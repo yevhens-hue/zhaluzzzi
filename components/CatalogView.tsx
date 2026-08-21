@@ -158,6 +158,8 @@ export function CatalogView({
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+            aria-expanded={isMobileFilterOpen}
+            aria-controls="catalog-sidebar-filters"
             className="lg:hidden flex-1 py-2 px-3 bg-white border border-gray-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-gray-700"
           >
             <Filter className="w-4 h-4 text-blue-600" />
@@ -166,7 +168,9 @@ export function CatalogView({
 
           <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700">
             <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
+            <label htmlFor="sort-select" className="sr-only">Сортування товарів</label>
             <select
+              id="sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="bg-transparent focus:outline-hidden text-xs font-semibold cursor-pointer"
@@ -184,6 +188,8 @@ export function CatalogView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Sidebar Filters (4 cols on lg, drawer on mobile) */}
         <aside
+          id="catalog-sidebar-filters"
+          aria-label="Фільтри каталогу"
           className={`lg:col-span-3 bg-white rounded-2xl border border-gray-200/80 p-5 space-y-6 shadow-2xs ${
             isMobileFilterOpen ? 'block' : 'hidden lg:block'
           }`}

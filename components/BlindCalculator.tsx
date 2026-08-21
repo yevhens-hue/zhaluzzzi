@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useTransition, useCallback } from 'react';
 import { Calculator, Check, ArrowRight, ShieldCheck, Sparkles, Sliders, CheckCircle2, ShoppingBag, Eye } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -21,6 +21,8 @@ export function BlindCalculator() {
   const [isOneClickOpen, setIsOneClickOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 
+  const [, startTransition] = useTransition();
+
   // Quick size presets
   const sizePresets = [
     { label: 'Стулка', w: 50, h: 130 },
@@ -29,6 +31,18 @@ export function BlindCalculator() {
     { label: 'Двостулкове', w: 120, h: 140 },
     { label: 'Балконні двері', w: 65, h: 200 },
   ];
+
+  const handleWidthChange = useCallback((newW: number) => {
+    startTransition(() => {
+      setWidth(newW);
+    });
+  }, []);
+
+  const handleHeightChange = useCallback((newH: number) => {
+    startTransition(() => {
+      setHeight(newH);
+    });
+  }, []);
 
   // Find demo product for this category
   const targetProduct: Product = useMemo(() => {
@@ -201,7 +215,7 @@ export function BlindCalculator() {
                     max={240}
                     step={1}
                     value={width}
-                    onChange={(e) => setWidth(Number(e.target.value))}
+                    onChange={(e) => handleWidthChange(Number(e.target.value))}
                     className="w-full accent-amber-400 cursor-pointer h-2 bg-gray-700 rounded-lg appearance-none"
                   />
                   <div className="flex justify-between text-[10px] text-gray-400 mt-1 font-mono">
@@ -222,7 +236,7 @@ export function BlindCalculator() {
                     max={260}
                     step={1}
                     value={height}
-                    onChange={(e) => setHeight(Number(e.target.value))}
+                    onChange={(e) => handleHeightChange(Number(e.target.value))}
                     className="w-full accent-amber-400 cursor-pointer h-2 bg-gray-700 rounded-lg appearance-none"
                   />
                   <div className="flex justify-between text-[10px] text-gray-400 mt-1 font-mono">
