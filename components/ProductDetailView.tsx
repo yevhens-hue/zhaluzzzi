@@ -1,0 +1,664 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
+import Link from 'next/image';
+import { Product, ProductColor, Review } from '@/types/database';
+import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
+import { OneClickModal } from './OneClickModal';
+import { addProductReview } from '@/lib/supabase';
+import {
+  Star,
+  Heart,
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+  Check,
+  Plus,
+  Minus,
+  Sparkles,
+  MessageSquare,
+  FileText,
+  Sliders,
+  Send,
+} from 'lucide-react';
+
+interface ProductDetailViewProps {
+  product: Product;
+  reviews: Review[];
+  relatedProducts: Product[];
+}
+
+export function ProductDetailView({
+  product,
+  reviews: initialReviews,
+  relatedProducts,
+}: ProductDetailViewProps) {
+  const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+
+  // Gallery
+  const allImages = useMemo(() => {
+    return product.images && product.images.length > 0
+      ? product.images
+      : [product.main_image];
+  }, [product]);
+
+  const [activeImage, setActiveImage] = useState(allImages[0]);
+  const [selectedColor, setSelectedColor] = useState<ProductColor>(
+    product.available_colors?.[0] || {
+      id: 'default',
+      name: product.color_name || 'Стандарт',
+      code: product.sku,
+      hex: product.color_hex || '#888',
+    }
+  );
+
+  // Configurator state
+  const [width, setWidth] = useState<number>(product.base_width || 60);
+  const [height, setHeight] = useState<number>(product.base_height || 140);
+  const [controlSide, setControlSide] = useState<'left' | 'right'>('right');
+  const [fixationType, setFixationType] = useState<'with_line' | 'without_line'>('with_line');
+  const [quantity, setQuantity] = useState<number>(1);
+  const [activeTab, setActiveTab] = useState<'main' | 'specs' | 'desc' | 'reviews'>('main');
+
+  // Modals & review
+  const [isOneClickOpen, setIsOneClickOpen] = useState(false);
+  const [reviewsList, setReviewsList] = useState<Review[]>(initialReviews);
+  const [reviewName, setReviewName] = useState('');
+  const [reviewCity, setReviewCity] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  const inWishlist = isInWishlist(product.id);
+
+  // Price Calculation formula based on area
+  const unitPrice = useMemo(() => {
+    const area = Math.max(0.5, (width * height) / 10000);
+    const rate = product.price_per_sqm || 450;
+    let extra = 0;
+    if (fixationType === 'with_line') extra += 60;
+
+    const calculated = Math.round(area * rate + extra);
+    return Math.max(product.base_price, calculated);
+  }, [width, height, fixationType, product]);
+
+  const totalPrice = unitPrice * quantity;
+
+  // Add to cart handler
+  const handleAddToCart = () => {
+    addItem({
+      productId: product.id,
+      slug: product.slug,
+      title: product.title,
+      sku: product.sku,
+      image: activeImage,
+      width,
+      height,
+      color: selectedColor,
+      controlSide,
+      fixationType,
+      unitPrice,
+      quantity,
+    });
+  };
+
+  // Review submit
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewName || !reviewComment) return;
+
+    setIsSubmittingReview(true);
+    const newRev = {
+      product_id: product.id,
+      author_name: reviewName,
+      city: reviewCity || 'Україна',
+      rating: reviewRating,
+      comment: reviewComment,
+    };
+
+    await addProductReview(newRev);
+
+    setReviewsList((prev) => [
+      {
+        ...newRev,
+        id: `rev-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
+
+    setReviewSubmitted(true);
+    setIsSubmittingReview(false);
+  };
+
+  return (
+    <div className="space-y-12">
+      {/* Breadcrumb Navigation */}
+      <nav className="text-xs text-gray-500 flex items-center gap-1.5 flex-wrap">
+        <a href="/" className="hover:text-blue-600">Головна</a>
+        <span>/</span>
+        <a href={`/${product.category_slug}`} className="hover:text-blue-600 capitalize">
+          {product.category_slug}
+        </a>
+        <span>/</span>
+        <span className="text-gray-900 font-medium line-clamp-1">{product.title}</span>
+      </nav>
+
+      {/* Main Product Layout (Gallery + Configurator) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Image Gallery (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Main Large Image */}
+          <div className="relative aspect-4/5 w-full bg-gray-50 rounded-3xl overflow-hidden border border-gray-200/80 shadow-md">
+            {/* Badges */}
+            <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
+              {product.is_popular && (
+                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-xs">
+                  Популярний
+                </span>
+              )}
+              {product.is_offer_of_day && (
+                <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-xs">
+                  Пропозиція дня
+                </span>
+              )}
+            </div>
+
+            <Image
+              src={activeImage}
+              alt={product.title}
+              fill
+              className="object-cover"
+              priority
+              unoptimized
+            />
+          </div>
+
+          {/* Thumbnails Row */}
+          {allImages.length > 1 && (
+            <div className="flex gap-2.5 overflow-x-auto pb-1">
+              {allImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImage(img)}
+                  className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border-2 transition ${
+                    activeImage === img ? 'border-blue-600 scale-95' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Image
+                    src={img}
+                    alt={`${product.title} зразок ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Guarantee / Delivery info pills */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 flex items-center gap-2.5 text-xs text-gray-700">
+              <Truck className="w-5 h-5 text-blue-600 shrink-0" />
+              <div>
+                <div className="font-bold text-gray-900">Доставка Нова Пошта</div>
+                <div className="text-[11px] text-gray-500">2-4 дні по Україні</div>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 flex items-center gap-2.5 text-xs text-gray-700">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <div className="font-bold text-gray-900">Гарантія 12 міс.</div>
+                <div className="text-[11px] text-gray-500">Офіційна від заводу</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Title, Configurator & Purchase Box (7 cols) */}
+        <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
+          {/* Header info */}
+          <div>
+            <div className="flex justify-between items-start gap-4">
+              <h1 className="text-xl sm:text-2xl font-black text-gray-900 leading-snug">
+                {product.title}
+              </h1>
+
+              <button
+                onClick={() => toggleWishlist(product.id)}
+                className={`p-2.5 rounded-full border transition ${
+                  inWishlist
+                    ? 'bg-rose-50 border-rose-200 text-rose-600'
+                    : 'border-gray-200 text-gray-400 hover:text-rose-500 hover:bg-gray-50'
+                }`}
+                title="Додати в обране"
+              >
+                <Heart className={`w-5 h-5 ${inWishlist ? 'fill-rose-500' : ''}`} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 mt-2 text-xs">
+              <span className="text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold">
+                В наявності
+              </span>
+              <span className="text-gray-400">|</span>
+              <span className="text-gray-500">Артикул: <strong className="text-gray-700">{product.sku}</strong></span>
+              <span className="text-gray-400">|</span>
+              <div className="flex items-center gap-1 text-amber-400 font-semibold">
+                <Star className="w-3.5 h-3.5 fill-amber-400" />
+                <span className="text-gray-800">{product.rating}</span>
+                <span className="text-gray-400">({reviewsList.length} відгуків)</span>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* 1. Dimension Inputs (Width x Height) */}
+          <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-blue-900">
+                1. Вкажіть ваші розміри (см)
+              </label>
+              <a href="/zamir" target="_blank" className="text-[11px] font-bold text-blue-600 hover:underline">
+                📐 Інструкція заміру
+              </a>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Width */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Ширина (від {product.min_width} до {product.max_width} см):
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={product.min_width || 20}
+                    max={product.max_width || 240}
+                    value={width}
+                    onChange={(e) => setWidth(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-hidden focus:border-blue-600"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                    см
+                  </span>
+                </div>
+              </div>
+
+              {/* Height */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Висота (від {product.min_height} до {product.max_height} см):
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={product.min_height || 30}
+                    max={product.max_height || 260}
+                    value={height}
+                    onChange={(e) => setHeight(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-hidden focus:border-blue-600"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                    см
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-gray-500">
+              * Заводське виготовлення здійснюється точно за вашими розмірами з точністю до міліметра.
+            </div>
+          </div>
+
+          {/* 2. Color / Fabric Selector */}
+          {product.available_colors && product.available_colors.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700">
+                  2. Оберіть колір тканини:
+                </label>
+                <span className="text-xs font-bold text-blue-700">{selectedColor.name}</span>
+              </div>
+
+              <div className="flex flex-wrap gap-2.5">
+                {product.available_colors.map((color) => {
+                  const isSelected = selectedColor.id === color.id;
+                  return (
+                    <button
+                      key={color.id}
+                      onClick={() => setSelectedColor(color)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition ${
+                        isSelected
+                          ? 'border-blue-600 bg-blue-50/50 shadow-xs ring-1 ring-blue-600'
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                    >
+                      <span
+                        className="w-4 h-4 rounded-full border border-gray-300 shadow-2xs inline-block shrink-0"
+                        style={{ backgroundColor: color.hex }}
+                      />
+                      <span className="text-xs font-semibold text-gray-800">{color.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Options (Control side, fixation) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                Сторона управління:
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setControlSide('left')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition ${
+                    controlSide === 'left'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700 font-bold'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Ліва
+                </button>
+                <button
+                  onClick={() => setControlSide('right')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition ${
+                    controlSide === 'right'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700 font-bold'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Права
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                Система фіксації:
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFixationType('with_line')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition ${
+                    fixationType === 'with_line'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700 font-bold'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  На лісці (+60 грн)
+                </button>
+                <button
+                  onClick={() => setFixationType('without_line')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition ${
+                    fixationType === 'without_line'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700 font-bold'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Без ліски
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* 4. Price and Action Buttons */}
+          <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-gray-500 font-medium">Розрахункова ціна за розмір:</div>
+                <div className="text-2xl sm:text-3xl font-black text-blue-950">
+                  {totalPrice.toLocaleString('uk-UA')} грн
+                </div>
+              </div>
+
+              {/* Quantity input */}
+              <div className="flex items-center border border-gray-300 rounded-xl bg-white">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-l-xl transition"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="px-3.5 text-sm font-bold text-gray-900">{quantity}</span>
+                <button
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-r-xl transition"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={handleAddToCart}
+                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                <span>Додати у кошик</span>
+              </button>
+
+              <button
+                onClick={() => setIsOneClickOpen(true)}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-95"
+              >
+                Купити в 1 клік
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs: Specs, Description, Reviews */}
+      <div className="bg-white rounded-3xl border border-gray-200/80 p-6 sm:p-8 shadow-xs">
+        <div className="flex border-b border-gray-200 gap-6 text-sm font-bold">
+          <button
+            onClick={() => setActiveTab('main')}
+            className={`pb-3 transition relative ${
+              activeTab === 'main'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Характеристики
+          </button>
+          <button
+            onClick={() => setActiveTab('desc')}
+            className={`pb-3 transition relative ${
+              activeTab === 'desc'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Опис моделі
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`pb-3 transition relative ${
+              activeTab === 'reviews'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Відгуки ({reviewsList.length})
+          </button>
+        </div>
+
+        {/* Tab 1: Characteristics */}
+        {activeTab === 'main' && (
+          <div className="py-6 max-w-2xl">
+            <table className="w-full text-xs sm:text-sm">
+              <tbody className="divide-y divide-gray-100">
+                {product.characteristics &&
+                  Object.entries(product.characteristics).map(([key, value]) => (
+                    <tr key={key} className="py-2.5 flex justify-between">
+                      <td className="text-gray-500 font-medium">{key}</td>
+                      <td className="text-gray-900 font-bold text-right">{value}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Tab 2: Description */}
+        {activeTab === 'desc' && (
+          <div className="py-6 text-xs sm:text-sm text-gray-700 leading-relaxed space-y-4 max-w-3xl whitespace-pre-line">
+            {product.description}
+          </div>
+        )}
+
+        {/* Tab 3: Reviews */}
+        {activeTab === 'reviews' && (
+          <div className="py-6 space-y-8 max-w-3xl">
+            {/* Review form */}
+            <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200/80 space-y-3">
+              <h3 className="font-bold text-sm text-gray-900">Залишити відгук про товар</h3>
+
+              {reviewSubmitted ? (
+                <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-medium">
+                  ✓ Дякуємо! Ваш відгук опубліковано.
+                </div>
+              ) : (
+                <form onSubmit={handleReviewSubmit} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Ваше ім'я *</label>
+                      <input
+                        type="text"
+                        required
+                        value={reviewName}
+                        onChange={(e) => setReviewName(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Місто</label>
+                      <input
+                        type="text"
+                        value={reviewCity}
+                        onChange={(e) => setReviewCity(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Оцінка</label>
+                    <div className="flex gap-1 text-amber-400">
+                      {[1, 2, 3, 4, 5].map((st) => (
+                        <button
+                          type="button"
+                          key={st}
+                          onClick={() => setReviewRating(st)}
+                          className="p-1"
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              st <= reviewRating ? 'fill-amber-400' : 'text-gray-300'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Ваш відгук *</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Поділіться вашими враженнями про якість, монтаж та роботу виробу..."
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingReview}
+                    className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition flex items-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Надіслати відгук</span>
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {/* Reviews List */}
+            <div className="space-y-4">
+              {reviewsList.map((rev) => (
+                <div key={rev.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-2xs space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <div className="font-bold text-xs sm:text-sm text-gray-900">
+                      {rev.author_name} {rev.city && <span className="text-gray-400 font-normal">({rev.city})</span>}
+                    </div>
+                    <div className="flex text-amber-400">
+                      {[...Array(rev.rating)].map((_, i) => (
+                        <Star key={i} className="w-3 h-3 fill-amber-400" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">{rev.comment}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Recommended Products */}
+      {relatedProducts.length > 0 && (
+        <div className="space-y-6">
+          <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+            Схожі моделі та рекомендації
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+            {relatedProducts.slice(0, 4).map((item) => (
+              <a key={item.id} href={`/product/${item.slug}`}>
+                <div className="bg-white rounded-2xl border border-gray-100 p-3 shadow-xs hover:shadow-md transition">
+                  <div className="relative aspect-4/5 w-full bg-gray-50 rounded-xl overflow-hidden mb-2">
+                    <Image
+                      src={item.main_image}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                  <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{item.title}</h4>
+                  <div className="text-xs font-extrabold text-blue-900 mt-1">{item.base_price} грн</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 1-Click Modal */}
+      <OneClickModal
+        product={product}
+        selectedColor={selectedColor}
+        width={width}
+        height={height}
+        calculatedPrice={totalPrice}
+        isOpen={isOneClickOpen}
+        onClose={() => setIsOneClickOpen(false)}
+      />
+    </div>
+  );
+}

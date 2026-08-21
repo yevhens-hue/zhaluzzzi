@@ -1,0 +1,1326 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getLocalLogs, clearLocalLogs, LogEntry } from '@/lib/logger';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { Product } from '@/types/database';
+import {
+  Package,
+  Users,
+  Database,
+  RefreshCw,
+  Activity,
+  Trash2,
+  Lock,
+  LogOut,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Plus,
+  Edit2,
+  Save,
+  CheckCircle2,
+  Calculator,
+  Phone,
+  Megaphone,
+  Sparkles,
+  RotateCcw,
+  Sliders,
+} from 'lucide-react';
+
+const ADMIN_LOGIN = 'admin';
+const ADMIN_PASS = 'Dnipro2026!';
+const SESSION_AUTH_KEY = 'app_admin_session_v2';
+
+export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [loginInput, setLoginInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  const { settings, products, updateSettings, updateProducts, resetDefaults } = useSiteSettings();
+
+  // Active subtab
+  const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'products' | 'calculator' | 'contacts' | 'promo' | 'logs' | 'db'>('orders');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Form states for Settings
+  const [calcForm, setCalcForm] = useState(settings.calculator);
+  const [contactsForm, setContactsForm] = useState(settings.contacts);
+  const [promoForm, setPromoForm] = useState(settings.promo);
+
+  // Product editing modal / inline state
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isAddingNewProduct, setIsAddingNewProduct] = useState(false);
+
+  // Logs filters
+  const [logFilter, setLogFilter] = useState<'ALL' | 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'>('ALL');
+  const [logSearch, setLogSearch] = useState('');
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Clear legacy persistent auth key
+      localStorage.removeItem('app_admin_authenticated');
+
+      const isSessionAuth = sessionStorage.getItem(SESSION_AUTH_KEY) === 'true';
+      setIsAuthenticated(isSessionAuth);
+      setIsAuthChecking(false);
+      if (isSessionAuth) {
+        loadData();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    setCalcForm(settings.calculator);
+    setContactsForm(settings.contacts);
+    setPromoForm(settings.promo);
+  }, [settings]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginInput.trim() === ADMIN_LOGIN && passwordInput === ADMIN_PASS) {
+      setIsAuthenticated(true);
+      setAuthError('');
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(SESSION_AUTH_KEY, 'true');
+      }
+      loadData();
+    } else {
+      setAuthError('Невірний логін або пароль адміністратора.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setLoginInput('');
+    setPasswordInput('');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(SESSION_AUTH_KEY);
+      localStorage.removeItem('app_admin_authenticated');
+    }
+  };
+
+  const loadData = async () => {
+    setIsLoading(true);
+    const localLogs = getLocalLogs();
+    setLogs(localLogs);
+
+    if (!supabase) {
+      if (typeof window !== 'undefined') {
+        const storedOrders = JSON.parse(localStorage.getItem('app_orders') || '[]');
+        const storedLeads = JSON.parse(localStorage.getItem('app_leads') || '[]');
+        setOrders(storedOrders);
+        setLeads(storedLeads);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const [{ data: ordersData }, { data: leadsData }, { data: dbLogs }] = await Promise.all([
+        supabase.from('orders').select('*').order('created_at', { ascending: false }),
+        supabase.from('leads').select('*').order('created_at', { ascending: false }),
+        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
+      ]);
+
+      setOrders(ordersData || []);
+      setLeads(leadsData || []);
+      if (dbLogs && dbLogs.length > 0) {
+        setLogs(dbLogs);
+      }
+    } catch (e) {
+      console.error('Data load error:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const showNotification = (msg: string) => {
+    setSaveSuccessMsg(msg);
+    setTimeout(() => setSaveSuccessMsg(null), 3500);
+  };
+
+  // Save Calculator Rates
+  const handleSaveCalculator = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateSettings({
+      ...settings,
+      calculator: calcForm,
+    });
+    showNotification('Розцінки та формулу калькулятора успішно оновлено!');
+  };
+
+  // Save Contacts & Info
+  const handleSaveContacts = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateSettings({
+      ...settings,
+      contacts: contactsForm,
+    });
+    showNotification('Контактні дані та графік успішно збережено!');
+  };
+
+  // Save Promo & Banners
+  const handleSavePromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateSettings({
+      ...settings,
+      promo: promoForm,
+    });
+    showNotification('Тексти банерів та заголовки сайту успішно оновлено!');
+  };
+
+  // Save / Update a Product
+  const handleSaveProduct = async (productToSave: Product) => {
+    let updated: Product[];
+    const exists = products.some((p) => p.id === productToSave.id);
+    if (exists) {
+      updated = products.map((p) => (p.id === productToSave.id ? productToSave : p));
+    } else {
+      updated = [productToSave, ...products];
+    }
+    await updateProducts(updated);
+    setEditingProduct(null);
+    setIsAddingNewProduct(false);
+    showNotification(`Товар "${productToSave.title}" збережено!`);
+  };
+
+  // Delete a Product
+  const handleDeleteProduct = async (productId: string) => {
+    if (confirm('Видалити цей товар з каталогу?')) {
+      const updated = products.filter((p) => p.id !== productId);
+      await updateProducts(updated);
+      showNotification('Товар видалено з каталогу.');
+    }
+  };
+
+  // Clear Logs
+  const handleClearLogs = () => {
+    if (confirm('Очистити журнал логів?')) {
+      clearLocalLogs();
+      setLogs([]);
+      showNotification('Журнал логів очищено.');
+    }
+  };
+
+  const filteredLogs = logs.filter((log) => {
+    if (logFilter !== 'ALL' && log.level !== logFilter) return false;
+    if (logSearch) {
+      const q = logSearch.toLowerCase();
+      return (
+        log.action?.toLowerCase().includes(q) ||
+        log.message?.toLowerCase().includes(q) ||
+        JSON.stringify(log.details || '').toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  if (isAuthChecking) {
+    return (
+      <div className="max-w-md mx-auto py-24 px-4 text-center space-y-4">
+        <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-gray-500 font-semibold">Перевірка безпеки доступу...</p>
+      </div>
+    );
+  }
+
+  // Login Screen
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4">
+        <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-xl space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+              <Lock className="w-7 h-7" />
+            </div>
+            <h1 className="text-2xl font-black text-gray-900">Вхід в адмін-панель</h1>
+            <p className="text-xs text-gray-500">
+              Введіть логін та пароль адміністратора для доступу до керування сайтом
+            </p>
+          </div>
+
+          {authError && (
+            <div className="p-3 bg-red-50 text-red-700 text-xs font-semibold rounded-xl border border-red-200 text-center">
+              {authError}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Логін адміністратора
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Введіть логін"
+                value={loginInput}
+                onChange={(e) => setLoginInput(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Пароль
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Введіть пароль"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition cursor-pointer"
+            >
+              Увійти в адмін-панель
+            </button>
+          </form>
+
+          <div className="text-[11px] text-gray-400 text-center">
+            🔒 Доступ суворо обмежений для власника сайту.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 py-6">
+      {/* Top Banner with Alert Notification */}
+      {saveSuccessMsg && (
+        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-3 duration-200">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>{saveSuccessMsg}</span>
+        </div>
+      )}
+
+      {/* Main Admin Header */}
+      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400 mb-1">
+            <ShieldCheck className="w-4 h-4" />
+            <span>Панель керування сайтом & CMS</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black">Управління цінами, товарами та замовленнями</h1>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/20">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isSupabaseConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+              }`}
+            />
+            <span>{isSupabaseConfigured ? 'Supabase Live' : 'Local Storage Sync'}</span>
+          </div>
+
+          <button
+            onClick={loadData}
+            className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition"
+            title="Оновити дані"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="p-2 bg-white/10 hover:bg-red-600 text-white rounded-xl transition"
+            title="Вийти з адмін-панелі"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation Sub-Tabs */}
+      <div className="flex border-b border-gray-200 gap-4 text-xs sm:text-sm font-bold overflow-x-auto pb-1">
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'orders'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Package className="w-4 h-4" />
+          <span>Замовлення ({orders.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('leads')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'leads'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Ліди в 1 клік ({leads.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'products'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Sliders className="w-4 h-4" />
+          <span>Товари та розцінки ({products.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('calculator')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'calculator'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Calculator className="w-4 h-4" />
+          <span>Тарифи калькулятора</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('contacts')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'contacts'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Phone className="w-4 h-4" />
+          <span>Контакти & Майстер</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('promo')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'promo'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Megaphone className="w-4 h-4" />
+          <span>Банери та тексти</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('logs')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'logs'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>Журнал подій ({logs.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('db')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'db'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          <span>База Supabase</span>
+        </button>
+      </div>
+
+      {/* ----------------- 1. ORDERS TAB ----------------- */}
+      {activeTab === 'orders' && (
+        <div className="space-y-4">
+          {orders.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-gray-200/80 shadow-xs space-y-2">
+              <Package className="w-12 h-12 text-gray-300 mx-auto" />
+              <h3 className="font-bold text-gray-800">Замовлень поки що немає</h3>
+              <p className="text-xs text-gray-500">
+                Нові замовлення з кошика з'являтимуться тут автоматично.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {orders.map((ord: any) => (
+                <div
+                  key={ord.id || ord.order_number}
+                  className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-sm text-blue-900">{ord.order_number}</span>
+                      <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {ord.status || 'Нове'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(ord.created_at || Date.now()).toLocaleString('uk-UA')}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <div className="text-gray-400 font-semibold mb-0.5">Клієнт:</div>
+                      <div className="font-bold text-gray-900">{ord.customer_name}</div>
+                      <div className="text-blue-600 font-bold">{ord.phone}</div>
+                      {ord.email && <div className="text-gray-500">{ord.email}</div>}
+                    </div>
+
+                    <div>
+                      <div className="text-gray-400 font-semibold mb-0.5">Доставка та адреса:</div>
+                      <div className="font-bold text-gray-900">{ord.city}</div>
+                      <div className="text-gray-600">{ord.delivery_address}</div>
+                      <div className="text-gray-500 text-[11px] capitalize">{ord.delivery_type}</div>
+                    </div>
+
+                    <div className="text-left md:text-right">
+                      <div className="text-gray-400 font-semibold mb-0.5">Сума до сплати:</div>
+                      <div className="text-xl font-black text-blue-950">
+                        {ord.total_amount?.toLocaleString('uk-UA')} грн
+                      </div>
+                      <div className="text-gray-500 text-[11px] capitalize">
+                        {ord.payment_method === 'cash_on_delivery' ? 'Післяплата' : ord.payment_method}
+                      </div>
+                    </div>
+                  </div>
+
+                  {ord.items && (
+                    <div className="pt-2 border-t border-gray-50 text-[11px] text-gray-600 space-y-1">
+                      <div className="font-semibold text-gray-700">Позиції замовлення:</div>
+                      {ord.items.map((it: any, idx: number) => (
+                        <div key={idx} className="flex justify-between">
+                          <span>
+                            • {it.title} ({it.width}×{it.height} см, {it.color}) × {it.quantity} шт
+                          </span>
+                          <span className="font-bold text-gray-800">{it.totalPrice || it.total_price} грн</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ----------------- 2. LEADS TAB ----------------- */}
+      {activeTab === 'leads' && (
+        <div className="space-y-4">
+          {leads.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-gray-200/80 shadow-xs space-y-2">
+              <Users className="w-12 h-12 text-gray-300 mx-auto" />
+              <h3 className="font-bold text-gray-800">Заявок в 1 клік поки що немає</h3>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {leads.map((lead: any, idx: number) => (
+                <div
+                  key={lead.id || idx}
+                  className="bg-white rounded-2xl p-4 border border-gray-200/80 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs"
+                >
+                  <div>
+                    <div className="font-bold text-base text-blue-600">{lead.phone}</div>
+                    <div className="text-gray-900 font-semibold mt-0.5">
+                      {lead.name ? `Клієнт: ${lead.name}` : 'Швидка покупка в 1 клік'}
+                    </div>
+                    {lead.product_title && (
+                      <div className="text-gray-600 text-[11px]">
+                        Товар: <strong>{lead.product_title}</strong> {lead.dimensions && `(${lead.dimensions})`}
+                      </div>
+                    )}
+                    {lead.comment && (
+                      <div className="text-gray-500 text-[11px] italic mt-1">
+                        Повідомлення: "{lead.comment}"
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-left sm:text-right space-y-1">
+                    {lead.calculated_price && (
+                      <div className="font-black text-gray-900 text-sm">
+                        {lead.calculated_price} грн
+                      </div>
+                    )}
+                    <div className="text-[10px] text-gray-400">
+                      {new Date(lead.created_at || Date.now()).toLocaleString('uk-UA')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ----------------- 3. PRODUCTS & PRICING CMS ----------------- */}
+      {activeTab === 'products' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-gray-200">
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Каталог товарів та розцінки</h2>
+              <p className="text-xs text-gray-500">
+                Змінюйте ціни, фото, назви, наявність або додавайте нові позиції на сайт
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                const newId = String(Date.now());
+                setEditingProduct({
+                  id: newId,
+                  slug: `product-${newId}`,
+                  sku: `ZR-${Math.floor(100 + Math.random() * 900)}`,
+                  title: 'Новий виріб (Ролета / Штора / Жалюзі)',
+                  category_slug: 'roleti',
+                  base_price: 550,
+                  old_price: 680,
+                  price_unit: 'грн/шт',
+                  min_width: 25,
+                  max_width: 240,
+                  min_height: 30,
+                  max_height: 300,
+                  base_width: 50,
+                  base_height: 130,
+                  price_per_sqm: 550,
+                  available_colors: [
+                    { id: 'c1', name: 'Білий', hex: '#FFFFFF', code: '01' },
+                    { id: 'c2', name: 'Бежевий', hex: '#E5DCC5', code: '02' },
+                    { id: 'c3', name: 'Графіт', hex: '#374151', code: '03' },
+                  ],
+                  main_image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+                  images: [],
+                  in_stock: true,
+                  is_popular: false,
+                  is_new: true,
+                  rating: 5.0,
+                  reviews_count: 1,
+                  description: 'Виготовлення за індивідуальними розмірами замовника.',
+                  characteristics: {
+                    type: 'Тканинні ролети',
+                    material: 'Поліестер 100%',
+                    country: 'Німеччина',
+                    care: 'Суха чистка',
+                    warranty: '24 місяці',
+                  },
+                });
+                setIsAddingNewProduct(true);
+              }}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Додати новий товар</span>
+            </button>
+          </div>
+
+          {/* Product Edit / Add Modal */}
+          {editingProduct && (
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-blue-500 shadow-xl space-y-6">
+              <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+                <h3 className="font-extrabold text-lg text-gray-900">
+                  {isAddingNewProduct ? '✨ Додавання нового товару' : `✏️ Редагування товару: ${editingProduct.title}`}
+                </h3>
+                <button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setIsAddingNewProduct(false);
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-700"
+                >
+                  Скасувати
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-gray-700 mb-1">Назва товару *</label>
+                  <input
+                    type="text"
+                    value={editingProduct.title}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Категорія *</label>
+                  <select
+                    value={editingProduct.category_slug}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, category_slug: e.target.value })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                  >
+                    <option value="roleti">Тканинні ролети (roleti)</option>
+                    <option value="shtori">Штори День-Ніч (shtori)</option>
+                    <option value="zhaluzi">Жалюзі (zhaluzi)</option>
+                    <option value="zakryta-sistema">Закрита система (zakryta-sistema)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Базова ціна (грн) *</label>
+                  <input
+                    type="number"
+                    value={editingProduct.base_price}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, base_price: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Стара ціна (зі знижкою) (грн)</label>
+                  <input
+                    type="number"
+                    value={editingProduct.old_price || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, old_price: Number(e.target.value) || undefined })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Ціна за 1 м² (грн)</label>
+                  <input
+                    type="number"
+                    value={editingProduct.price_per_sqm}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, price_per_sqm: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-gray-700 mb-1">URL зображення товару *</label>
+                  <input
+                    type="text"
+                    value={editingProduct.main_image}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, main_image: e.target.value })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs font-mono text-gray-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Статус наявності</label>
+                  <select
+                    value={editingProduct.in_stock ? 'true' : 'false'}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, in_stock: e.target.value === 'true' })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                  >
+                    <option value="true">В наявності (виготовлення 2-4 дні)</option>
+                    <option value="false">Під замовлення</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="block font-bold text-gray-700 mb-1">Опис товару</label>
+                  <textarea
+                    rows={3}
+                    value={editingProduct.description}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 bg-white font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setIsAddingNewProduct(false);
+                  }}
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-100 transition"
+                >
+                  Скасувати
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveProduct(editingProduct)}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Зберегти товар</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Products List Table / Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {products.map((p) => (
+              <div
+                key={p.id}
+                className="bg-white rounded-2xl p-4 border border-gray-200/80 shadow-xs flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={p.main_image}
+                      alt={p.title}
+                      className="w-14 h-14 object-cover rounded-xl border border-gray-100 shrink-0"
+                    />
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                        {p.category_slug}
+                      </span>
+                      <h4 className="font-bold text-gray-900 text-xs mt-1 line-clamp-1">{p.title}</h4>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="font-black text-sm text-gray-900">{p.base_price} грн</span>
+                        {p.old_price && (
+                          <span className="text-[11px] text-gray-400 line-through">{p.old_price} грн</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-gray-500 line-clamp-2">{p.description}</p>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
+                  <span className={`text-[11px] font-bold ${p.in_stock ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {p.in_stock ? '● В наявності' : '○ Під замовлення'}
+                  </span>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingProduct(p);
+                        setIsAddingNewProduct(false);
+                      }}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      title="Редагувати"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(p.id)}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
+                      title="Видалити"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- 4. CALCULATOR RATES CMS ----------------- */}
+      {activeTab === 'calculator' && (
+        <form onSubmit={handleSaveCalculator} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-xs space-y-6 max-w-4xl">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+            <Calculator className="w-8 h-8 text-blue-600" />
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Тарифи та формули онлайн-калькулятора</h2>
+              <p className="text-xs text-gray-500">
+                Зміна базових ставок за квадратний метр, коефіцієнтів тканини та додаткових опцій
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-extrabold text-sm text-gray-900">1. Базова ставка за 1 м² за категоріями</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Тканинні ролети (грн/м²)</label>
+                <input
+                  type="number"
+                  value={calcForm.roletiBaseRate}
+                  onChange={(e) => setCalcForm({ ...calcForm, roletiBaseRate: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Штори День-Ніч (грн/м²)</label>
+                <input
+                  type="number"
+                  value={calcForm.shtoriBaseRate}
+                  onChange={(e) => setCalcForm({ ...calcForm, shtoriBaseRate: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Жалюзі (грн/м²)</label>
+                <input
+                  type="number"
+                  value={calcForm.zhaluziBaseRate}
+                  onChange={(e) => setCalcForm({ ...calcForm, zhaluziBaseRate: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Закрита система (грн/м²)</label>
+                <input
+                  type="number"
+                  value={calcForm.zakrytaBaseRate}
+                  onChange={(e) => setCalcForm({ ...calcForm, zakrytaBaseRate: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-4 border-t border-gray-100">
+            <h3 className="font-extrabold text-sm text-gray-900">2. Коефіцієнти типу тканини та додаткові опції</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Коефіцієнт тканини Преміум</label>
+                <input
+                  type="number"
+                  step="0.05"
+                  value={calcForm.premiumMultiplier}
+                  onChange={(e) => setCalcForm({ ...calcForm, premiumMultiplier: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Коефіцієнт тканини Блекаут</label>
+                <input
+                  type="number"
+                  step="0.05"
+                  value={calcForm.blackoutMultiplier}
+                  onChange={(e) => setCalcForm({ ...calcForm, blackoutMultiplier: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Доплата за ліску (грн)</label>
+                <input
+                  type="number"
+                  value={calcForm.lineFixationCost}
+                  onChange={(e) => setCalcForm({ ...calcForm, lineFixationCost: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Доплата за електропривод (грн)</label>
+                <input
+                  type="number"
+                  value={calcForm.motorizationCost}
+                  onChange={(e) => setCalcForm({ ...calcForm, motorizationCost: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={resetDefaults}
+              className="text-xs text-gray-500 hover:text-red-600 flex items-center gap-1"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Скинути до стандартних</span>
+            </button>
+
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md"
+            >
+              <Save className="w-4 h-4" />
+              <span>Зберегти розцінки</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ----------------- 5. CONTACTS CMS ----------------- */}
+      {activeTab === 'contacts' && (
+        <form onSubmit={handleSaveContacts} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-xs space-y-6 max-w-4xl">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+            <Phone className="w-8 h-8 text-blue-600" />
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Контактна інформація та майстер</h2>
+              <p className="text-xs text-gray-500">
+                Телефони, посилання на соцмережі, графік та умови доставки
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Контактна особа / Майстер *</label>
+              <input
+                type="text"
+                value={contactsForm.masterName}
+                onChange={(e) => setContactsForm({ ...contactsForm, masterName: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Місто / Локація *</label>
+              <input
+                type="text"
+                value={contactsForm.city}
+                onChange={(e) => setContactsForm({ ...contactsForm, city: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Основний телефон *</label>
+              <input
+                type="text"
+                value={contactsForm.phone1}
+                onChange={(e) => setContactsForm({ ...contactsForm, phone1: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Додатковий телефон</label>
+              <input
+                type="text"
+                value={contactsForm.phone2}
+                onChange={(e) => setContactsForm({ ...contactsForm, phone2: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Посилання на Instagram</label>
+              <input
+                type="text"
+                value={contactsForm.instagramUrl}
+                onChange={(e) => setContactsForm({ ...contactsForm, instagramUrl: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs font-mono text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Посилання на Telegram</label>
+              <input
+                type="text"
+                value={contactsForm.telegramUrl}
+                onChange={(e) => setContactsForm({ ...contactsForm, telegramUrl: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs font-mono text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Номер Viber</label>
+              <input
+                type="text"
+                value={contactsForm.viberNumber}
+                onChange={(e) => setContactsForm({ ...contactsForm, viberNumber: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Графік роботи</label>
+              <input
+                type="text"
+                value={contactsForm.workHours}
+                onChange={(e) => setContactsForm({ ...contactsForm, workHours: e.target.value })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Сума для безкоштовної доставки (грн)</label>
+              <input
+                type="number"
+                value={contactsForm.deliveryFreeThreshold}
+                onChange={(e) => setContactsForm({ ...contactsForm, deliveryFreeThreshold: Number(e.target.value) })}
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-gray-100">
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md"
+            >
+              <Save className="w-4 h-4" />
+              <span>Зберегти контакти</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ----------------- 6. PROMO & BANNERS CMS ----------------- */}
+      {activeTab === 'promo' && (
+        <form onSubmit={handleSavePromo} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-xs space-y-6 max-w-4xl">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+            <Megaphone className="w-8 h-8 text-blue-600" />
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Банери та рекламні тексти</h2>
+              <p className="text-xs text-gray-500">
+                Керуйте текстом рекламної плашки у шапці та головними заголовками
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Рекламна плашка у самій шапці сайту (Top Banner)
+              </label>
+              <input
+                type="text"
+                value={promoForm.topBannerText}
+                onChange={(e) => setPromoForm({ ...promoForm, topBannerText: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">Залиште порожнім, якщо бажаєте приховати плашку.</p>
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Головний заголовок сторінки (Hero Title)
+              </label>
+              <input
+                type="text"
+                value={promoForm.heroTitle}
+                onChange={(e) => setPromoForm({ ...promoForm, heroTitle: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Підзаголовок / УТП (Hero Subtitle)
+              </label>
+              <textarea
+                rows={2}
+                value={promoForm.heroSubtitle}
+                onChange={(e) => setPromoForm({ ...promoForm, heroSubtitle: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs font-medium text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Бейдж акції / знижки (наприклад: "🔥 Знижки до -25% на День-Ніч")
+              </label>
+              <input
+                type="text"
+                value={promoForm.heroDiscountBadge}
+                onChange={(e) => setPromoForm({ ...promoForm, heroDiscountBadge: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-gray-100">
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md"
+            >
+              <Save className="w-4 h-4" />
+              <span>Зберегти тексти</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ----------------- 7. LOGS TAB ----------------- */}
+      {activeTab === 'logs' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl p-4 border border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-700">Рівень:</span>
+              {(['ALL', 'SUCCESS', 'INFO', 'WARN', 'ERROR'] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setLogFilter(lvl)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                    logFilter === lvl
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Пошук по логах..."
+                value={logSearch}
+                onChange={(e) => setLogSearch(e.target.value)}
+                className="px-3 py-1.5 border border-gray-300 rounded-xl text-xs text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 flex-1 sm:w-64"
+              />
+              <button
+                onClick={handleClearLogs}
+                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"
+                title="Очистити журнал"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {filteredLogs.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-gray-200/80 shadow-xs space-y-2">
+              <Activity className="w-12 h-12 text-gray-300 mx-auto" />
+              <h3 className="font-bold text-gray-800">Логів не знайдено</h3>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredLogs.map((log, idx) => {
+                const isExpanded = expandedLogId === (log.id || String(idx));
+                const badgeColor =
+                  log.level === 'SUCCESS'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : log.level === 'ERROR'
+                    ? 'bg-red-100 text-red-800'
+                    : log.level === 'WARN'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-blue-100 text-blue-800';
+
+                return (
+                  <div
+                    key={log.id || idx}
+                    className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-2xs hover:shadow-xs transition text-xs space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-md font-extrabold text-[10px] uppercase ${badgeColor}`}>
+                          {log.level}
+                        </span>
+                        <span className="font-mono font-bold text-gray-800">{log.action}</span>
+                        <span className="text-gray-600">{log.message}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          {new Date(log.timestamp).toLocaleTimeString('uk-UA')}
+                        </span>
+                        {log.details && (
+                          <button
+                            onClick={() =>
+                              setExpandedLogId(isExpanded ? null : log.id || String(idx))
+                            }
+                            className="text-gray-400 hover:text-gray-700"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {isExpanded && log.details && (
+                      <pre className="bg-slate-900 text-emerald-400 p-3 rounded-lg font-mono text-[10px] overflow-x-auto">
+                        {JSON.stringify(log.details, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ----------------- 8. DATABASE & CREDENTIALS TAB ----------------- */}
+      {activeTab === 'db' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="w-8 h-8 text-blue-600" />
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Адміністратор сайту</h2>
+                <p className="text-xs text-gray-500">Доступ до панелі керування /admin</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-xs text-gray-700">
+              <div className="flex justify-between">
+                <span className="text-gray-500">URL адмінки:</span>
+                <span className="font-mono font-bold text-blue-600">/admin</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Логін:</span>
+                <span className="font-mono font-bold text-gray-900">admin</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Пароль:</span>
+                <span className="font-mono font-bold text-gray-900">Dnipro2026!</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-3">
+              <Database className="w-8 h-8 text-emerald-600" />
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Хмарна база Supabase</h2>
+                <p className="text-xs text-gray-500">PostgreSQL база даних</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-xs text-gray-700">
+              <div>
+                <span className="text-gray-500 block mb-0.5">Project ID:</span>
+                <span className="font-mono font-bold text-gray-900">pnerikwvvtehclswgstb</span>
+              </div>
+              <div>
+                <span className="text-gray-500 block mb-0.5">Supabase URL:</span>
+                <span className="font-mono text-[11px] text-blue-600 break-all">
+                  https://pnerikwvvtehclswgstb.supabase.co
+                </span>
+              </div>
+              <a
+                href="https://supabase.com/dashboard/project/pnerikwvvtehclswgstb"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 pt-2"
+              >
+                <span>Відкрити кабінет Supabase</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

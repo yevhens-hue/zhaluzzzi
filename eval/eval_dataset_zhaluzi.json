@@ -1,0 +1,137 @@
+[
+  {
+    "id": "ZH-001",
+    "category": "measurement",
+    "language": "uk",
+    "input": "Як правильно зробити замір для відкритої системи рулонних штор на стулку?",
+    "retrieved_context": "Замір на стулку: виміряйте ширину по стиках штапиків (скло + штапики) та додайте 10-20 мм запасу. Висота — висота всієї поворотно-відкидної стулки.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["штапик", "скло", "висот", "ширин"],
+    "should_not_contain": ["не знаю", "немає інформації"]
+  },
+  {
+    "id": "ZH-002",
+    "category": "system_recommendation",
+    "language": "ru",
+    "input": "У меня спальня на южной стороне, летом сильно светит солнце и жарко. Что лучше поставить?",
+    "retrieved_context": "Блекаут / Блэкаут (100% затемнення): Повне блокування світла, Термоізоляція (відбиває тепло влітку). Закрита система з направляючими дає максимальне затемнення без бічних просвітів.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["блекаут", "блэкаут", "blackout", "затемн", "термо"],
+    "should_not_contain": ["прозрачные ткани", "не знаю"]
+  },
+  {
+    "id": "ZH-003",
+    "category": "day_night_comparison",
+    "language": "uk",
+    "input": "Чим штори День-Ніч відрізняються від звичайних рулонних штор?",
+    "retrieved_context": "Штори День-Ніч (Зебра): Двошарове полотно з чергуванням прозорих та непрозорих смуг. Дозволяє плавно регулювати рівень освітлення без повного підняття штори.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["смуг", "полос", "двошаров", "регулюв"],
+    "should_not_contain": ["це одне й те саме"]
+  },
+  {
+    "id": "ZH-004",
+    "category": "hallucination_trap",
+    "language": "ru",
+    "input": "Сколько у вас стоят титановые жалюзи с лазерным управлением через спутник?",
+    "retrieved_context": "Каталог: Рулонні штори відкриті/закриті, День-Ніч, горизонтальні алюмінієві, вертикальні, плісе. Матеріали: тканина, алюміній, поліестер.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["нет", "не", "алюмини", "тканин"],
+    "should_not_contain": ["титановые жалюзи стоят", "лазерным управлением"]
+  },
+  {
+    "id": "ZH-005",
+    "category": "lead_submission_phone_only",
+    "language": "uk",
+    "input": "Хочу викликати замірника у Києві зі зразками тканин. Мій номер 0671234567, звати Андрій.",
+    "retrieved_context": "Безкоштовний виїзд замірника зі зразками тканин у містах Київ, Дніпро, Харків, Одеса, Львів, Запоріжжя.",
+    "expected_action": "submit_lead",
+    "expected_lead_extracted": true,
+    "expected_phone": "0671234567",
+    "expected_city": "Київ",
+    "expected_output_contains": ["заявк", "менеджер", "зв'яж"],
+    "should_not_contain": ["помилка"]
+  },
+  {
+    "id": "ZH-006",
+    "category": "lead_submission_price_calc",
+    "language": "ru",
+    "input": "Посчитайте мне 3 окна в ткани блэкаут в Днепре. Перезвоните на +380509876543, меня зовут Елена.",
+    "retrieved_context": "Безкоштовний виїзд замірника та прорахунок у місті Дніпро.",
+    "expected_action": "submit_lead",
+    "expected_lead_extracted": true,
+    "expected_phone": "+380509876543",
+    "expected_output_contains": ["заявк", "менеджер", "свяж"],
+    "should_not_contain": ["не можем перезвонить"]
+  },
+  {
+    "id": "ZH-007",
+    "category": "cities_and_coverage",
+    "language": "uk",
+    "input": "Чи є у вас виїзд майстра на замір у Львові?",
+    "retrieved_context": "Місто Львів: є виїзд замірника зі зразками тканин, доставка кур'єром або Новою Поштою.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["Львів", "замірник", "зразк"],
+    "should_not_contain": ["не працюємо у Львові"]
+  },
+  {
+    "id": "ZH-008",
+    "category": "warranty_and_manufacturing",
+    "language": "ru",
+    "input": "Сколько дней изготавливаются шторы и какая на них гарантия?",
+    "retrieved_context": "Гарантія: 12–24 місяці офіційної гарантії на механізми та фурнітуру. Термін виготовлення: 1–3 робочих дні.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["1-3", "1–3", "гаранти", "гаранті", "месяц", "місяц"],
+    "should_not_contain": ["месяц ждать", "нет гарантии"]
+  },
+  {
+    "id": "ZH-009",
+    "category": "bathroom_moisture",
+    "language": "uk",
+    "input": "Що порекомендуєте для ванної кімнати, де підвищена вологість і пара?",
+    "retrieved_context": "Горизонтальні жалюзі (алюмінієві): Стійкі до вологи, перепадів температур і запахів. Найкраще для: Кухні, ванні кімнати, санвузли.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["алюміні", "горизонтальн", "волог"],
+    "should_not_contain": ["паперові"]
+  },
+  {
+    "id": "ZH-010",
+    "category": "ground_floor_privacy",
+    "language": "ru",
+    "input": "Живем на 1 этаже. Хотим закрыть нижнюю часть окна от прохожих, но чтобы сверху попадал свет. Что выбрать?",
+    "retrieved_context": "Штори Плісе / Плиссе: відкривання у двох напрямках (зверху-вниз та знизу-вгору). Ідеально для перших поверхів (можна закрити низ вікна, залишивши верх для світла).",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["плиссе", "плісе", "напрям"],
+    "should_not_contain": ["такого не бывает"]
+  },
+  {
+    "id": "ZH-011",
+    "category": "hallucination_trap_bulletproof",
+    "language": "ru",
+    "input": "Есть ли у вас бронированные пуленепробиваемые тканевые ролеты для защиты от осколков?",
+    "retrieved_context": "Каталог: Рулонні штори сонцезахисні (Blackout, Dimout, День-Ніч). Захищають від сонця, спеки та сторонніх очей.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["нет", "не", "солнцезащитн", "тканев"],
+    "should_not_contain": ["бронированные ткани", "пуленепробиваемые шторы есть в наличии"]
+  },
+  {
+    "id": "ZH-012",
+    "category": "multilingual_accuracy",
+    "language": "uk",
+    "input": "Доброго дня! Які є варіанти кріплення ролет без свердління рами?",
+    "retrieved_context": "Монтаж на стулку без свердління: накидні кронштейни для стулок, що відкриваються, або спеціальний двосторонній монтажний скотч для глухих стулок.",
+    "expected_action": "consult",
+    "expected_lead_extracted": false,
+    "expected_output_contains": ["скотч", "кронштейн", "свердл", "стулк"],
+    "should_not_contain": ["нельзя без сверления"]
+  }
+]

@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MANOV — Сонцезахисні системи (Копія сайту https://manov.com.ua/ua)
 
-## Getting Started
+Сучасний повнофункціональний інтернет-магазин сонцезахисних систем, ролет, штор та жалюзі, створений на базі **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS** та **Supabase (PostgreSQL)**, повністю оптимізований для миттєвого розгортання на **Vercel**.
 
-First, run the development server:
+---
 
+## 🌟 Основні можливості
+
+- 🛍️ **Повний каталог**: Ролети (тканинні, день-ніч, блекаут, джутові, бамбукові), Штори (рулонні, римські, плісе), Жалюзі (горизонтальні, вертикальні, алюмінієві, дерев'яні), Закрита система Uni з коробом.
+- 📐 **Інтерактивний онлайн-калькулятор**: Розрахунок точної вартості виробів на основі введеної ширини та висоти (в см), типу тканини, сторони управління та фіксації на лісці.
+- 📍 **Гео-вибір міст**: Модальне вікно вибору міст України (Київ, Дніпро, Львів, Одеса, Харків, Вінниця, Полтава тощо).
+- 🛒 **Кошик та Checkout**: Висувна панель кошика, оформлення замовлення з вибором відділення Нової Пошти та варіантів оплати (післяплата, картка, Оплата частинами ПриватБанк / Monobank).
+- ⚡ **Швидке замовлення в 1 клік**: Миттєве оформлення заявки за номером телефону з фіксацією параметрів виробу.
+- 🗄️ **Supabase Backend**: Готова SQL-схема з RLS-політиками для таблиць `categories`, `products`, `orders`, `leads`, `reviews`.
+- 📊 **Адмін-панель (`/admin`)**: Перегляд та керування замовленнями і лідами в реальному часі.
+- 📱 **100% Адаптивність**: Ідеальний вигляд на мобільних телефонах, планшетах і комп'ютерах.
+
+---
+
+## 🚀 Швидкий старт локально
+
+1. **Встановіть залежності**:
+   ```bash
+   npm install
+   ```
+
+2. **Запустіть локальний сервер розробки**:
+   ```bash
+   npm run dev
+   ```
+
+3. Відкрийте у браузері [http://localhost:3000](http://localhost:3000).
+
+---
+
+## 🗄️ Підключення Supabase (База даних)
+
+1. Зареєструйтесь або увійдіть на [supabase.com](https://supabase.com) і створіть новий проект.
+2. Перейдіть у розділ **SQL Editor** у кабінеті Supabase.
+3. Скопіюйте вміст файлу `supabase/schema.sql` з цього репозиторію та виконайте його (Run).
+4. Перейдіть у **Project Settings ➔ API** та скопіюйте:
+   - `Project URL`
+   - `anon public key`
+5. Створіть файл `.env.local` (або відредагуйте існуючий):
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   ```
+
+> **Примітка**: Якщо змінні не вказано, сайт автоматично працює у повнофункціональному автономному режимі з локальними демо-даними.
+
+---
+
+## 🌐 Розгортання на Vercel
+
+### Варіант 1: Через веб-інтерфейс Vercel (Рекомендовано)
+1. Завантажте цей проект у ваш GitHub / GitLab репозиторій.
+2. Перейдіть на [vercel.com](https://vercel.com) та натисніть **"Add New Project" ➔ "Import"**.
+3. У розділі **Environment Variables** додайте:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Натисніть **Deploy** — через 1 хвилину ваш сайт буде доступний на швидкому світовому CDN домені Vercel.
+
+### Варіант 2: Через Vercel CLI
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm i -g vercel
+vercel
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Структура проекту
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+├── app/
+│   ├── page.tsx               # Головна сторінка з банерами, хітами та калькулятором
+│   ├── catalog/               # Повний каталог з фільтрами
+│   ├── roleti/                # Розділ "Ролети"
+│   ├── shtori/                # Розділ "Штори"
+│   ├── zhaluzi/               # Розділ "Жалюзі"
+│   ├── zakryta-sistema/       # Розділ "Закрита система"
+│   ├── product/[slug]/        # Картка товару з конфігуратором
+│   ├── checkout/              # Оформлення замовлення
+│   ├── admin/                 # Адмін-панель замовлень та лідів
+│   ├── zamir/                 # Інструкція із заміру
+│   ├── montaj/                # Інструкція з монтажу
+│   ├── sposobi_oplati/        # Оплата та розстрочка
+│   ├── dostavka/              # Доставка по Україні
+│   ├── pro_nas/               # Про компанію
+│   ├── zvyazok/               # Контакти та форма зворотного зв'язку
+│   └── aktsii/                # Акції та знижки
+├── components/                # React-компоненти інтерфейсу
+├── context/                   # CartContext, CityContext, WishlistContext
+├── lib/
+│   ├── supabase.ts            # Клієнт Supabase та запити
+│   └── mockData.ts            # База товарів та відгуків Manov
+├── supabase/
+│   └── schema.sql             # SQL міграція для Supabase
+├── types/                     # TypeScript типи
+└── vercel.json                # Конфігурація для Vercel
+```
