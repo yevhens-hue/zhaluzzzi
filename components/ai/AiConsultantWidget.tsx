@@ -123,10 +123,10 @@ export const AiConsultantWidget: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end font-sans">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-4 w-[92vw] sm:w-[390px] h-[530px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="mb-3 w-[92vw] sm:w-[390px] h-[530px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-4 text-white flex items-center justify-between shadow-md">
             <div className="flex items-center space-x-3">
@@ -225,22 +225,25 @@ export const AiConsultantWidget: React.FC = () => {
       {/* Floating Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative group flex items-center justify-center w-14 h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+        className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 group relative"
+        title="AI-Консультант (онлайн)"
         aria-label="Відкрити онлайн AI-консультант"
       >
         <span className="absolute -inset-1 bg-blue-500 rounded-full opacity-30 group-hover:opacity-60 animate-ping duration-1000 pointer-events-none"></span>
 
         {hasUnread && (
-          <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 border-2 border-white rounded-full"></span>
+          <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-rose-500 border-2 border-white rounded-full"></span>
         )}
 
         {isOpen ? (
-          <X className="w-6 h-6 z-10" />
+          <X className="w-5 h-5 z-10" />
         ) : (
-          <div className="flex items-center justify-center z-10 text-2xl">
-            <MessageSquare className="w-6 h-6 fill-white" />
-          </div>
+          <MessageSquare className="w-5 h-5 z-10 fill-white" />
         )}
+
+        <span className="absolute right-14 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          AI-Консультант 24/7
+        </span>
       </button>
     </div>
   );

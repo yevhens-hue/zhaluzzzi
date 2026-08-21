@@ -6,6 +6,7 @@ import { HeroBanner } from '@/components/HeroBanner';
 import { BlindCalculator } from '@/components/BlindCalculator';
 import { WhyUsSection } from '@/components/WhyUsSection';
 import { MaterialsSection } from '@/components/MaterialsSection';
+import { PortfolioGallery } from '@/components/PortfolioGallery';
 import { FaqSection } from '@/components/FaqSection';
 import { ProductCard } from '@/components/ProductCard';
 import { getProducts, getCategories } from '@/lib/supabase';
@@ -140,7 +141,10 @@ export default async function HomePage() {
       {/* 7. Materials & Fabric Guide */}
       <MaterialsSection />
 
-      {/* 8. FAQ Accordion */}
+      {/* 8. Portfolio Gallery */}
+      <PortfolioGallery />
+
+      {/* 9. FAQ Accordion */}
       <FaqSection />
 
       {/* 9. SEO Text Article */}

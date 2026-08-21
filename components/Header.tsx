@@ -11,6 +11,8 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { MegaMenu } from './MegaMenu';
 import { Logo } from './Logo';
 import { InstagramIcon } from './InstagramIcon';
+import { TrackingModal } from './TrackingModal';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function Header() {
   const router = useRouter();
@@ -18,11 +20,13 @@ export function Header() {
   const { currentCity, openModal } = useCity();
   const { wishlistCount } = useWishlist();
   const { settings } = useSiteSettings();
+  const { lang, setLang } = useLanguage();
   const contacts = settings.contacts;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +115,30 @@ export function Header() {
             <div className="flex items-center space-x-1 text-gray-500">
               <Clock className="w-3.5 h-3.5 text-amber-500 mr-0.5" />
               <span>{contacts.workHours || '9:00 - 19:00'}</span>
+            </div>
+
+            {/* Nova Poshta Tracking Button */}
+            <button
+              onClick={() => setIsTrackingOpen(true)}
+              className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-lg transition flex items-center gap-1"
+            >
+              <span>📦 ТТН</span>
+            </button>
+
+            {/* Language Switcher */}
+            <div className="flex items-center bg-gray-200/70 p-0.5 rounded-lg text-[10px] font-bold">
+              <button
+                onClick={() => setLang('uk')}
+                className={`px-2 py-0.5 rounded-md transition ${lang === 'uk' ? 'bg-blue-600 text-white shadow-xs' : 'text-gray-600'}`}
+              >
+                UA
+              </button>
+              <button
+                onClick={() => setLang('ru')}
+                className={`px-2 py-0.5 rounded-md transition ${lang === 'ru' ? 'bg-blue-600 text-white shadow-xs' : 'text-gray-600'}`}
+              >
+                RU
+              </button>
             </div>
           </div>
         </div>
@@ -358,6 +386,9 @@ export function Header() {
           </div>
         </div>
       )}
+
+      {/* Tracking Modal */}
+      <TrackingModal isOpen={isTrackingOpen} onClose={() => setIsTrackingOpen(false)} />
     </header>
   );
 }

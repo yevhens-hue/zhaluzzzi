@@ -6,6 +6,8 @@ import { CartProvider } from '@/context/CartContext';
 import { CityProvider } from '@/context/CityContext';
 import { WishlistProvider } from '@/context/WishlistContext';
 import { SiteSettingsProvider } from '@/context/SiteSettingsContext';
+import { ToastProvider } from '@/context/ToastContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartDrawer } from '@/components/CartDrawer';
@@ -94,23 +96,27 @@ export default function RootLayout({
         <WebSiteJsonLd />
       </head>
       <body className="min-h-screen flex flex-col bg-white text-gray-900 antialiased selection:bg-blue-600 selection:text-white">
-        <SiteSettingsProvider>
-          <CartProvider>
-            <CityProvider>
-              <WishlistProvider>
-                <Header />
-                <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
-                  {children}
-                </main>
-                <Footer />
-                <CartDrawer />
-                <CityModal />
-                <TelegramWidget />
-                <AiConsultantWidget />
-              </WishlistProvider>
-            </CityProvider>
-          </CartProvider>
-        </SiteSettingsProvider>
+        <LanguageProvider>
+          <ToastProvider>
+            <SiteSettingsProvider>
+              <CartProvider>
+                <CityProvider>
+                  <WishlistProvider>
+                    <Header />
+                    <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+                      {children}
+                    </main>
+                    <Footer />
+                    <CartDrawer />
+                    <CityModal />
+                    <TelegramWidget />
+                    <AiConsultantWidget />
+                  </WishlistProvider>
+                </CityProvider>
+              </CartProvider>
+            </SiteSettingsProvider>
+          </ToastProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -10,7 +10,7 @@ export function TelegramWidget() {
   const contacts = settings.contacts;
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-2.5 items-end">
+    <div className="fixed bottom-[80px] right-5 z-40 flex flex-col gap-2.5 items-end">
       {/* Phone call */}
       <a
         href={`tel:${contacts.phone1.replace(/[^0-9]/g, '')}`}
