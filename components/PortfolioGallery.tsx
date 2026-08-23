@@ -3,53 +3,57 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Sparkles, X, ZoomIn } from 'lucide-react';
-
-const portfolioItems = [
-  {
-    id: 1,
-    title: 'Рулонні штори День-Ніч у сучасній вітальні',
-    city: 'м. Дніпро, пр. Яворницького',
-    image: 'https://images.unsplash.com/photo-1618221639244-c1a8502c0eb9?auto=format&fit=crop&w=800&q=80',
-    category: 'День-Ніч',
-  },
-  {
-    id: 2,
-    title: 'Дерев’яні жалюзі 50 мм у кабінеті',
-    city: 'м. Київ, Печерськ',
-    image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
-    category: 'Жалюзі',
-  },
-  {
-    id: 3,
-    title: 'Закрита система Uni на панорамному вікні',
-    city: 'м. Одеса, Аркадія',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-    category: 'Закрита система',
-  },
-  {
-    id: 4,
-    title: 'Тканинні ролети Блекаут у спальні',
-    city: 'м. Харків, Центр',
-    image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=800&q=80',
-    category: 'Блекаут',
-  },
-];
+import { useLanguage } from '@/context/LanguageContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export function PortfolioGallery() {
+  const { lang, t } = useLanguage();
+  const { settings } = useSiteSettings();
   const [activeImage, setActiveImage] = useState<string | null>(null);
+
+  const portfolioItems = settings.gallery && settings.gallery.length > 0 ? settings.gallery : [
+    {
+      id: 1,
+      title: 'Рулонні штори День-Ніч у сучасній вітальні',
+      city: 'м. Дніпро, пр. Яворницького',
+      image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+      category: 'День-Ніч',
+    },
+    {
+      id: 2,
+      title: 'Дерев’яні жалюзі 50 мм у кабінеті',
+      city: 'м. Київ, Печерськ',
+      image: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=800&q=80',
+      category: 'Жалюзі',
+    },
+    {
+      id: 3,
+      title: 'Закрита система Uni на панорамному вікні',
+      city: 'м. Одеса, Аркадія',
+      image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+      category: 'Закрита система',
+    },
+    {
+      id: 4,
+      title: 'Тканинні ролети Блекаут у спальні',
+      city: 'м. Харків, Центр',
+      image: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80',
+      category: 'Блекаут',
+    },
+  ];
 
   return (
     <div className="my-16">
       <div className="text-center max-w-2xl mx-auto mb-10">
         <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full mb-2 border border-blue-100">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>Наші реалізовані проєкти</span>
+          <span>{t('Наші реалізовані проєкти', 'Наши реализованные проекты')}</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
-          Фотогалерея робіт у будинках та квартирах
+          {t('Фотогалерея робіт у будинках та квартирах', 'Фотогалерея работ в домах и квартирах')}
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 mt-2">
-          Приклади професійного монтажу сонцезахисних систем нашим майстром Віктором Кузьменком.
+          {t('Приклади професійного монтажу сонцезахисних систем нашим майстром Віктором Кузьменком.', 'Примеры профессионального монтажа солнцезащитных систем нашим мастером Виктором Кузьменко.')}
         </p>
       </div>
 

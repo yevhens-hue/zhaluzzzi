@@ -130,7 +130,7 @@ export interface Lead {
   dimensions?: string;
   selected_color?: string;
   calculated_price?: number;
-  lead_type?: 'one_click' | 'callback' | 'consultation';
+  lead_type?: 'one_click' | 'callback' | 'consultation' | 'measurement';
   comment?: string;
   status?: string;
   created_at?: string;

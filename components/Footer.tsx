@@ -2,13 +2,15 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Phone, Mail, MapPin, Clock, Send, ShieldCheck, User } from 'lucide-react';
+import { Phone, MapPin, Clock, Send, ShieldCheck, User } from 'lucide-react';
 import { Logo } from './Logo';
 import { InstagramIcon } from './InstagramIcon';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function Footer() {
   const { settings } = useSiteSettings();
+  const { t } = useLanguage();
   const contacts = settings.contacts;
 
   return (
@@ -22,17 +24,20 @@ export function Footer() {
               <Logo />
             </div>
             <p className="text-gray-400 leading-relaxed max-w-sm">
-              Виробництво та монтаж жалюзі і тканинних ролет під замовлення у м. Дніпро та з доставкою по всій Україні. Індивідуальні розміри, європейські тканини та надійні механізми.
+              {t(
+                'Виробництво та монтаж жалюзі і тканинних ролет під замовлення у м. Дніпро та з доставкою по всій Україні. Індивідуальні розміри, європейські тканини та надійні механізми.',
+                'Производство и монтаж жалюзи и тканевых роллет под заказ в г. Днепр и с доставкой по всей Украине. Индивидуальные размеры, европейские ткани и надежные механизмы.'
+              )}
             </p>
 
             <div className="space-y-2.5 text-gray-300 pt-2">
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-400 shrink-0" />
-                <span className="font-bold text-white">Контактна особа: {contacts.masterName}</span>
+                <span className="font-bold text-white">{t('Контактна особа:', 'Контактное лицо:')} {contacts.masterName}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>{contacts.city} (Доставка та відправка по всій Україні)</span>
+                <span>{contacts.city} ({t('Доставка та відправка по всій Україні', 'Доставка и отправка по всей Украине')})</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-blue-400 shrink-0" />
@@ -82,48 +87,48 @@ export function Footer() {
           {/* Catalog: Ролети & Штори */}
           <div>
             <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">
-              Ролети & Штори
+              {t('Ролети & Штори', 'Роллеты & Шторы')}
             </h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/roleti?sub=tkanunni_roleti" className="hover:text-white">Тканинні ролети</Link></li>
-              <li><Link href="/roleti?sub=den-nich" className="hover:text-white">Ролети День-Ніч</Link></li>
-              <li><Link href="/roleti?sub=blekaut_roleti" className="hover:text-white">Ролети Блекаут</Link></li>
-              <li><Link href="/roleti?sub=dzhutovi_roleti" className="hover:text-white">Джутові ролети</Link></li>
-              <li><Link href="/roleti?sub=bambukovi" className="hover:text-white">Бамбукові ролети</Link></li>
-              <li><Link href="/shtori?sub=rimski" className="hover:text-white">Римські штори</Link></li>
-              <li><Link href="/shtori?sub=plise" className="hover:text-white">Штори Плісе Duo</Link></li>
+              <li><Link href="/roleti?sub=tkanunni_roleti" className="hover:text-white">{t('Тканинні ролети', 'Тканевые роллеты')}</Link></li>
+              <li><Link href="/roleti?sub=den-nich" className="hover:text-white">{t('Ролети День-Ніч', 'Роллеты День-Ночь')}</Link></li>
+              <li><Link href="/roleti?sub=blekaut_roleti" className="hover:text-white">{t('Ролети Блекаут', 'Роллеты Блэкаут')}</Link></li>
+              <li><Link href="/roleti?sub=dzhutovi_roleti" className="hover:text-white">{t('Джутові ролети', 'Джутовые роллеты')}</Link></li>
+              <li><Link href="/roleti?sub=bambukovi" className="hover:text-white">{t('Бамбукові ролети', 'Бамбуковые роллеты')}</Link></li>
+              <li><Link href="/shtori?sub=rimski" className="hover:text-white">{t('Римські штори', 'Римские шторы')}</Link></li>
+              <li><Link href="/shtori?sub=plise" className="hover:text-white">{t('Штори Плісе Duo', 'Шторы Плиссе Duo')}</Link></li>
             </ul>
           </div>
 
           {/* Catalog: Жалюзі & Закрита система */}
           <div>
             <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">
-              Жалюзі & Системи
+              {t('Жалюзі & Системи', 'Жалюзи & Системы')}
             </h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/zhaluzi?sub=gorizontalnie_zhaluzi" className="hover:text-white">Горизонтальні жалюзі</Link></li>
-              <li><Link href="/zhaluzi?sub=vertikalnie_zhaluzi" className="hover:text-white">Вертикальні жалюзі</Link></li>
-              <li><Link href="/zhaluzi?sub=alyuminievie_zhaluzi" className="hover:text-white">Алюмінієві жалюзі</Link></li>
-              <li><Link href="/zhaluzi?sub=bambukovi_zhalyuzi" className="hover:text-white">Бамбукові жалюзі</Link></li>
-              <li><Link href="/zhaluzi?sub=derevyani" className="hover:text-white">Дерев'яні жалюзі</Link></li>
-              <li><Link href="/zakryta-sistema" className="hover:text-white">Закрита система з коробом</Link></li>
+              <li><Link href="/zhaluzi?sub=gorizontalnie_zhaluzi" className="hover:text-white">{t('Горизонтальні жалюзі', 'Горизонтальные жалюзи')}</Link></li>
+              <li><Link href="/zhaluzi?sub=vertikalnie_zhaluzi" className="hover:text-white">{t('Вертикальні жалюзі', 'Вертикальные жалюзи')}</Link></li>
+              <li><Link href="/zhaluzi?sub=alyuminievie_zhaluzi" className="hover:text-white">{t('Алюмінієві жалюзі', 'Алюминиевые жалюзи')}</Link></li>
+              <li><Link href="/zhaluzi?sub=bambukovi_zhalyuzi" className="hover:text-white">{t('Бамбукові жалюзі', 'Бамбуковые жалюзи')}</Link></li>
+              <li><Link href="/zhaluzi?sub=derevyani" className="hover:text-white">{t("Дерев'яні жалюзі", 'Деревянные жалюзи')}</Link></li>
+              <li><Link href="/zakryta-sistema" className="hover:text-white">{t('Закрита система з коробом', 'Закрытая система с коробом')}</Link></li>
             </ul>
           </div>
 
           {/* Customer Info */}
           <div>
             <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">
-              Покупцям
+              {t('Покупцям', 'Покупателям')}
             </h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/aktsii" className="hover:text-white">Акції та знижки</Link></li>
-              <li><Link href="/zamir" className="hover:text-white">Інструкція з заміру</Link></li>
-              <li><Link href="/montaj" className="hover:text-white">Інструкція з монтажу</Link></li>
-              <li><Link href="/sposobi_oplati" className="hover:text-white">Оплата та розстрочка</Link></li>
-              <li><Link href="/dostavka" className="hover:text-white">Доставка Новою Поштою</Link></li>
-              <li><Link href="/pro_nas" className="hover:text-white">Про компанію</Link></li>
-              <li><Link href="/zvyazok" className="hover:text-white">Контакти</Link></li>
-              <li><Link href="/admin" className="text-amber-400 hover:text-amber-300 font-semibold">Адмін-панель</Link></li>
+              <li><Link href="/aktsii" className="hover:text-white">{t('Акції та знижки', 'Акции и скидки')}</Link></li>
+              <li><Link href="/zamir" className="hover:text-white">{t('Інструкція з заміру', 'Инструкция по замеру')}</Link></li>
+              <li><Link href="/montaj" className="hover:text-white">{t('Інструкція з монтажу', 'Инструкция по монтажу')}</Link></li>
+              <li><Link href="/sposobi_oplati" className="hover:text-white">{t('Оплата та розстрочка', 'Оплата и рассрочка')}</Link></li>
+              <li><Link href="/dostavka" className="hover:text-white">{t('Доставка Новою Поштою', 'Доставка Новой Почтой')}</Link></li>
+              <li><Link href="/pro_nas" className="hover:text-white">{t('Про компанію', 'О компании')}</Link></li>
+              <li><Link href="/zvyazok" className="hover:text-white">{t('Контакти', 'Контакты')}</Link></li>
+              <li><Link href="/admin" className="text-amber-400 hover:text-amber-300 font-semibold">{t('Адмін-панель', 'Админ-панель')}</Link></li>
             </ul>
           </div>
         </div>
@@ -131,11 +136,11 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-gray-500">
           <div>
-            © 2014–2026 Жалюзі та Ролети від виробника • м. Дніпро. Всі права захищено.
+            © 2014–2026 {t('Жалюзі та Ролети від виробника • м. Дніпро. Всі права захищено.', 'Жалюзи и Роллеты от производителя • г. Днепр. Все права защищены.')}
           </div>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1 text-emerald-500">
-              <ShieldCheck className="w-3.5 h-3.5" /> 100% Гарантія якості
+              <ShieldCheck className="w-3.5 h-3.5" /> 100% {t('Гарантія якості', 'Гарантия качества')}
             </span>
             <span>Приват24 • Monobank • Visa • MasterCard • NovaPay</span>
           </div>

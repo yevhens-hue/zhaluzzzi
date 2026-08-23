@@ -2,10 +2,12 @@
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import Link from 'next/image';
+import Link from 'next/link';
 import { Product, ProductColor, Review } from '@/types/database';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
 import { addProductReview } from '@/lib/supabase';
 import {
@@ -13,15 +15,11 @@ import {
   Heart,
   Truck,
   ShieldCheck,
-  RotateCcw,
   Check,
   Plus,
   Minus,
-  Sparkles,
-  MessageSquare,
-  FileText,
-  Sliders,
   Send,
+  Sparkles,
 } from 'lucide-react';
 
 interface ProductDetailViewProps {
@@ -31,14 +29,35 @@ interface ProductDetailViewProps {
 }
 
 export function ProductDetailView({
-  product,
+  product: initialProduct,
   reviews: initialReviews,
   relatedProducts,
 }: ProductDetailViewProps) {
   const { addItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { t, tProdTitle, tColorName, tCharKey, tCharVal } = useLanguage();
+  const { products: dynamicProducts } = useSiteSettings();
 
-  // Gallery
+  const product = useMemo(() => {
+    const found = dynamicProducts?.find(
+      (p) => p.id === initialProduct.id || p.slug === initialProduct.slug || p.sku === initialProduct.sku
+    );
+    return found || initialProduct;
+  }, [dynamicProducts, initialProduct]);
+
+  // Deduplicate available colors
+  const uniqueColors = useMemo(() => {
+    if (!product.available_colors) return [];
+    const seen = new Set();
+    return product.available_colors.filter((col) => {
+      const key = `${col.name.trim()}_${col.code || col.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [product.available_colors]);
+
+  // Gallery images
   const allImages = useMemo(() => {
     return product.images && product.images.length > 0
       ? product.images
@@ -47,7 +66,7 @@ export function ProductDetailView({
 
   const [activeImage, setActiveImage] = useState(allImages[0]);
   const [selectedColor, setSelectedColor] = useState<ProductColor>(
-    product.available_colors?.[0] || {
+    uniqueColors[0] || {
       id: 'default',
       name: product.color_name || 'Стандарт',
       code: product.sku,
@@ -78,17 +97,15 @@ export function ProductDetailView({
   // Price Calculation formula based on area
   const unitPrice = useMemo(() => {
     const area = Math.max(0.5, (width * height) / 10000);
-    const rate = product.price_per_sqm || 450;
-    let extra = 0;
-    if (fixationType === 'with_line') extra += 60;
-
-    const calculated = Math.round(area * rate + extra);
-    return Math.max(product.base_price, calculated);
+    let baseCalculated = Math.round(product.price_per_sqm * area);
+    if (fixationType === 'with_line') {
+      baseCalculated += 60;
+    }
+    return Math.max(product.base_price, baseCalculated);
   }, [width, height, fixationType, product]);
 
   const totalPrice = unitPrice * quantity;
 
-  // Add to cart handler
   const handleAddToCart = () => {
     addItem({
       productId: product.id,
@@ -106,31 +123,33 @@ export function ProductDetailView({
     });
   };
 
-  // Review submit
+  const handleColorSelect = (color: ProductColor) => {
+    setSelectedColor(color);
+  };
+
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewName || !reviewComment) return;
 
-    setIsSubmittingReview(true);
-    const newRev = {
+    await addProductReview({
       product_id: product.id,
       author_name: reviewName,
-      city: reviewCity || 'Україна',
+      city: reviewCity || undefined,
       rating: reviewRating,
       comment: reviewComment,
+    });
+
+    const newReviewObj: Review = {
+      id: Date.now().toString(),
+      product_id: product.id,
+      author_name: reviewName,
+      city: reviewCity,
+      rating: reviewRating,
+      comment: reviewComment,
+      created_at: new Date().toISOString(),
     };
 
-    await addProductReview(newRev);
-
-    setReviewsList((prev) => [
-      {
-        ...newRev,
-        id: `rev-${Date.now()}`,
-        created_at: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
-
+    setReviewsList((prev) => [newReviewObj, ...prev]);
     setReviewSubmitted(true);
     setIsSubmittingReview(false);
   };
@@ -139,13 +158,13 @@ export function ProductDetailView({
     <div className="space-y-12">
       {/* Breadcrumb Navigation */}
       <nav className="text-xs text-gray-500 flex items-center gap-1.5 flex-wrap">
-        <a href="/" className="hover:text-blue-600">Головна</a>
+        <Link href="/" className="hover:text-blue-600">{t('Головна', 'Главная')}</Link>
         <span>/</span>
-        <a href={`/${product.category_slug}`} className="hover:text-blue-600 capitalize">
+        <Link href={`/${product.category_slug}`} className="hover:text-blue-600 capitalize">
           {product.category_slug}
-        </a>
+        </Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium line-clamp-1">{product.title}</span>
+        <span className="text-gray-900 font-medium line-clamp-1">{tProdTitle(product.title)}</span>
       </nav>
 
       {/* Main Product Layout (Gallery + Configurator) */}
@@ -153,24 +172,24 @@ export function ProductDetailView({
         {/* Left Column: Image Gallery (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           {/* Main Large Image */}
-          <div className="relative aspect-4/5 w-full bg-gray-50 rounded-3xl overflow-hidden border border-gray-200/80 shadow-md">
+          <div className="relative aspect-4/5 w-full bg-gray-50 rounded-3xl overflow-hidden border border-gray-200/80 shadow-md group">
             {/* Badges */}
             <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
               {product.is_popular && (
                 <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-xs">
-                  Популярний
+                  {t('Популярний', 'Популярный')}
                 </span>
               )}
               {product.is_offer_of_day && (
                 <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-xs">
-                  Пропозиція дня
+                  {t('Пропозиція дня', 'Предложение дня')}
                 </span>
               )}
             </div>
 
             <Image
               src={activeImage}
-              alt={product.title}
+              alt={tProdTitle(product.title)}
               fill
               className="object-cover"
               priority
@@ -191,7 +210,7 @@ export function ProductDetailView({
                 >
                   <Image
                     src={img}
-                    alt={`${product.title} зразок ${idx + 1}`}
+                    alt={`${tProdTitle(product.title)} ${idx + 1}`}
                     fill
                     className="object-cover"
                     unoptimized
@@ -206,15 +225,15 @@ export function ProductDetailView({
             <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 flex items-center gap-2.5 text-xs text-gray-700">
               <Truck className="w-5 h-5 text-blue-600 shrink-0" />
               <div>
-                <div className="font-bold text-gray-900">Доставка Нова Пошта</div>
-                <div className="text-[11px] text-gray-500">2-4 дні по Україні</div>
+                <div className="font-bold text-gray-900">{t('Доставка Нова Пошта', 'Доставка Новая Почта')}</div>
+                <div className="text-[11px] text-gray-500">{t('2-4 дні по Україні', '2-4 дня по Украине')}</div>
               </div>
             </div>
             <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 flex items-center gap-2.5 text-xs text-gray-700">
               <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
               <div>
-                <div className="font-bold text-gray-900">Гарантія 12 міс.</div>
-                <div className="text-[11px] text-gray-500">Офіційна від заводу</div>
+                <div className="font-bold text-gray-900">{t('Гарантія 12 міс.', 'Гарантия 12 мес.')}</div>
+                <div className="text-[11px] text-gray-500">{t('Офіційна від заводу', 'Официальная от завода')}</div>
               </div>
             </div>
           </div>
@@ -226,7 +245,7 @@ export function ProductDetailView({
           <div>
             <div className="flex justify-between items-start gap-4">
               <h1 className="text-xl sm:text-2xl font-black text-gray-900 leading-snug">
-                {product.title}
+                {tProdTitle(product.title)}
               </h1>
 
               <button
@@ -236,7 +255,7 @@ export function ProductDetailView({
                     ? 'bg-rose-50 border-rose-200 text-rose-600'
                     : 'border-gray-200 text-gray-400 hover:text-rose-500 hover:bg-gray-50'
                 }`}
-                title="Додати в обране"
+                title={t('Додати в обране', 'Добавить в избранное')}
               >
                 <Heart className={`w-5 h-5 ${inWishlist ? 'fill-rose-500' : ''}`} />
               </button>
@@ -244,15 +263,15 @@ export function ProductDetailView({
 
             <div className="flex items-center gap-3 mt-2 text-xs">
               <span className="text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold">
-                В наявності
+                {t('В наявності', 'В наличии')}
               </span>
               <span className="text-gray-400">|</span>
-              <span className="text-gray-500">Артикул: <strong className="text-gray-700">{product.sku}</strong></span>
+              <span className="text-gray-500">{t('Артикул', 'Артикул')}: <strong className="text-gray-700">{selectedColor.code || product.sku}</strong></span>
               <span className="text-gray-400">|</span>
               <div className="flex items-center gap-1 text-amber-400 font-semibold">
                 <Star className="w-3.5 h-3.5 fill-amber-400" />
                 <span className="text-gray-800">{product.rating}</span>
-                <span className="text-gray-400">({reviewsList.length} відгуків)</span>
+                <span className="text-gray-400">({reviewsList.length} {t('відгуків', 'отзывов')})</span>
               </div>
             </div>
           </div>
@@ -263,10 +282,10 @@ export function ProductDetailView({
           <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100/80 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-extrabold uppercase tracking-wider text-blue-900">
-                1. Вкажіть ваші розміри (см)
+                1. {t('Вкажіть ваші розміри (см)', 'Укажите ваши размеры (см)')}
               </label>
               <a href="/zamir" target="_blank" className="text-[11px] font-bold text-blue-600 hover:underline">
-                📐 Інструкція заміру
+                📐 {t('Інструкція заміру', 'Инструкция замера')}
               </a>
             </div>
 
@@ -274,7 +293,7 @@ export function ProductDetailView({
               {/* Width */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Ширина (від {product.min_width} до {product.max_width} см):
+                  {t('Ширина', 'Ширина')} ({t('від', 'от')} {product.min_width} {t('до', 'до')} {product.max_width} {t('см', 'см')}):
                 </label>
                 <div className="relative">
                   <input
@@ -286,7 +305,7 @@ export function ProductDetailView({
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-hidden focus:border-blue-600"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
-                    см
+                    {t('см', 'см')}
                   </span>
                 </div>
               </div>
@@ -294,7 +313,7 @@ export function ProductDetailView({
               {/* Height */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Висота (від {product.min_height} до {product.max_height} см):
+                  {t('Висота', 'Высота')} ({t('від', 'от')} {product.min_height} {t('до', 'до')} {product.max_height} {t('см', 'см')}):
                 </label>
                 <div className="relative">
                   <input
@@ -306,46 +325,49 @@ export function ProductDetailView({
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-hidden focus:border-blue-600"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
-                    см
+                    {t('см', 'см')}
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="text-[11px] text-gray-500">
-              * Заводське виготовлення здійснюється точно за вашими розмірами з точністю до міліметра.
+              * {t('Заводське виготовлення здійснюється точно за вашими розмірами з точністю до міліметра.', 'Заводское изготовление осуществляется точно по вашим размерам с точностью до миллиметра.')}
             </div>
           </div>
 
           {/* 2. Color / Fabric Selector */}
-          {product.available_colors && product.available_colors.length > 0 && (
+          {uniqueColors.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700">
-                  2. Оберіть колір тканини:
+                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 flex items-center gap-1">
+                  <span>2. {t('Оберіть колір тканини:', 'Выберите цвет ткани:')}</span>
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                 </label>
-                <span className="text-xs font-bold text-blue-700">{selectedColor.name}</span>
+                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                  {tColorName(selectedColor.name)} ({selectedColor.code})
+                </span>
               </div>
 
               <div className="flex flex-wrap gap-2.5">
-                {product.available_colors.map((color) => {
+                {uniqueColors.map((color) => {
                   const isSelected = selectedColor.id === color.id;
                   return (
                     <button
                       key={color.id}
-                      onClick={() => setSelectedColor(color)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition ${
+                      onClick={() => handleColorSelect(color)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200 ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50/50 shadow-xs ring-1 ring-blue-600'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? 'border-blue-600 bg-blue-50/90 shadow-xs ring-2 ring-blue-600/30 scale-102 font-bold'
+                          : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50 bg-white'
                       }`}
                     >
                       <span
                         className="w-4 h-4 rounded-full border border-gray-300 shadow-2xs inline-block shrink-0"
                         style={{ backgroundColor: color.hex }}
                       />
-                      <span className="text-xs font-semibold text-gray-800">{color.name}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                      <span className="text-xs text-gray-800">{tColorName(color.name)}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
                     </button>
                   );
                 })}
@@ -357,7 +379,7 @@ export function ProductDetailView({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Сторона управління:
+                {t('Сторона управління:', 'Сторона управления:')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -368,7 +390,7 @@ export function ProductDetailView({
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  Ліва
+                  {t('Ліва', 'Левая')}
                 </button>
                 <button
                   onClick={() => setControlSide('right')}
@@ -378,14 +400,14 @@ export function ProductDetailView({
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  Права
+                  {t('Права', 'Правая')}
                 </button>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Система фіксації:
+                {t('Система фіксації:', 'Система фиксации:')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -396,7 +418,7 @@ export function ProductDetailView({
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  На лісці (+60 грн)
+                  {t('На лісці (+60 грн)', 'С леской (+60 грн)')}
                 </button>
                 <button
                   onClick={() => setFixationType('without_line')}
@@ -406,7 +428,7 @@ export function ProductDetailView({
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  Без ліски
+                  {t('Без ліски', 'Без лески')}
                 </button>
               </div>
             </div>
@@ -418,9 +440,9 @@ export function ProductDetailView({
           <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs text-gray-500 font-medium">Розрахункова ціна за розмір:</div>
+                <div className="text-xs text-gray-500 font-medium">{t('Розрахункова ціна за розмір:', 'Расчетная цена за размер:')}</div>
                 <div className="text-2xl sm:text-3xl font-black text-blue-950">
-                  {totalPrice.toLocaleString('uk-UA')} грн
+                  {totalPrice.toLocaleString('uk-UA')} {t('грн', 'грн')}
                 </div>
               </div>
 
@@ -447,14 +469,14 @@ export function ProductDetailView({
                 onClick={handleAddToCart}
                 className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
               >
-                <span>Додати у кошик</span>
+                <span>{t('Додати у кошик', 'Добавить в корзину')}</span>
               </button>
 
               <button
                 onClick={() => setIsOneClickOpen(true)}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-95"
               >
-                Купити в 1 клік
+                {t('Купити в 1 клік', 'Купить в 1 клик')}
               </button>
             </div>
           </div>
@@ -472,7 +494,7 @@ export function ProductDetailView({
                 : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Характеристики
+            {t('Характеристики', 'Характеристики')}
           </button>
           <button
             onClick={() => setActiveTab('desc')}
@@ -482,7 +504,7 @@ export function ProductDetailView({
                 : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Опис моделі
+            {t('Опис моделі', 'Описание модели')}
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
@@ -492,7 +514,7 @@ export function ProductDetailView({
                 : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Відгуки ({reviewsList.length})
+            {t('Відгуки', 'Отзывы')} ({reviewsList.length})
           </button>
         </div>
 
@@ -504,8 +526,8 @@ export function ProductDetailView({
                 {product.characteristics &&
                   Object.entries(product.characteristics).map(([key, value]) => (
                     <tr key={key} className="py-2.5 flex justify-between">
-                      <td className="text-gray-500 font-medium">{key}</td>
-                      <td className="text-gray-900 font-bold text-right">{value}</td>
+                      <td className="text-gray-500 font-medium">{tCharKey(key)}</td>
+                      <td className="text-gray-900 font-bold text-right">{tCharVal(value || '')}</td>
                     </tr>
                   ))}
               </tbody>
@@ -516,7 +538,7 @@ export function ProductDetailView({
         {/* Tab 2: Description */}
         {activeTab === 'desc' && (
           <div className="py-6 text-xs sm:text-sm text-gray-700 leading-relaxed space-y-4 max-w-3xl whitespace-pre-line">
-            {product.description}
+            {tProdTitle(product.description)}
           </div>
         )}
 
@@ -525,17 +547,17 @@ export function ProductDetailView({
           <div className="py-6 space-y-8 max-w-3xl">
             {/* Review form */}
             <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200/80 space-y-3">
-              <h3 className="font-bold text-sm text-gray-900">Залишити відгук про товар</h3>
+              <h3 className="font-bold text-sm text-gray-900">{t('Залишити відгук про товар', 'Оставить отзыв о товаре')}</h3>
 
               {reviewSubmitted ? (
                 <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-medium">
-                  ✓ Дякуємо! Ваш відгук опубліковано.
+                  ✓ {t('Дякуємо! Ваш відгук опубліковано.', 'Спасибо! Ваш отзыв опубликован.')}
                 </div>
               ) : (
                 <form onSubmit={handleReviewSubmit} className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Ваше ім'я *</label>
+                      <label className="block text-xs text-gray-600 mb-1">{t("Ваше ім'я *", 'Ваше имя *')}</label>
                       <input
                         type="text"
                         required
@@ -545,7 +567,7 @@ export function ProductDetailView({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Місто</label>
+                      <label className="block text-xs text-gray-600 mb-1">{t('Місто', 'Город')}</label>
                       <input
                         type="text"
                         value={reviewCity}
@@ -556,7 +578,7 @@ export function ProductDetailView({
                   </div>
 
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Оцінка</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t('Оцінка', 'Оценка')}</label>
                     <div className="flex gap-1 text-amber-400">
                       {[1, 2, 3, 4, 5].map((st) => (
                         <button
@@ -576,13 +598,13 @@ export function ProductDetailView({
                   </div>
 
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Ваш відгук *</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t('Ваш відгук *', 'Ваш отзыв *')}</label>
                     <textarea
                       required
                       rows={3}
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
-                      placeholder="Поділіться вашими враженнями про якість, монтаж та роботу виробу..."
+                      placeholder={t('Поділіться вашими враженнями про якість, монтаж та роботу виробу...', 'Поделитесь вашими впечатлениями о качестве, монтаже и работе изделия...')}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs"
                     />
                   </div>
@@ -593,7 +615,7 @@ export function ProductDetailView({
                     className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Надіслати відгук</span>
+                    <span>{t('Надіслати відгук', 'Отправить отзыв')}</span>
                   </button>
                 </form>
               )}
@@ -625,7 +647,7 @@ export function ProductDetailView({
       {relatedProducts.length > 0 && (
         <div className="space-y-6">
           <h2 className="text-xl sm:text-2xl font-black text-gray-900">
-            Схожі моделі та рекомендації
+            {t('Схожі моделі та рекомендації', 'Похожие модели и рекомендации')}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
             {relatedProducts.slice(0, 4).map((item) => (
@@ -634,14 +656,14 @@ export function ProductDetailView({
                   <div className="relative aspect-4/5 w-full bg-gray-50 rounded-xl overflow-hidden mb-2">
                     <Image
                       src={item.main_image}
-                      alt={item.title}
+                      alt={tProdTitle(item.title)}
                       fill
                       className="object-cover"
                       unoptimized
                     />
                   </div>
-                  <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{item.title}</h4>
-                  <div className="text-xs font-extrabold text-blue-900 mt-1">{item.base_price} грн</div>
+                  <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{tProdTitle(item.title)}</h4>
+                  <div className="text-xs font-extrabold text-blue-900 mt-1">{item.base_price} {t('грн', 'грн')}</div>
                 </div>
               </a>
             ))}

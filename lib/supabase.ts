@@ -181,13 +181,26 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   }
 }
 
+import { validateAndNormalizeUaPhone } from './phoneValidator';
+import { sendOrderNotification, sendLeadNotification } from './notifications';
+
 /**
- * Save new order to database
+ * Save new order to database and trigger Email + SMS notifications
  */
 export async function createOrder(order: Order): Promise<{ success: boolean; orderNumber: string; error?: string }> {
+  // Validate and normalize phone
+  const phoneVal = validateAndNormalizeUaPhone(order.phone);
+  if (!phoneVal.isValid) {
+    logEvent('WARN', 'ORDER_INVALID_PHONE', `Спроба оформити замовлення з невалідним номером: ${order.phone}`, { error: phoneVal.error });
+    return { success: false, orderNumber: '', error: phoneVal.error || 'Некоректний номер телефону' };
+  }
+
   const orderNumber = `ZR-${Math.floor(100000 + Math.random() * 900000)}`;
-  const payload = {
+  const normalizedPhone = phoneVal.normalizedPhone || order.phone;
+
+  const payload: Order = {
     ...order,
+    phone: normalizedPhone,
     order_number: orderNumber,
     status: 'new',
     created_at: new Date().toISOString(),
@@ -195,74 +208,124 @@ export async function createOrder(order: Order): Promise<{ success: boolean; ord
 
   logEvent('INFO', 'ORDER_ATTEMPT', `Спроба створення замовлення ${orderNumber}`, {
     customer: order.customer_name,
-    phone: order.phone,
+    phone: normalizedPhone,
+    operator: phoneVal.operator,
     total: order.total_amount,
     items_count: order.items?.length,
   });
 
-  if (!supabase) {
-    if (typeof window !== 'undefined') {
+  // 1. Save locally if running in browser
+  if (typeof window !== 'undefined') {
+    try {
       const stored = JSON.parse(localStorage.getItem('app_orders') || '[]');
-      stored.unshift(payload);
-      localStorage.setItem('app_orders', JSON.stringify(stored));
+      const updated = Array.isArray(stored) ? stored : [];
+      updated.unshift(payload);
+      localStorage.setItem('app_orders', JSON.stringify(updated));
+    } catch (e) {
+      localStorage.setItem('app_orders', JSON.stringify([payload]));
     }
-    logEvent('SUCCESS', 'ORDER_CREATED_LOCAL', `Замовлення ${orderNumber} збережено локально`, payload);
-    return { success: true, orderNumber };
   }
 
-  try {
-    const { error } = await supabase.from('orders').insert([payload]);
-    if (error) {
-      logEvent('WARN', 'ORDER_SUPABASE_FALLBACK', `Помилка запису в Supabase, збереження локально: ${error.message}`, error);
-      if (typeof window !== 'undefined') {
-        const stored = JSON.parse(localStorage.getItem('app_orders') || '[]');
-        stored.unshift(payload);
-        localStorage.setItem('app_orders', JSON.stringify(stored));
+  // 2. Save in Supabase if configured
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('orders').insert([payload]);
+      if (error) {
+        logEvent('WARN', 'ORDER_SUPABASE_FALLBACK', `Помилка запису в Supabase, збережено локально: ${error.message}`, error);
+      } else {
+        logEvent('SUCCESS', 'ORDER_CREATED_SUPABASE', `Замовлення ${orderNumber} успішно збережено в Supabase`, payload);
       }
-      return { success: true, orderNumber };
+    } catch (err: any) {
+      logEvent('ERROR', 'ORDER_EXCEPTION', `Помилка запису в Supabase: ${err.message}`, err);
     }
-    logEvent('SUCCESS', 'ORDER_CREATED_SUPABASE', `Замовлення ${orderNumber} успішно збережено в Supabase`, payload);
-    return { success: true, orderNumber };
-  } catch (err: any) {
-    logEvent('ERROR', 'ORDER_EXCEPTION', `Критична помилка при оформленні: ${err.message}`, err);
-    return { success: true, orderNumber };
+  } else {
+    logEvent('SUCCESS', 'ORDER_CREATED_LOCAL', `Замовлення ${orderNumber} збережено локально`, payload);
   }
+
+  // 3. Dispatch Email & SMS notifications to site administrator
+  try {
+    if (typeof window !== 'undefined') {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'order', data: payload, orderNumber }),
+      }).catch((e) => console.warn('Notification fetch warning:', e));
+    } else {
+      await sendOrderNotification(payload, orderNumber);
+    }
+  } catch (err: any) {
+    logEvent('WARN', 'ORDER_NOTIFY_ERROR', `Помилка виклику сповіщень: ${err.message}`);
+  }
+
+  return { success: true, orderNumber };
 }
 
 /**
- * Save lead (1-click buy or callback)
+ * Save lead (1-click buy, AI chat or callback) and trigger Email + SMS notifications
  */
 export async function createLead(lead: Lead): Promise<{ success: boolean; error?: string }> {
-  const payload = {
+  // Validate and normalize phone
+  const phoneVal = validateAndNormalizeUaPhone(lead.phone);
+  if (!phoneVal.isValid) {
+    logEvent('WARN', 'LEAD_INVALID_PHONE', `Спроба створити лід з невалідним номером: ${lead.phone}`, { error: phoneVal.error });
+    return { success: false, error: phoneVal.error || 'Некоректний номер телефону' };
+  }
+
+  const normalizedPhone = phoneVal.normalizedPhone || lead.phone;
+
+  const payload: Lead = {
     ...lead,
+    phone: normalizedPhone,
     status: 'pending',
     created_at: new Date().toISOString(),
   };
 
-  logEvent('INFO', 'LEAD_ATTEMPT', `Нова заявка ліда: ${lead.phone} (${lead.lead_type || 'one_click'})`, lead);
+  logEvent('INFO', 'LEAD_ATTEMPT', `Нова заявка ліда: ${normalizedPhone} [${phoneVal.operator || 'UA'}] (${lead.lead_type || 'one_click'})`, payload);
 
-  if (!supabase) {
-    if (typeof window !== 'undefined') {
+  // 1. Save locally if running in browser
+  if (typeof window !== 'undefined') {
+    try {
       const stored = JSON.parse(localStorage.getItem('app_leads') || '[]');
-      stored.unshift(payload);
-      localStorage.setItem('app_leads', JSON.stringify(stored));
+      const updated = Array.isArray(stored) ? stored : [];
+      updated.unshift(payload);
+      localStorage.setItem('app_leads', JSON.stringify(updated));
+    } catch (e) {
+      localStorage.setItem('app_leads', JSON.stringify([payload]));
     }
-    logEvent('SUCCESS', 'LEAD_CREATED_LOCAL', `Лід ${lead.phone} збережено локально`, payload);
-    return { success: true };
   }
 
-  try {
-    const { error } = await supabase.from('leads').insert([payload]);
-    if (error) {
-      logEvent('WARN', 'LEAD_SUPABASE_FALLBACK', `Помилка ліда в Supabase: ${error.message}`, error);
-    } else {
-      logEvent('SUCCESS', 'LEAD_CREATED_SUPABASE', `Лід ${lead.phone} збережено в Supabase`, payload);
+  // 2. Save in Supabase if configured
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('leads').insert([payload]);
+      if (error) {
+        logEvent('WARN', 'LEAD_SUPABASE_FALLBACK', `Помилка ліда в Supabase, збережено локально: ${error.message}`, error);
+      } else {
+        logEvent('SUCCESS', 'LEAD_CREATED_SUPABASE', `Лід ${normalizedPhone} успішно збережено в Supabase`, payload);
+      }
+    } catch (err: any) {
+      logEvent('ERROR', 'LEAD_EXCEPTION', `Помилка Supabase: ${err.message}`, err);
     }
-    return { success: true };
-  } catch (err: any) {
-    logEvent('ERROR', 'LEAD_EXCEPTION', `Помилка відправки ліда: ${err.message}`, err);
-    return { success: true };
+  } else {
+    logEvent('SUCCESS', 'LEAD_CREATED_LOCAL', `Лід ${normalizedPhone} збережено локально`, payload);
   }
+
+  // 3. Dispatch Email & SMS notifications to site administrator
+  try {
+    if (typeof window !== 'undefined') {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'lead', data: payload }),
+      }).catch((e) => console.warn('Notification fetch warning:', e));
+    } else {
+      await sendLeadNotification(payload);
+    }
+  } catch (err: any) {
+    logEvent('WARN', 'LEAD_NOTIFY_ERROR', `Помилка виклику сповіщень: ${err.message}`);
+  }
+
+  return { success: true };
 }
 
 /**

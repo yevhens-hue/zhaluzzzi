@@ -1,114 +1,91 @@
-# 📑 Engineering Continuity & System Handoff Package
+# 📑 Engineering Continuity & Production Handoff Package: Жалюзі та Рулонні Штори Дніпро
 
-**Project Name**: Жалюзі та Ролети від виробника (м. Дніпро)  
-**Production Domain**: [https://zhaluzi-rolety-dnipro.vercel.app](https://zhaluzi-rolety-dnipro.vercel.app)  
-**Admin CMS URL**: [https://zhaluzi-rolety-dnipro.vercel.app/admin](https://zhaluzi-rolety-dnipro.vercel.app/admin)  
-**Last Updated**: 2026-08-22 01:18 (UTC+2)  
-**Status**: 🟢 **PROD LIVE & 100% VERIFIED**
-
----
-
-## 1. 🚀 Executive Summary & Production Status
-
-This repository contains a full-stack, responsive e-commerce web platform for custom window blinds and roller shutters (**Жалюзі, Тканинні Ролети, Штори День-Ніч, Закрита система Uni**) based in **Dnipro, Ukraine**.
-
-The platform is deployed to Vercel with real-time Supabase Postgres cloud database integration, local fallback persistence, live calculator rate engine, session-guarded full CMS admin panel, audit logger subsystem, an automated GPT-4o AI Consultant with continuous eval testing, and complete Schema.org / XML Sitemap SEO infrastructure.
+**Project Target:** Production E-Commerce Web Application & CMS  
+**Production URL:** [https://zhaluzi-rolety-dnipro.vercel.app](https://zhaluzi-rolety-dnipro.vercel.app)  
+**Admin Panel:** [https://zhaluzi-rolety-dnipro.vercel.app/admin](https://zhaluzi-rolety-dnipro.vercel.app/admin)  
+**Admin Credentials:**  
+- **Login:** `admin`  
+- **Password:** `Dnipro2026!`  
+**Language Lock:** 100% Ukrainian (`uk`) across all 21 routes.
 
 ---
 
-## 2. 🔐 Key Credentials & Environment Configuration
+## 🏛️ System Map & Component Topology
 
-| Resource | Value / Access Details | Description |
-|---|---|---|
-| **Live Storefront** | [https://zhaluzi-rolety-dnipro.vercel.app](https://zhaluzi-rolety-dnipro.vercel.app) | Production customer storefront |
-| **Admin CMS Panel** | [https://zhaluzi-rolety-dnipro.vercel.app/admin](https://zhaluzi-rolety-dnipro.vercel.app/admin) | Protected by session authentication |
-| **Admin Login** | `admin` | Administrator username |
-| **Admin Password** | `Dnipro2026!` | Administrator password |
-| **Vercel Project** | `yevhens-hues-projects/zhaluzi-rolety-dnipro` | Vercel scope & project |
-| **Supabase Project** | `pnerikwvvtehclswgstb` | Project ID (EU Central / Frankfurt) |
-| **Supabase URL** | `https://pnerikwvvtehclswgstb.supabase.co` | `NEXT_PUBLIC_SUPABASE_URL` |
-| **XML Sitemap** | [https://zhaluzi-rolety-dnipro.vercel.app/sitemap.xml](https://zhaluzi-rolety-dnipro.vercel.app/sitemap.xml) | Dynamic crawler map |
-| **Robots Directives** | [https://zhaluzi-rolety-dnipro.vercel.app/robots.txt](https://zhaluzi-rolety-dnipro.vercel.app/robots.txt) | Indexing rules |
-
-### Business Contacts & Persona
-- **Контактна особа**: Віктор Кузьменко
-- **Телефони**: `(093) 912-85-31`, `(093) 510-55-21`
-- **Локація**: м. Дніпро (Замір по місту + відправка Новою Поштою по всій Україні)
-- **Instagram**: [https://www.instagram.com/zhaluzi.rollety.dnipro](https://www.instagram.com/zhaluzi.rollety.dnipro)
-- **Telegram**: [https://t.me/+380939128531](https://t.me/+380939128531)
-- **Viber**: `+380939128531`
-
----
-
-## 3. 🗺️ System Map & Component Topology
-
-```mermaid
-graph TD
-    Client[Browser / Customer] -->|HTTPS| Vercel[Vercel Edge Next.js 16 App]
-    Admin[Site Owner / Admin] -->|Login Gate| AdminCMS[/admin Dashboard]
-    
-    subgraph Frontend [Next.js Client Architecture]
-        SiteCtx[SiteSettingsContext]
-        CartCtx[CartContext]
-        CityCtx[CityContext]
-        AiWidget[AiConsultantWidget / MessageBubble]
-        Calc[BlindCalculator with 3D Preview]
-        Catalog[CatalogView & Filters]
-        FloatingStack[TelegramWidget + AI Stack]
-    end
-    
-    subgraph DataLayer [Storage & Logger & AI Engine]
-        Logger[lib/logger.ts]
-        SupabaseClient[lib/supabase.ts]
-        AiEngine[lib/ai/ - Prompts, KnowledgeBase, Tools]
-        LocalStorageFallback[Client Storage Fallback]
-    end
-    
-    subgraph CloudBackend [Supabase Postgres Cloud & OpenAI]
-        DB_Orders[(orders)]
-        DB_Leads[(leads)]
-        DB_Products[(products)]
-        DB_Settings[(site_settings)]
-        DB_Logs[(audit_logs)]
-        OpenAI_API[OpenAI GPT-4o-mini]
-    end
-    
-    Vercel --> Frontend
-    Frontend --> DataLayer
-    DataLayer --> CloudBackend
-    AiWidget -->|POST /api/chat| OpenAI_API
+```
+├── app/
+│   ├── page.tsx                     # Homepage (Hero, Categories, Catalog preview, Works Gallery, AI Consultant)
+│   ├── admin/page.tsx               # Full Admin Panel & CMS (Orders, Leads, Products, Calculator, Gallery, Contacts with Email/SMS, Logs)
+│   ├── catalog/page.tsx             # Full Catalog page with Live Filters & Search
+│   ├── product/[slug]/page.tsx      # Dynamic Product Detail Page with Configurator
+│   ├── checkout/page.tsx            # Full Checkout flow with live UA phone validation & operator badge
+│   ├── api/
+│   │   ├── tracking/route.ts        # Nova Poshta Live TTN Tracking API
+│   │   ├── notify/route.ts          # Server-side Email (HTML) & SMS notification dispatcher
+│   │   └── chat/route.ts            # AI Consultant OpenAI GPT-4o-mini + Tool Calling + Lead Qualification
+├── components/
+│   ├── Header.tsx                   # Header with Navigation, Contacts, Mobile Drawer & TTN Tracking modal
+│   ├── ProductDetailView.tsx        # Product detail view with size calculator, color options, cart integration
+│   ├── ProductCard.tsx              # Reusable product card with useSiteSettings dynamic sync
+│   ├── CatalogView.tsx              # Catalog page with filter drawer, room tags, texture, blackout & search
+│   ├── PortfolioGallery.tsx         # Works gallery connected to useSiteSettings.gallery CMS
+│   ├── TrackingModal.tsx            # Nova Poshta 14-digit TTN tracking popup modal
+│   ├── OneClickModal.tsx            # 1-Click order popup with real-time UA phone validation & operator badge
+│   └── ai/
+│       └── AiConsultantWidget.tsx   # Floating AI assistant with city context, quick prompts & lead capture
+├── lib/
+│   ├── phoneValidator.ts            # Ukrainian Phone Validator (Kyivstar, Vodafone, Lifecell, Intertelecom, Landline)
+│   ├── notifications.ts             # Email (HTML) & SMS notification dispatcher (Resend, TurboSMS, AlphaSMS, Webhooks)
+│   ├── siteSettings.ts              # SiteSettings interfaces (contacts.email, phone1, phone2), defaults & sync
+│   ├── supabase.ts                  # Supabase client, createOrder & createLead with automated notification triggers
+│   ├── mockData.ts                  # Baseline fallback product catalog & categories
+│   ├── logger.ts                    # Application event audit logger
+│   └── ai/
+│       ├── prompts.ts               # System prompt with order qualification (type, sizes, preferred time)
+│       ├── tools.ts                 # Function calling schema (submitLead with orderType, dimensions, time)
+│       └── knowledgeBase.ts         # Technical knowledge base for window treatment systems
+└── context/
+    ├── SiteSettingsContext.tsx      # Global React Context broadcasting settings & dynamic products
+    ├── CartContext.tsx              # Shopping cart state manager
+    ├── CityContext.tsx              # City & geolocation selector
+    └── LanguageContext.tsx          # Language provider (locked to Ukrainian)
 ```
 
 ---
 
-## 4. 🌟 Key Features Delivered & Verified
+## 🚀 Key Features Implemented & Verified
 
-| Feature / Component | File Locations | Details |
-|---|---|---|
-| **🤖 AI Consultant & Lead Qualifier** | [`app/api/chat/route.ts`](file:///Users/yevhen/Жалюзи/app/api/chat/route.ts), [`lib/ai/`](file:///Users/yevhen/Жалюзи/lib/ai/), [`components/ai/`](file:///Users/yevhen/Жалюзи/components/ai/) | GPT-4o-mini powered consultant, multilingual (UK/RU), strict domain grounding, automated `submitLead` saving directly to Supabase & audit logs. |
-| **🧪 Continuous Eval Suite** | [`eval/test_zhaluzi_agent.py`](file:///Users/yevhen/Жалюзи/eval/test_zhaluzi_agent.py), [`eval/eval_dataset_zhaluzi.json`](file:///Users/yevhen/Жалюзи/eval/eval_dataset_zhaluzi.json) | 12 automated test cases covering measurement guides, fabric choices, lead capturing, anti-hallucination traps (100% Pass Rate). |
-| **🔍 SEO & Schema.org Microdata** | [`components/seo/JsonLd.tsx`](file:///Users/yevhen/Жалюзи/components/seo/JsonLd.tsx), [`app/sitemap.ts`](file:///Users/yevhen/Жалюзи/app/sitemap.ts), [`app/robots.ts`](file:///Users/yevhen/Жалюзи/app/robots.ts) | JSON-LD schemas (`LocalBusiness`, `Product`, `Breadcrumbs`, `WebSite`), canonical alternates, dynamic sitemap and robots.txt. |
-| **🪟 Interactive Window Calculator** | [`components/BlindCalculator.tsx`](file:///Users/yevhen/Жалюзи/components/BlindCalculator.tsx) | Live window schematic preview with fabric textures, guides, chain position, React 19 `useTransition` 60fps sliders, and 1-click size presets. |
-| **🛍 Product Cards & Micro-Animations** | [`components/ProductCard.tsx`](file:///Users/yevhen/Жалюзи/components/ProductCard.tsx), [`app/globals.css`](file:///Users/yevhen/Жалюзи/app/globals.css) | Hover zoom, discount badges, color swatches, instant cart checkmark feedback, smooth scrollbars and glassmorphism. |
-| **📱 Non-Overlapping Floating Stack** | [`components/TelegramWidget.tsx`](file:///Users/yevhen/Жалюзи/components/TelegramWidget.tsx), [`components/ai/AiConsultantWidget.tsx`](file:///Users/yevhen/Жалюзи/components/ai/AiConsultantWidget.tsx) | Perfect vertical spacing: Phone, Instagram, Telegram, and AI Assistant aligned along right edge with zero overlap. |
+| Feature | Description | Status |
+| :--- | :--- | :--- |
+| **Ukrainian Phone Validation** | Validates digit count (10/12), normalizes to E.164 (`+380...`), detects mobile operators (Kyivstar, Vodafone, Lifecell, etc.) with real-time badge in UI | ✅ Live & Verified |
+| **Email & SMS Auto-Dispatch** | Instant rich HTML email with product table + concise SMS to site contacts upon order or lead creation | ✅ Live & Verified |
+| **AI Consultant with Qualification** | GPT-4o-mini consultant that clarifies order type (visit/custom sizes), dimensions, and preferred contact time | ✅ Live & Verified |
+| **Nova Poshta TTN Tracking** | Live 14-digit TTN tracking popup connected to official Nova Poshta API | ✅ Live & Verified |
+| **Admin Panel CMS** | Full control over orders, leads, products, calculator rates, gallery, and notification contacts (email & phones) | ✅ Live & Verified |
+| **Dynamic Context Sync** | Real-time synchronization between Admin changes and client views via `SiteSettingsContext` | ✅ Live & Verified |
 
 ---
 
-## 5. 🧪 Testing & Validation Runbook
+## 🛠️ Diagnostics & Maintenance Runbook
 
-1. **Production Build Check:**
-   ```bash
-   cd /Users/yevhen/Жалюзи
-   npm run build
-   ```
-2. **AI Agent Automated Eval Tests:**
-   ```bash
-   cd /Users/yevhen/Жалюзи
-   python3 -m pytest eval/test_zhaluzi_agent.py -v
-   ```
-   *Expectation: 12 passed in ~28s.*
-3. **Deploy to Vercel:**
-   ```bash
-   cd /Users/yevhen/Жалюзи
-   npx vercel --prod --yes
-   ```
+### 1. Local Verification
+To build and test the project locally:
+```bash
+npm run build
+```
+
+### 2. Integration Tests
+To run phone validation & notification tests:
+```bash
+npx tsx scratch/test-phone-notifications.ts
+```
+
+### 3. Vercel Production Deployment
+To deploy all changes directly to production:
+```bash
+npx vercel --prod --yes
+```
+
+---
+
+*Handoff package generated and updated on 2026-08-23.*

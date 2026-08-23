@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCity } from '@/context/CityContext';
 import { MessageBubble, MessageItem } from './MessageBubble';
-import { MessageSquare, X, Send, Bot, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Sparkles, RotateCcw } from 'lucide-react';
 
 const QUICK_PROMPTS = [
   '📐 Як правильно заміряти вікно?',
@@ -21,27 +21,71 @@ export const AiConsultantWidget: React.FC = () => {
   const [hasUnread, setHasUnread] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // 1. Load chat history from localStorage on initial render
   useEffect(() => {
-    // Initial welcome message
+    try {
+      const savedHistory = localStorage.getItem('zhaluzi_ai_chat_history_v1');
+      if (savedHistory) {
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse chat history from localStorage:', err);
+    }
+
     const welcomeCityText =
       currentCity && currentCity !== 'Місто'
         ? `у місті ${currentCity}`
         : 'по всій Україні';
 
-    if (messages.length === 0) {
-      setMessages([
-        {
-          id: 'welcome-1',
-          role: 'assistant',
-          content: `Вітаю! 👋 Я AI-консультант фабрики «Жалюзи». Допоможу обрати рулонні штори або жалюзі ${welcomeCityText}, підкажу як зробити точний замір або оформити безкоштовний виїзд майстра зі зразками! Чим можу допомогти?`,
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-        },
-      ]);
+    setMessages([
+      {
+        id: 'welcome-1',
+        role: 'assistant',
+        content: `Вітаю! 👋 Я AI-консультант фабрики «Жалюзи». Допоможу обрати рулонні штори або жалюзі ${welcomeCityText}, підкажу як зробити точний замір або оформити безкоштовний виїзд майстра зі зразками! Чим можу допомогти?`,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      },
+    ]);
+  }, [currentCity]);
+
+  // 2. Persist chat history to localStorage whenever messages update
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem('zhaluzi_ai_chat_history_v1', JSON.stringify(messages));
+      } catch (err) {
+        console.warn('Failed to save chat history to localStorage:', err);
+      }
     }
-  }, [currentCity, messages.length]);
+  }, [messages]);
+
+  // 3. Clear chat history handler
+  const handleClearHistory = () => {
+    try {
+      localStorage.removeItem('zhaluzi_ai_chat_history_v1');
+    } catch (e) {}
+    const welcomeCityText =
+      currentCity && currentCity !== 'Місто'
+        ? `у місті ${currentCity}`
+        : 'по всій Україні';
+    setMessages([
+      {
+        id: 'welcome-reset-' + Date.now(),
+        role: 'assistant',
+        content: `Історію чату очищено. 👋 Чим можу допомогти ${welcomeCityText}?`,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      },
+    ]);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -139,20 +183,32 @@ export const AiConsultantWidget: React.FC = () => {
               <div>
                 <h3 className="font-bold text-sm leading-tight flex items-center gap-1.5">
                   <span>AI-Консультант</span>
-                  <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-mono">GPT-4o</span>
+                  <span className="text-[10px] bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> Oracle Certified
+                  </span>
                 </h3>
                 <p className="text-xs text-blue-100 flex items-center gap-1 mt-0.5">
                   Онлайн {currentCity && currentCity !== 'Місто' ? `• ${currentCity}` : '• Україна'}
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 rounded-full hover:bg-white/20 transition text-white/80 hover:text-white"
-              aria-label="Закрити чат"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleClearHistory}
+                className="p-2 rounded-full hover:bg-white/20 transition text-white/80 hover:text-white"
+                title="Очистити історію чату"
+                aria-label="Очистити історію чату"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 rounded-full hover:bg-white/20 transition text-white/80 hover:text-white"
+                aria-label="Закрити чат"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Messages Body */}
@@ -222,28 +278,42 @@ export const AiConsultantWidget: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Toggle Button */}
+      {/* Floating AI Agent Teaser Pill */}
+      {!isOpen && (
+        <div className="mb-2 hidden sm:flex items-center gap-2 bg-slate-900/90 text-white backdrop-blur-md border border-indigo-500/40 px-3.5 py-1.5 rounded-full shadow-lg text-xs font-medium animate-bounce duration-1000 cursor-pointer hover:bg-slate-900 transition-all"
+             onClick={() => setIsOpen(true)}>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <span>✨ <b>AI-Консультант</b> • Замір за 10 сек</span>
+        </div>
+      )}
+
+      {/* Floating Holographic AI Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 group relative"
+        className="h-13 px-4 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] hover:shadow-[0_0_35px_rgba(99,102,241,0.8)] flex items-center justify-center gap-2.5 transition-all duration-300 hover:scale-105 active:scale-95 group relative border border-white/20"
         title="AI-Консультант (онлайн)"
         aria-label="Відкрити онлайн AI-консультант"
       >
-        <span className="absolute -inset-1 bg-blue-500 rounded-full opacity-30 group-hover:opacity-60 animate-ping duration-1000 pointer-events-none"></span>
+        <span className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full opacity-40 group-hover:opacity-80 blur-md transition duration-500 pointer-events-none animate-pulse"></span>
 
         {hasUnread && (
-          <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-rose-500 border-2 border-white rounded-full"></span>
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white rounded-full z-20"></span>
         )}
 
         {isOpen ? (
           <X className="w-5 h-5 z-10" />
         ) : (
-          <MessageSquare className="w-5 h-5 z-10 fill-white" />
+          <>
+            <div className="relative z-10 w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-amber-300 animate-spin [animation-duration:6s]" />
+            </div>
+            <span className="z-10 font-bold text-xs tracking-wide flex items-center gap-1.5">
+              <span>AI Эксперт</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            </span>
+          </>
         )}
-
-        <span className="absolute right-14 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-          AI-Консультант 24/7
-        </span>
       </button>
     </div>
   );

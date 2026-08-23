@@ -5,9 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Truck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, totalAmount, totalCount } = useCart();
+  const { t, tProdTitle, tColorName } = useLanguage();
 
   if (!isOpen) return null;
 
@@ -25,7 +27,7 @@ export function CartDrawer() {
           <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-gray-900 text-lg">Кошик покупок</h3>
+              <h3 className="font-bold text-gray-900 text-lg">{t('Кошик покупок', 'Корзина покупок')}</h3>
               <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full">
                 {totalCount}
               </span>
@@ -33,7 +35,7 @@ export function CartDrawer() {
             <button
               onClick={closeCart}
               className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-200 transition"
-              aria-label="Закрити"
+              aria-label={t('Закрити', 'Закрыть')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -46,16 +48,16 @@ export function CartDrawer() {
                 <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-3">
                   <ShoppingBag className="w-8 h-8" />
                 </div>
-                <h4 className="font-bold text-gray-800 text-base mb-1">Ваш кошик порожній</h4>
+                <h4 className="font-bold text-gray-800 text-base mb-1">{t('Ваш кошик порожній', 'Ваша корзина пуста')}</h4>
                 <p className="text-xs text-gray-500 max-w-xs mb-6">
-                  Оберіть потрібний товар у каталозі, вкажіть розміри та додайте його у кошик.
+                  {t('Оберіть потрібний товар у каталозі, вкажіть розміри та додайте його у кошик.', 'Выберите нужный товар в каталоге, укажите размеры и добавьте его в корзину.')}
                 </p>
                 <Link
                   href="/catalog"
                   onClick={closeCart}
                   className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition"
                 >
-                  Перейти до каталогу
+                  {t('Перейти до каталогу', 'Перейти в каталог')}
                 </Link>
               </div>
             ) : (
@@ -68,7 +70,7 @@ export function CartDrawer() {
                   <div className="w-20 h-24 rounded-xl overflow-hidden bg-gray-100 relative shrink-0">
                     <Image
                       src={item.image || '/placeholder.png'}
-                      alt={item.title}
+                      alt={tProdTitle(item.title)}
                       fill
                       className="object-cover"
                       unoptimized
@@ -80,12 +82,12 @@ export function CartDrawer() {
                     <div>
                       <div className="flex justify-between items-start gap-1">
                         <h4 className="font-bold text-xs sm:text-sm text-gray-900 line-clamp-2">
-                          {item.title}
+                          {tProdTitle(item.title)}
                         </h4>
                         <button
                           onClick={() => removeItem(item.id)}
                           className="text-gray-300 hover:text-red-500 p-1 transition"
-                          title="Видалити"
+                          title={t('Видалити', 'Удалить')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -94,18 +96,18 @@ export function CartDrawer() {
                       {/* Specs */}
                       <div className="mt-1 space-y-0.5 text-[11px] text-gray-500">
                         <p>
-                          Розмір: <strong className="text-gray-800">{item.width} см × {item.height} см</strong>
+                          {t('Розмір', 'Размер')}: <strong className="text-gray-800">{item.width} {t('см', 'см')} × {item.height} {t('см', 'см')}</strong>
                         </p>
                         <p className="flex items-center gap-1">
-                          Колір:
+                          {t('Колір', 'Цвет')}:
                           <span
                             className="inline-block w-2.5 h-2.5 rounded-full border border-gray-300"
                             style={{ backgroundColor: item.color?.hex || '#999' }}
                           />
-                          <span className="text-gray-700">{item.color?.name}</span>
+                          <span className="text-gray-700">{tColorName(item.color?.name || '')}</span>
                         </p>
                         <p>
-                          Управління: {item.controlSide === 'left' ? 'Ліве' : 'Праве'} • {item.fixationType === 'with_line' ? 'На лісці' : 'Без ліски'}
+                          {t('Управління', 'Управление')}: {item.controlSide === 'left' ? t('Ліве', 'Левое') : t('Праве', 'Правое')} • {item.fixationType === 'with_line' ? t('На лісці', 'С леской') : t('Без ліски', 'Без лески')}
                         </p>
                       </div>
                     </div>
@@ -132,11 +134,11 @@ export function CartDrawer() {
 
                       <div className="text-right">
                         <div className="text-sm font-extrabold text-blue-900">
-                          {item.totalPrice.toLocaleString('uk-UA')} грн
+                          {item.totalPrice.toLocaleString('uk-UA')} {t('грн', 'грн')}
                         </div>
                         {item.quantity > 1 && (
                           <div className="text-[10px] text-gray-400">
-                            {item.unitPrice} грн / шт
+                            {item.unitPrice} {t('грн / шт', 'грн / шт')}
                           </div>
                         )}
                       </div>
@@ -153,18 +155,18 @@ export function CartDrawer() {
               {/* Delivery badges */}
               <div className="flex items-center justify-between text-[11px] text-gray-500 px-1">
                 <span className="flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-blue-600" /> Відправка 2-4 дні
+                  <Truck className="w-3.5 h-3.5 text-blue-600" /> {t('Відправка 2-4 дні', 'Отправка 2-4 дня')}
                 </span>
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Гарантія 12 міс.
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> {t('Гарантія 12 міс.', 'Гарантия 12 мес.')}
                 </span>
               </div>
 
               {/* Total sum */}
               <div className="flex justify-between items-center text-sm pt-1">
-                <span className="text-gray-600 font-medium">Разом до сплати:</span>
+                <span className="text-gray-600 font-medium">{t('Разом до сплати:', 'Итого к оплате:')}</span>
                 <span className="text-xl font-extrabold text-gray-900">
-                  {totalAmount.toLocaleString('uk-UA')} грн
+                  {totalAmount.toLocaleString('uk-UA')} {t('грн', 'грн')}
                 </span>
               </div>
 
@@ -174,7 +176,7 @@ export function CartDrawer() {
                 onClick={closeCart}
                 className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition active:scale-98"
               >
-                <span>Оформити замовлення</span>
+                <span>{t('Оформити замовлення', 'Оформить заказ')}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
@@ -183,7 +185,7 @@ export function CartDrawer() {
                 onClick={closeCart}
                 className="w-full text-center text-xs text-gray-500 hover:text-gray-800 font-medium py-1"
               >
-                Продовжити покупки
+                {t('Продовжити покупки', 'Продолжить покупки')}
               </button>
             </div>
           )}

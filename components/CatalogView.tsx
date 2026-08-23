@@ -4,8 +4,10 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Product } from '@/types/database';
 import { ProductCard } from './ProductCard';
-import { Filter, SlidersHorizontal, ArrowUpDown, X, Search } from 'lucide-react';
+import { Filter, SlidersHorizontal, ArrowUpDown, Search } from 'lucide-react';
 import { useWishlist } from '@/context/WishlistContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface CatalogViewProps {
   initialProducts: Product[];
@@ -20,6 +22,12 @@ export function CatalogView({
 }: CatalogViewProps) {
   const searchParams = useSearchParams();
   const { wishlistIds } = useWishlist();
+  const { t, tProdTitle } = useLanguage();
+  const { products: dynamicProducts } = useSiteSettings();
+
+  const allProducts = useMemo(() => {
+    return dynamicProducts && dynamicProducts.length > 0 ? dynamicProducts : initialProducts;
+  }, [dynamicProducts, initialProducts]);
 
   // URL query params
   const urlSearch = searchParams.get('search') || '';
@@ -40,19 +48,19 @@ export function CatalogView({
 
   // Destinations options
   const destinations = [
-    { key: 'all', label: 'Всі приміщення' },
-    { key: 'na-kuhnju', label: 'На кухню' },
-    { key: 'v-spalnju', label: 'У спальню' },
-    { key: 'v-gostinnuju', label: 'У вітальню' },
-    { key: 'na-balkon', label: 'На балкон' },
-    { key: 'v-ofis', label: 'В офіс' },
-    { key: 'v-detskuju', label: 'У дитячу' },
-    { key: 'na-mansardu', label: 'На мансарду' },
+    { key: 'all', label: t('Всі приміщення', 'Все помещения') },
+    { key: 'na-kuhnju', label: t('На кухню', 'На кухню') },
+    { key: 'v-spalnju', label: t('У спальню', 'В спальню') },
+    { key: 'v-gostinnuju', label: t('У вітальню', 'В гостиную') },
+    { key: 'na-balkon', label: t('На балкон', 'На балкон') },
+    { key: 'v-ofis', label: t('В офіс', 'В офис') },
+    { key: 'v-detskuju', label: t('У дитячу', 'В детскую') },
+    { key: 'na-mansardu', label: t('На мансарду', 'На мансарду') },
   ];
 
   // Filter products
   const filteredProducts = useMemo(() => {
-    let list = [...initialProducts];
+    let list = [...allProducts];
 
     // Wishlist view
     if (urlWishlist) {
@@ -141,16 +149,20 @@ export function CatalogView({
     setSearchQuery('');
   };
 
+  const displayTitle = urlWishlist
+    ? t('Мої закладки (Обрані товари)', 'Мои закладки (Избранные товары)')
+    : tProdTitle(categoryTitle);
+
   return (
     <div className="space-y-6">
       {/* Header and Breadcrumbs */}
       <div className="bg-gray-50/80 rounded-2xl p-6 border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
-            {urlWishlist ? 'Мої закладки (Обрані товари)' : categoryTitle}
+            {displayTitle}
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Знайдено {filteredProducts.length} моделей за вашими параметрами
+            {t('Знайдено', 'Найдено')} {filteredProducts.length} {t('моделей за вашими параметрами', 'моделей по вашим параметрам')}
           </p>
         </div>
 
@@ -163,22 +175,22 @@ export function CatalogView({
             className="lg:hidden flex-1 py-2 px-3 bg-white border border-gray-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-gray-700"
           >
             <Filter className="w-4 h-4 text-blue-600" />
-            <span>Фільтри</span>
+            <span>{t('Фільтри', 'Фильтры')}</span>
           </button>
 
           <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700">
             <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
-            <label htmlFor="sort-select" className="sr-only">Сортування товарів</label>
+            <label htmlFor="sort-select" className="sr-only">{t('Сортування товарів', 'Сортировка товаров')}</label>
             <select
               id="sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="bg-transparent focus:outline-hidden text-xs font-semibold cursor-pointer"
             >
-              <option value="popular">За популярністю</option>
-              <option value="price_asc">Від дешевих до дорогих</option>
-              <option value="price_desc">Від дорогих до дешевих</option>
-              <option value="rating">За рейтингом</option>
+              <option value="popular">{t('За популярністю', 'По популярности')}</option>
+              <option value="price_asc">{t('Від дешевих до дорогих', 'Сначала дешевые')}</option>
+              <option value="price_desc">{t('Від дорогих до дешевих', 'Сначала дорогие')}</option>
+              <option value="rating">{t('За рейтингом', 'По рейтингу')}</option>
             </select>
           </div>
         </div>
@@ -189,7 +201,7 @@ export function CatalogView({
         {/* Sidebar Filters (4 cols on lg, drawer on mobile) */}
         <aside
           id="catalog-sidebar-filters"
-          aria-label="Фільтри каталогу"
+          aria-label={t('Фільтри каталогу', 'Фильтры каталога')}
           className={`lg:col-span-3 bg-white rounded-2xl border border-gray-200/80 p-5 space-y-6 shadow-2xs ${
             isMobileFilterOpen ? 'block' : 'hidden lg:block'
           }`}
@@ -197,23 +209,23 @@ export function CatalogView({
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <h3 className="font-bold text-sm text-gray-900 flex items-center gap-1.5">
               <SlidersHorizontal className="w-4 h-4 text-blue-600" />
-              <span>Фільтри каталогу</span>
+              <span>{t('Фільтри каталогу', 'Фильтры каталога')}</span>
             </h3>
             <button
               onClick={clearFilters}
               className="text-[11px] font-semibold text-blue-600 hover:text-blue-800"
             >
-              Скинути
+              {t('Скинути', 'Сбросить')}
             </button>
           </div>
 
           {/* Quick Search */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Пошук за назвою або артикулом</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">{t('Пошук за назвою або артикулом', 'Поиск по названию или артикулу')}</label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Наприклад: Len, 7439..."
+                placeholder={t('Наприклад: Len, 7439...', 'Например: Len, 7439...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-xl text-xs focus:outline-hidden focus:border-blue-600"
@@ -224,7 +236,7 @@ export function CatalogView({
 
           {/* Destination / Room */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">Призначення / Кімната</label>
+            <label className="block text-xs font-bold text-gray-700 mb-2">{t('Призначення / Кімната', 'Назначение / Комната')}</label>
             <div className="space-y-1">
               {destinations.map((dest) => (
                 <button
@@ -244,12 +256,12 @@ export function CatalogView({
 
           {/* Texture */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">Фактура полотна</label>
+            <label className="block text-xs font-bold text-gray-700 mb-2">{t('Фактура полотна', 'Фактура полотна')}</label>
             <div className="space-y-1">
               {[
-                { key: 'all', label: 'Всі варіанти' },
-                { key: 'plain', label: 'Однотонні / Без малюнка' },
-                { key: 'pattern', label: 'З малюнком / Текстурні' },
+                { key: 'all', label: t('Всі варіанти', 'Все варианты') },
+                { key: 'plain', label: t('Однотонні / Без малюнка', 'Однотонные / Без рисунка') },
+                { key: 'pattern', label: t('З малюнком / Текстурні', 'С рисунком / Текстурные') },
               ].map((tex) => (
                 <button
                   key={tex.key}
@@ -268,13 +280,13 @@ export function CatalogView({
 
           {/* Blackout level */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">Рівень затемнення</label>
+            <label className="block text-xs font-bold text-gray-700 mb-2">{t('Рівень затемнення', 'Уровень затемнения')}</label>
             <div className="space-y-1">
               {[
-                { key: 'all', label: 'Всі рівні' },
-                { key: '100', label: '100% Блекаут (Повна темрява)' },
-                { key: 'dimout', label: '60-80% Напівзатемнення' },
-                { key: 'light', label: '40-50% Розсіювання світла' },
+                { key: 'all', label: t('Всі рівні', 'Все уровни') },
+                { key: '100', label: t('100% Блекаут (Повна темрява)', '100% Блэкаут (Полная темнота)') },
+                { key: 'dimout', label: t('60-80% Напівзатемнення', '60-80% Полузатемнение') },
+                { key: 'light', label: t('40-50% Розсіювання світла', '40-50% Рассеивание света') },
               ].map((b) => (
                 <button
                   key={b.key}
@@ -299,15 +311,15 @@ export function CatalogView({
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto text-gray-400">
                 <Search className="w-8 h-8" />
               </div>
-              <h3 className="font-bold text-lg text-gray-900">За обраними фільтрами нічого не знайдено</h3>
+              <h3 className="font-bold text-lg text-gray-900">{t('За обраними фільтрами нічого не знайдено', 'По выбранным фильтрам ничего не найдено')}</h3>
               <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                Спробуйте змінити або скинути параметри фільтрації, щоб побачити більше товарів.
+                {t('Спробуйте змінити або скинути параметри фільтрації, щоб побачити більше товарів.', 'Попробуйте изменить или сбросить параметры фильтрации, чтобы увидеть больше товаров.')}
               </p>
               <button
                 onClick={clearFilters}
                 className="mt-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition"
               >
-                Скинути фільтри
+                {t('Скинути фільтри', 'Сбросить фильтры')}
               </button>
             </div>
           ) : (

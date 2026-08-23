@@ -4,24 +4,23 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { createOrder } from '@/lib/supabase';
+import { validateAndNormalizeUaPhone } from '@/lib/phoneValidator';
 import {
   ShieldCheck,
   Truck,
   CreditCard,
   CheckCircle2,
-  Phone,
   User,
-  MapPin,
-  FileText,
   ShoppingBag,
   ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function CheckoutPage() {
   const { items, totalAmount, clearCart } = useCart();
+  const { t, tProdTitle, tColorName } = useLanguage();
 
   // Form State
   const [name, setName] = useState('');
@@ -34,21 +33,30 @@ export default function CheckoutPage() {
   const [comment, setComment] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderResult, setOrderResult] = useState<{ success: boolean; orderNumber: string } | null>(null);
+
+  const phoneValidation = validateAndNormalizeUaPhone(phone);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
     if (!name || !phone || !city || !deliveryAddress) {
-      alert('Будь ласка, заповніть усі обов’язкові поля.');
+      setErrorMessage(t('Будь ласка, заповніть усі обов’язкові поля (Ім’я, Телефон, Місто, Адреса).', 'Пожалуйста, заполните все обязательные поля (Имя, Телефон, Город, Адрес).'));
       return;
     }
 
+    if (!phoneValidation.isValid) {
+      setErrorMessage(phoneValidation.error || t('Будь ласка, введіть коректний номер телефону України (10 цифр).', 'Пожалуйста, введите корректный номер телефона Украины (10 цифр).'));
+      return;
+    }
+
+    setErrorMessage(null);
     setIsSubmitting(true);
     try {
       const result = await createOrder({
         customer_name: name,
-        phone,
+        phone: phoneValidation.normalizedPhone || phone,
         email,
         city,
         delivery_type: deliveryType,
@@ -71,17 +79,22 @@ export default function CheckoutPage() {
         comment,
       });
 
-      setOrderResult(result);
-      clearCart();
+      if (result.success) {
+        setOrderResult(result);
+        clearCart();
 
-      // Launch confetti
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    } catch (err) {
+        // Launch confetti
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      } else {
+        setErrorMessage(result.error || t('Не вдалося зберегти замовлення. Спробуйте ще раз або зателефонуйте менеджеру.', 'Не удалось сохранить заказ. Попробуйте еще раз или позвоните менеджеру.'));
+      }
+    } catch (err: any) {
       console.error('Checkout error:', err);
+      setErrorMessage(t('Виникла непередбачувана помилка при оформленні. Будь ласка, спробуйте ще раз.', 'Возникла непредвиденная ошибка при оформлении. Пожалуйста, попробуйте еще раз.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -98,29 +111,29 @@ export default function CheckoutPage() {
 
           <div className="space-y-2">
             <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
-              Замовлення успішно оформлено!
+              {t('Замовлення успішно оформлено!', 'Заказ успешно оформлен!')}
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
-              Номер замовлення: {orderResult.orderNumber}
+              {t('Номер замовлення', 'Номер заказа')}: {orderResult.orderNumber}
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto">
-              Дякуємо за покупку в нашому інтернет-магазині! Менеджер зв'яжеться з вами за номером <strong>{phone}</strong> для підтвердження розмірів та передачі замовлення у виробництво.
+              {t("Дякуємо за покупку в нашому інтернет-магазині! Менеджер зв'яжеться з вами за номером", 'Спасибо за покупку в нашем интернет-магазине! Менеджер свяжется с вами по номеру')} <strong>{phone}</strong> {t('для підтвердження розмірів та передачі замовлення у виробництво.', 'для подтверждения размеров и передачи заказа в производство.')}
             </p>
           </div>
 
           <div className="bg-gray-50 rounded-2xl p-5 text-left text-xs space-y-2 max-w-md mx-auto text-gray-700">
             <div className="flex justify-between">
-              <span>Одержувач:</span>
+              <span>{t('Одержувач:', 'Получатель:')}</span>
               <strong className="text-gray-900">{name}</strong>
             </div>
             <div className="flex justify-between">
-              <span>Місто / Доставка:</span>
+              <span>{t('Місто / Доставка:', 'Город / Доставка:')}</span>
               <strong className="text-gray-900">{city}, {deliveryAddress}</strong>
             </div>
             <div className="flex justify-between">
-              <span>Спосіб оплати:</span>
+              <span>{t('Спосіб оплати:', 'Способ оплаты:')}</span>
               <strong className="text-gray-900 capitalize">
-                {paymentMethod === 'cash_on_delivery' ? 'Післяплата при отриманні' : 'Оплата карткою'}
+                {paymentMethod === 'cash_on_delivery' ? t('Післяплата при отриманні', 'Наложенный платеж при получении') : t('Оплата карткою', 'Оплата картой')}
               </strong>
             </div>
           </div>
@@ -130,13 +143,13 @@ export default function CheckoutPage() {
               href="/"
               className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition"
             >
-              На головну сторінку
+              {t('На головну сторінку', 'На главную страницу')}
             </Link>
             <Link
               href="/catalog"
               className="px-6 py-3 bg-gray-100 text-gray-800 rounded-xl text-xs font-semibold hover:bg-gray-200 transition"
             >
-              Продовжити покупки
+              {t('Продовжити покупки', 'Продолжить покупки')}
             </Link>
           </div>
         </div>
@@ -150,15 +163,15 @@ export default function CheckoutPage() {
         <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
           <ShoppingBag className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">У кошику немає товарів</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('У кошику немає товарів', 'В корзине нет товаров')}</h2>
         <p className="text-xs text-gray-500">
-          Оберіть жалюзі або ролети у каталозі, вкажіть розміри та перейдіть до оформлення.
+          {t('Оберіть жалюзі або ролети у каталозі, вкажіть розміри та перейдіть до оформлення.', 'Выберите жалюзи или роллеты в каталоге, укажите размеры и перейдите к оформлению.')}
         </p>
         <Link
           href="/catalog"
           className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition"
         >
-          Перейти до каталогу
+          {t('Перейти до каталогу', 'Перейти в каталог')}
         </Link>
       </div>
     );
@@ -167,9 +180,9 @@ export default function CheckoutPage() {
   return (
     <div className="space-y-8">
       <div className="bg-gray-50/80 rounded-2xl p-6 border border-gray-100">
-        <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Оформлення замовлення</h1>
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900">{t('Оформлення замовлення', 'Оформление заказа')}</h1>
         <p className="text-xs text-gray-500 mt-1">
-          Заповніть контактні дані та адресу доставки. Оплата здійснюється при отриманні або онлайн.
+          {t('Заповніть контактні дані та адресу доставки. Оплата здійснюється при отриманні або онлайн.', 'Заполните контактные данные и адрес доставки. Оплата осуществляется при получении или онлайн.')}
         </p>
       </div>
 
@@ -180,18 +193,18 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4">
             <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
               <User className="w-5 h-5 text-blue-600" />
-              <span>1. Контактні дані одержувача</span>
+              <span>1. {t('Контактні дані одержувача', 'Контактные данные получателя')}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Прізвище та ім'я *
+                  {t("Прізвище та ім'я *", 'Фамилия и имя *')}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Шевченко Тарас"
+                  placeholder={t('Шевченко Тарас', 'Иванов Иван')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -199,23 +212,39 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Номер телефону *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-700">
+                    {t('Номер телефону *', 'Номер телефона *')}
+                  </label>
+                  {phone.length >= 9 && phoneValidation.isValid && (
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      ✓ {phoneValidation.operator}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="tel"
                   required
-                  placeholder="+38 (099) 123-45-67"
+                  placeholder="+38 (093) 123-45-67 або 0931234567"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    if (errorMessage) setErrorMessage(null);
+                  }}
+                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:ring-1 ${
+                    phone.length >= 9 && !phoneValidation.isValid
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                      : phoneValidation.isValid
+                      ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-600'
+                      : 'border-gray-300 focus:border-blue-600 focus:ring-blue-600'
+                  }`}
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Електронна пошта (для отримання чека)
+                {t('Електронна пошта (для отримання чека)', 'Электронная почта (для получения чека)')}
               </label>
               <input
                 type="email"
@@ -231,14 +260,14 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4">
             <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
               <Truck className="w-5 h-5 text-blue-600" />
-              <span>2. Спосіб та адреса доставки</span>
+              <span>2. {t('Спосіб та адреса доставки', 'Способ и адрес доставки')}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { key: 'nova_poshta', label: 'Нова Пошта (Відділення)', desc: '2-4 дні' },
-                { key: 'poshtomat', label: 'Поштомат Нової Пошти', desc: 'Для компактних ролет' },
-                { key: 'courier', label: "Кур'єр Нової Пошти", desc: 'До дверей' },
+                { key: 'nova_poshta', label: t('Нова Пошта (Відділення)', 'Новая Почта (Отделение)'), desc: t('2-4 дні', '2-4 дня') },
+                { key: 'poshtomat', label: t('Поштомат Нової Пошти', 'Почтомат Новой Почты'), desc: t('Для компактних ролет', 'Для компактных роллет') },
+                { key: 'courier', label: t("Кур'єр Нової Пошти", 'Курьер Новой Почты'), desc: t('До дверей', 'До дверей') },
               ].map((del) => (
                 <button
                   type="button"
@@ -259,12 +288,12 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Місто / Населений пункт *
+                  {t('Місто / Населений пункт *', 'Город / Населенный пункт *')}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="напр. Дніпро, Київ, Львів"
+                  placeholder={t('напр. Дніпро, Київ, Львів', 'напр. Днепр, Киев, Харьков')}
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -273,12 +302,12 @@ export default function CheckoutPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  № відділення або адреса *
+                  {t('№ відділення або адреса *', '№ отделения или адрес *')}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Відділення №1 (вул. Головна...)"
+                  placeholder={t('Відділення №1 (вул. Головна...)', 'Отделение №1 (ул. Главная...)')}
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -291,30 +320,30 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4">
             <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-blue-600" />
-              <span>3. Спосіб оплати</span>
+              <span>3. {t('Спосіб оплати', 'Способ оплаты')}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 {
                   key: 'cash_on_delivery',
-                  label: 'Післяплата (при отриманні)',
-                  desc: 'Оплата після огляду на Новій Пошті',
+                  label: t('Післяплата (при отриманні)', 'Наложенный платеж (при получении)'),
+                  desc: t('Оплата після огляду на Новій Пошті', 'Оплата после осмотра на Новой Почте'),
                 },
                 {
                   key: 'card',
-                  label: 'Оплата онлайн (Карта / IBAN)',
+                  label: t('Оплата онлайн (Карта / IBAN)', 'Оплата онлайн (Карта / IBAN)'),
                   desc: 'Visa, MasterCard, Приват24',
                 },
                 {
                   key: 'privat_parts',
-                  label: 'Оплата частинами ПриватБанк',
-                  desc: 'До 24 місяців без переплат',
+                  label: t('Оплата частинами ПриватБанк', 'Оплата частями ПриватБанк'),
+                  desc: t('До 24 місяців без переплат', 'До 24 месяцев без переплат'),
                 },
                 {
                   key: 'mono_parts',
-                  label: 'Покупка частинами Monobank',
-                  desc: 'До 3 платежів без комісії',
+                  label: t('Покупка частинами Monobank', 'Покупка частями Monobank'),
+                  desc: t('До 3 платежів без комісії', 'До 3 платежей без комиссии'),
                 },
               ].map((pay) => (
                 <button
@@ -335,11 +364,11 @@ export default function CheckoutPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Коментар до замовлення (необов'язково)
+                {t("Коментар до замовлення (необов'язково)", 'Комментарий к заказу (необязательно)')}
               </label>
               <textarea
                 rows={2}
-                placeholder="Особливості монтажу, код домофону, побажання щодо часу дзвінка..."
+                placeholder={t('Особливості монтажу, код домофону, побажання щодо часу дзвінка...', 'Особенности монтажа, код домофона, пожелания по времени звонка...')}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -351,8 +380,8 @@ export default function CheckoutPage() {
         {/* Right Summary: Items and Submit (5 cols) */}
         <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-gray-200/80 shadow-md space-y-5 sticky top-24">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-            <h3 className="font-bold text-base text-gray-900">Ваше замовлення</h3>
-            <span className="text-xs font-semibold text-gray-500">{items.length} поз.</span>
+            <h3 className="font-bold text-base text-gray-900">{t('Ваше замовлення', 'Ваш заказ')}</h3>
+            <span className="text-xs font-semibold text-gray-500">{items.length} {t('поз.', 'поз.')}</span>
           </div>
 
           {/* Items Preview */}
@@ -362,20 +391,20 @@ export default function CheckoutPage() {
                 <div className="w-14 h-16 rounded-lg overflow-hidden bg-gray-100 relative shrink-0">
                   <Image
                     src={item.image || '/placeholder.png'}
-                    alt={item.title}
+                    alt={tProdTitle(item.title)}
                     fill
                     className="object-cover"
                     unoptimized
                   />
                 </div>
                 <div className="flex-1">
-                  <div className="font-bold text-gray-900 line-clamp-1">{item.title}</div>
+                  <div className="font-bold text-gray-900 line-clamp-1">{tProdTitle(item.title)}</div>
                   <div className="text-[11px] text-gray-500 mt-0.5">
-                    {item.width}×{item.height} см • {item.color?.name}
+                    {item.width}×{item.height} {t('см', 'см')} • {tColorName(item.color?.name || '')}
                   </div>
                   <div className="flex justify-between items-center mt-1">
-                    <span className="text-gray-500">Кількість: {item.quantity} шт</span>
-                    <span className="font-extrabold text-blue-900">{item.totalPrice} грн</span>
+                    <span className="text-gray-500">{t('Кількість', 'Количество')}: {item.quantity} {t('шт', 'шт')}</span>
+                    <span className="font-extrabold text-blue-900">{item.totalPrice} {t('грн', 'грн')}</span>
                   </div>
                 </div>
               </div>
@@ -385,20 +414,26 @@ export default function CheckoutPage() {
           {/* Summary calculations */}
           <div className="space-y-2 pt-2 border-t border-gray-100 text-xs text-gray-600">
             <div className="flex justify-between">
-              <span>Вартість товарів:</span>
-              <strong className="text-gray-900">{totalAmount.toLocaleString('uk-UA')} грн</strong>
+              <span>{t('Вартість товарів:', 'Стоимость товаров:')}</span>
+              <strong className="text-gray-900">{totalAmount.toLocaleString('uk-UA')} {t('грн', 'грн')}</strong>
             </div>
             <div className="flex justify-between">
-              <span>Доставка:</span>
-              <span className="text-emerald-600 font-semibold">за тарифами перевізника</span>
+              <span>{t('Доставка:', 'Доставка:')}</span>
+              <span className="text-emerald-600 font-semibold">{t('за тарифами перевізника', 'по тарифам перевозчика')}</span>
             </div>
             <div className="flex justify-between items-baseline pt-2 border-t border-gray-100">
-              <span className="text-sm font-bold text-gray-900">Разом до сплати:</span>
+              <span className="text-sm font-bold text-gray-900">{t('Разом до сплати:', 'Итого к оплате:')}</span>
               <span className="text-2xl font-black text-blue-950">
-                {totalAmount.toLocaleString('uk-UA')} грн
+                {totalAmount.toLocaleString('uk-UA')} {t('грн', 'грн')}
               </span>
             </div>
           </div>
+
+          {errorMessage && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">
+              ⚠️ {errorMessage}
+            </div>
+          )}
 
           {/* Guarantee and Submit */}
           <button
@@ -406,13 +441,13 @@ export default function CheckoutPage() {
             disabled={isSubmitting}
             className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <span>{isSubmitting ? 'Оформлення...' : 'Підтвердити замовлення'}</span>
+            <span>{isSubmitting ? t('Оформлення...', 'Оформление...') : t('Підтвердити замовлення', 'Подтвердить заказ')}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 text-center">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Офіційна гарантія та перевірка при отриманні</span>
+            <span>{t('Офіційна гарантія та перевірка при отриманні', 'Официальная гарантия и проверка при получении')}</span>
           </div>
         </div>
       </form>

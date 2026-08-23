@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import {
   ShieldCheck,
@@ -6,23 +8,23 @@ import {
   Sliders,
   SunMedium,
   CheckCircle2,
-  PhoneCall,
-  Ruler,
   Factory,
-  Truck,
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function WhyUsSection() {
+  const { t } = useLanguage();
+
   return (
     <section className="space-y-12">
       {/* 1. Benefits grid */}
       <div>
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
-            Переваги нашої продукції
+            {t('Переваги нашої продукції', 'Преимущества нашей продукции')}
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-2">
-            Практичні, довговічні та стильні конструкції, що підходять для будь-якого інтер'єру.
+            {t("Практичні, довговічні та стильні конструкції, що підходять для будь-якого інтер'єру.", 'Практичные, долговечные и стильные конструкции, подходящие для любого интерьера.')}
           </p>
         </div>
 
@@ -31,9 +33,9 @@ export function WhyUsSection() {
             <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
               <Sliders className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-gray-900 mb-2">Зручність у користуванні</h3>
+            <h3 className="font-bold text-base text-gray-900 mb-2">{t('Зручність у користуванні', 'Удобство в использовании')}</h3>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Штори можна фіксувати на будь-якій бажаній висоті: наприклад, закрити сонце, але залишити комфортне світло для квітів на підвіконні.
+              {t('Штори можна фіксувати на будь-якій бажаній висоті: наприклад, закрити сонце, але залишити комфортне світло для квітів на підвіконні.', 'Шторы можно фиксировать на любой желаемой высоте: например, закрыть солнце, но оставить комфортный свет для цветов на подоконнике.')}
             </p>
           </div>
 
@@ -41,9 +43,9 @@ export function WhyUsSection() {
             <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-gray-900 mb-2">Простота догляду</h3>
+            <h3 className="font-bold text-base text-gray-900 mb-2">{t('Простота догляду', 'Простота ухода')}</h3>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Спеціальне антистатичне та пиловідштовхувальне просочення запобігає забрудненню. Достатньо лише сухого чищення пилососом або вологою серветкою.
+              {t('Спеціальне антистатичне та пиловідштовхувальне просочення запобігає забрудненню. Достатньо лише сухого чищення пилососом або вологою серветкою.', 'Специальная антистатическая и пылеотталкивающая пропитка предотвращает загрязнение. Достаточно лишь сухой чистки пылесосом или влажной салфеткой.')}
             </p>
           </div>
 
@@ -51,9 +53,9 @@ export function WhyUsSection() {
             <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
               <SunMedium className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-gray-900 mb-2">Захист від вигоряння</h3>
+            <h3 className="font-bold text-base text-gray-900 mb-2">{t('Захист від вигоряння', 'Защита от выгорания')}</h3>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Ефективно захищають ваші меблі, шпалери та підлогове покриття від руйнівного впливу ультрафіолетових променів.
+              {t('Ефективно захищають ваші меблі, шпалери та підлогове покриття від руйнівного впливу ультрафіолетових променів.', 'Эффективно защищают вашу мебель, обои и напольное покрытие от разрушительного воздействия ультрафиолетовых лучей.')}
             </p>
           </div>
 
@@ -61,9 +63,9 @@ export function WhyUsSection() {
             <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-gray-900 mb-2">Європейська фурнітура</h3>
+            <h3 className="font-bold text-base text-gray-900 mb-2">{t('Європейська фурнітура', 'Европейская фурнитура')}</h3>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Використовуємо надійні механізми Besta (Польща), які гарантують плавний та безшумний хід полотна протягом багатьох років.
+              {t('Використовуємо надійні механізми Besta (Польща), які гарантують плавний та безшумний хід полотна протягом багатьох років.', 'Используем надежные механизмы Besta (Польша), гарантирующие плавный и бесшумный ход полотна на протяжении многих лет.')}
             </p>
           </div>
 
@@ -71,9 +73,9 @@ export function WhyUsSection() {
             <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
               <Award className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-gray-900 mb-2">Гарантія якості</h3>
+            <h3 className="font-bold text-base text-gray-900 mb-2">{t('Гарантія якості', 'Гарантия качества')}</h3>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Офіційна гарантія на всі механізми та полотна 12 місяців. Ми впевнені у кожній деталі нашого виробництва.
+              {t('Офіційна гарантія на всі механізми та полотна 12 місяців. Ми впевнені у кожній деталі нашого виробництва.', 'Официальная гарантия на все механизмы и полотна 12 месяцев. Мы уверены в каждой детали нашего производства.')}
             </p>
           </div>
 
@@ -81,9 +83,9 @@ export function WhyUsSection() {
             <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
               <Factory className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-gray-900 mb-2">Ціна від виробника</h3>
+            <h3 className="font-bold text-base text-gray-900 mb-2">{t('Ціна від виробника', 'Цена от производителя')}</h3>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Ви купуєте напряму без посередницьких націнок та переплат, отримуючи преміальну якість за чесною ціною.
+              {t('Ви купуєте напряму без посередницьких націнок та переплат, отримуючи преміальну якість за чесною ціною.', 'Вы покупаете напрямую без посреднических наценок и переплат, получая премиальное качество по честной цене.')}
             </p>
           </div>
         </div>
@@ -94,27 +96,27 @@ export function WhyUsSection() {
         <div className="relative z-10 max-w-2xl space-y-4">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-amber-300 text-xs font-bold">
             <CheckCircle2 className="w-4 h-4" />
-            <span>Надійність, перевірена часом</span>
+            <span>{t('Надійність, перевірена часом', 'Надежность, проверенная временем')}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-black leading-tight">
-            Чому обирають сонцезахисні системи нашого виробництва?
+            {t('Чому обирають сонцезахисні системи нашого виробництва?', 'Почему выбирают солнцезащитные системы нашего производства?')}
           </h2>
           <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-            Замовляючи ролети, жалюзі чи штори у нас, ви отримуєте вироби ідеальної якості без переплат, з гарантією та індивідуальним підходом.
+            {t('Замовляючи ролети, жалюзі чи штори у нас, ви отримуєте вироби ідеальної якості без переплат, з гарантією та індивідуальним підходом.', 'Заказывая роллеты, жалюзи или шторы у нас, вы получаете изделия идеального качества без переплат, с гарантией и индивидуальным подходом.')}
           </p>
 
           <div className="pt-4 grid grid-cols-3 gap-4 border-t border-white/10 text-center sm:text-left">
             <div>
               <div className="text-2xl sm:text-3xl font-black text-amber-400">10+</div>
-              <div className="text-[11px] text-gray-300 font-medium">років досвіду</div>
+              <div className="text-[11px] text-gray-300 font-medium">{t('років досвіду', 'лет опыта')}</div>
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black text-amber-400">50K+</div>
-              <div className="text-[11px] text-gray-300 font-medium">задоволених вікон</div>
+              <div className="text-[11px] text-gray-300 font-medium">{t('задоволених вікон', 'довольных окон')}</div>
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black text-amber-400">2-4</div>
-              <div className="text-[11px] text-gray-300 font-medium">дні виготовлення</div>
+              <div className="text-[11px] text-gray-300 font-medium">{t('дні виготовлення', 'дня изготовления')}</div>
             </div>
           </div>
         </div>
@@ -124,10 +126,10 @@ export function WhyUsSection() {
       <div>
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
-            Як замовити ролети за 4 простих кроки
+            {t('Як замовити ролети за 4 простих кроки', 'Как заказать роллеты за 4 простых шага')}
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-2">
-            Зручний процес від першої консультації до готового виробу на вашому вікні.
+            {t('Зручний процес від першої консультації до готового виробу на вашому вікні.', 'Удобный процесс от первой консультации до готового изделия на вашем окне.')}
           </p>
         </div>
 
@@ -136,9 +138,9 @@ export function WhyUsSection() {
             <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-black text-sm flex items-center justify-center mx-auto shadow-md">
               1
             </div>
-            <h4 className="font-bold text-sm text-gray-900">Замір або консультація</h4>
+            <h4 className="font-bold text-sm text-gray-900">{t('Замір або консультація', 'Замер или консультация')}</h4>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Залиште заявку або самостійно заміряйте вікна за нашою простою інструкцією.
+              {t('Залиште заявку або самостійно заміряйте вікна за нашою простою інструкцією.', 'Оставьте заявку или самостоятельно замерьте окна по нашей простой инструкции.')}
             </p>
           </div>
 
@@ -146,9 +148,9 @@ export function WhyUsSection() {
             <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-black text-sm flex items-center justify-center mx-auto shadow-md">
               2
             </div>
-            <h4 className="font-bold text-sm text-gray-900">Вибір тканини та системи</h4>
+            <h4 className="font-bold text-sm text-gray-900">{t('Вибір тканини та системи', 'Выбор ткани и системы')}</h4>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Оберіть тип системи, категорію тканини, ступінь затемнення та сторону управління.
+              {t('Оберіть тип системи, категорію тканини, ступінь затемнення та сторону управління.', 'Выберите тип системы, категорию ткани, степень затемнения и сторону управления.')}
             </p>
           </div>
 
@@ -156,9 +158,9 @@ export function WhyUsSection() {
             <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-black text-sm flex items-center justify-center mx-auto shadow-md">
               3
             </div>
-            <h4 className="font-bold text-sm text-gray-900">Швидке виготовлення</h4>
+            <h4 className="font-bold text-sm text-gray-900">{t('Швидке виготовлення', 'Быстрое изготовление')}</h4>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Виготовляємо виріб на лазерному розкрійному обладнанні за 2-4 робочих дні.
+              {t('Виготовляємо виріб на лазерному розкрійному обладнанні за 2-4 робочих дні.', 'Изготавливаем изделие на лазерном раскройном оборудовании за 2-4 рабочих дня.')}
             </p>
           </div>
 
@@ -166,9 +168,9 @@ export function WhyUsSection() {
             <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-black text-sm flex items-center justify-center mx-auto shadow-md">
               4
             </div>
-            <h4 className="font-bold text-sm text-gray-900">Доставка та монтаж</h4>
+            <h4 className="font-bold text-sm text-gray-900">{t('Доставка та монтаж', 'Доставка и монтаж')}</h4>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Отримайте готовий виріб на Новій Пошті або замовте професійний монтаж у Дніпрі.
+              {t('Отримайте готовий виріб на Новій Пошті або замовте професійний монтаж у Дніпрі.', 'Получите готовое изделие на Новой Почте или закажите профессиональный монтаж в Днепре.')}
             </p>
           </div>
         </div>

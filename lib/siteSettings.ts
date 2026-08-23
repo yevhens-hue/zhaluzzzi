@@ -19,6 +19,7 @@ export interface SiteContacts {
   masterName: string;
   phone1: string;
   phone2: string;
+  email: string;
   instagramUrl: string;
   telegramUrl: string;
   viberNumber: string;
@@ -34,10 +35,19 @@ export interface PromoContent {
   heroDiscountBadge: string;
 }
 
+export interface GalleryItem {
+  id: string | number;
+  title: string;
+  city: string;
+  image: string;
+  category: string;
+}
+
 export interface SiteSettings {
   contacts: SiteContacts;
   calculator: CalculatorRates;
   promo: PromoContent;
+  gallery: GalleryItem[];
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -45,6 +55,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     masterName: 'Віктор Кузьменко',
     phone1: '(093) 912-85-31',
     phone2: '(093) 510-55-21',
+    email: 'zhaluzi.dnipro@gmail.com',
     instagramUrl: 'https://www.instagram.com/zhaluzi.rollety.dnipro?igsh=MWR0cXVmdzExem02ZQ==',
     telegramUrl: 'https://t.me/+380939128531',
     viberNumber: '+380939128531',
@@ -69,6 +80,36 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     heroSubtitle: 'Виготовлення за вашими розмірами за 2-4 дні. 500+ зразків тканин, якісна фурнітура та гарантія 24 місяці.',
     heroDiscountBadge: '🔥 Знижки до -25% на День-Ніч',
   },
+  gallery: [
+    {
+      id: 1,
+      title: 'Рулонні штори День-Ніч у сучасній вітальні',
+      city: 'м. Дніпро, пр. Яворницького',
+      image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+      category: 'День-Ніч',
+    },
+    {
+      id: 2,
+      title: 'Дерев’яні жалюзі 50 мм у кабінеті',
+      city: 'м. Київ, Печерськ',
+      image: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=800&q=80',
+      category: 'Жалюзі',
+    },
+    {
+      id: 3,
+      title: 'Закрита система Uni на панорамному вікні',
+      city: 'м. Одеса, Аркадія',
+      image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+      category: 'Закрита система',
+    },
+    {
+      id: 4,
+      title: 'Тканинні ролети Блекаут у спальні',
+      city: 'м. Харків, Центр',
+      image: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80',
+      category: 'Блекаут',
+    },
+  ],
 };
 
 const SETTINGS_KEY = 'app_site_settings_v1';
@@ -84,6 +125,7 @@ export function getSiteSettings(): SiteSettings {
       contacts: { ...DEFAULT_SITE_SETTINGS.contacts, ...(parsed.contacts || {}) },
       calculator: { ...DEFAULT_SITE_SETTINGS.calculator, ...(parsed.calculator || {}) },
       promo: { ...DEFAULT_SITE_SETTINGS.promo, ...(parsed.promo || {}) },
+      gallery: Array.isArray(parsed.gallery) && parsed.gallery.length > 0 ? parsed.gallery : DEFAULT_SITE_SETTINGS.gallery,
     };
   } catch {
     return DEFAULT_SITE_SETTINGS;

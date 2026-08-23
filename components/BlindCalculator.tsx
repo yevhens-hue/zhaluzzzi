@@ -7,9 +7,12 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
 import { Product } from '@/types/database';
 
+import { useLanguage } from '@/context/LanguageContext';
+
 export function BlindCalculator() {
   const { addItem } = useCart();
   const { settings, products } = useSiteSettings();
+  const { t } = useLanguage();
 
   const [selectedCategory, setSelectedCategory] = useState<'roleti' | 'shtori' | 'zhaluzi' | 'zakryta-sistema'>('roleti');
   const [width, setWidth] = useState<number>(60);
@@ -25,11 +28,11 @@ export function BlindCalculator() {
 
   // Quick size presets
   const sizePresets = [
-    { label: 'Стулка', w: 50, h: 130 },
-    { label: 'Стандарт', w: 60, h: 140 },
-    { label: 'Широке', w: 75, h: 150 },
-    { label: 'Двостулкове', w: 120, h: 140 },
-    { label: 'Балконні двері', w: 65, h: 200 },
+    { label: t('Стулка', 'Створка'), w: 50, h: 130 },
+    { label: t('Стандарт', 'Стандарт'), w: 60, h: 140 },
+    { label: t('Широке', 'Широкое'), w: 75, h: 150 },
+    { label: t('Двостулкове', 'Двустворчатое'), w: 120, h: 140 },
+    { label: t('Балконні двері', 'Балконная дверь'), w: 65, h: 200 },
   ];
 
   const handleWidthChange = useCallback((newW: number) => {
@@ -46,10 +49,40 @@ export function BlindCalculator() {
 
   // Find demo product for this category
   const targetProduct: Product = useMemo(() => {
-    return (
-      products.find((p) => p.category_slug === selectedCategory) ||
-      products[0]
-    );
+    const found = products.find((p) => p.category_slug === selectedCategory) || products[0];
+    if (found) return found;
+    return {
+      id: 'calc-default-product',
+      title: 'Тканинні ролети за розрахунком',
+      slug: 'roleti-calc',
+      sku: 'ZR-CALC',
+      category_slug: selectedCategory,
+      subcategory_slug: 'classic',
+      main_image: '/images/products/roleti-mini.jpg',
+      images: ['/images/products/roleti-mini.jpg'],
+      base_price: 480,
+      price_per_sqm: 480,
+      price_unit: 'грн/м²',
+      min_width: 20,
+      max_width: 240,
+      min_height: 30,
+      max_height: 260,
+      base_width: 60,
+      base_height: 140,
+      in_stock: true,
+      rating: 5.0,
+      reviews_count: 24,
+      is_popular: true,
+      description: 'Розрахунковий виріб за індивідуальними габаритами.',
+      characteristics: {
+        warranty: '12 місяців',
+        manufacturer: 'Польща / Україна',
+      },
+      available_colors: [
+        { id: 'c-calc', name: 'Обраний колір', code: 'CALC', hex: '#6A4E38' }
+      ],
+      created_at: new Date().toISOString(),
+    };
   }, [products, selectedCategory]);
 
   // Price Calculation Logic

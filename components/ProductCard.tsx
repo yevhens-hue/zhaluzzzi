@@ -7,17 +7,30 @@ import { Heart, Star, ShoppingBag, Check, Zap } from 'lucide-react';
 import { Product } from '@/types/database';
 import { useWishlist } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
 
 interface ProductCardProps {
   product: Product;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product: initialProduct }: ProductCardProps) {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { addItem } = useCart();
+  const { t, tProdTitle } = useLanguage();
+  const { products: dynamicProducts } = useSiteSettings();
   const [isOneClickOpen, setIsOneClickOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+
+  const product = React.useMemo(() => {
+    const found = dynamicProducts?.find(
+      (p) => p.id === initialProduct.id || p.slug === initialProduct.slug || p.sku === initialProduct.sku
+    );
+    return found || initialProduct;
+  }, [dynamicProducts, initialProduct]);
+
+  const mainImg = product.main_image || '/placeholder.png';
 
   const inWishlist = isInWishlist(product.id);
 
@@ -65,17 +78,17 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.is_popular && (
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
               <Zap className="w-2.5 h-2.5 fill-white" />
-              Популярний
+              {t('Популярний', 'Популярный')}
             </span>
           )}
           {product.is_offer_of_day && (
             <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow-xs">
-              Пропозиція дня
+              {t('Пропозиція дня', 'Предложение дня')}
             </span>
           )}
           {product.is_new && (
             <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow-xs">
-              Новинка
+              {t('Новинка', 'Новинка')}
             </span>
           )}
           {discountPercent && (
@@ -97,8 +110,8 @@ export function ProductCard({ product }: ProductCardProps) {
               ? 'bg-rose-50 text-rose-600 shadow-md scale-110'
               : 'bg-white/80 text-gray-400 hover:text-rose-500 hover:bg-white hover:scale-110'
           }`}
-          title="В обране"
-          aria-label="В обране"
+          title={t('В обране', 'В избранное')}
+          aria-label={t('В обране', 'В избранное')}
         >
           <Heart className={`w-4 h-4 transition-transform active:scale-125 ${inWishlist ? 'fill-rose-500 text-rose-500' : ''}`} />
         </button>
@@ -106,8 +119,8 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Image link */}
         <Link href={`/product/${product.slug}`} className="block relative aspect-4/5 w-full bg-gray-50 overflow-hidden">
           <Image
-            src={product.main_image || '/placeholder.png'}
-            alt={product.title}
+            src={mainImg}
+            alt={tProdTitle(product.title)}
             fill
             className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
@@ -118,13 +131,13 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="absolute bottom-2 left-2 flex gap-1 z-10 pointer-events-none">
             <div
               className="bg-[#6B9F29] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs"
-              title={`Оплата частинами (ПриватБанк) від ${privat2mo} грн/міс`}
+              title={`${t('Оплата частинами (ПриватБанк) від', 'Оплата частями (ПриватБанк) от')} ${privat2mo} грн/${t('міс', 'мес')}`}
             >
               ПП {privat2mo}₴
             </div>
             <div
               className="bg-[#E74C3C] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs"
-              title={`Покупка частинами (МоноБанк) від ${mono3mo} грн/міс`}
+              title={`${t('Покупка частинами (МоноБанк) від', 'Покупка частями (МоноБанк) от')} ${mono3mo} грн/${t('міс', 'мес')}`}
             >
               МБ {mono3mo}₴
             </div>
@@ -137,18 +150,18 @@ export function ProductCard({ product }: ProductCardProps) {
             {/* Category tag */}
             <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">
               {product.category_slug === 'roleti'
-                ? 'Ролети на вікна'
+                ? t('Ролети на вікна', 'Роллеты на окна')
                 : product.category_slug === 'shtori'
-                ? 'Рулонні штори'
+                ? t('Рулонні штори', 'Рулонные шторы')
                 : product.category_slug === 'zhaluzi'
-                ? 'Жалюзі'
-                : 'Закрита система'}
+                ? t('Жалюзі', 'Жалюзи')
+                : t('Закрита система', 'Закрытая система')}
             </div>
 
             {/* Title */}
             <Link href={`/product/${product.slug}`}>
               <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition leading-snug">
-                {product.title}
+                {tProdTitle(product.title)}
               </h3>
             </Link>
 
@@ -187,14 +200,14 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Price and Action Buttons */}
           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
             <div>
-              <div className="text-[10px] text-gray-400 font-medium">від</div>
+              <div className="text-[10px] text-gray-400 font-medium">{t('від', 'от')}</div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-base sm:text-lg font-black text-gray-950">
-                  {product.base_price.toLocaleString('uk-UA')} грн
+                  {product.base_price.toLocaleString('uk-UA')} {t('грн', 'грн')}
                 </span>
                 {product.old_price && (
                   <span className="text-xs text-gray-400 line-through">
-                    {product.old_price} грн
+                    {product.old_price} {t('грн', 'грн')}
                   </span>
                 )}
               </div>
@@ -204,9 +217,9 @@ export function ProductCard({ product }: ProductCardProps) {
               <button
                 onClick={() => setIsOneClickOpen(true)}
                 className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 rounded-lg text-xs font-semibold transition"
-                title="Швидке замовлення в 1 клік"
+                title={t('Швидке замовлення в 1 клік', 'Быстрый заказ в 1 клик')}
               >
-                1 клік
+                {t('1 клік', '1 клик')}
               </button>
               <button
                 onClick={handleQuickAdd}
@@ -215,8 +228,8 @@ export function ProductCard({ product }: ProductCardProps) {
                     ? 'bg-emerald-600 text-white scale-105'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
-                title={isAdded ? 'Додано!' : 'Додати в кошик'}
-                aria-label="Додати в кошик"
+                title={isAdded ? t('Додано!', 'Добавлено!') : t('Додати в кошик', 'В корзину')}
+                aria-label={t('Додати в кошик', 'В корзину')}
               >
                 {isAdded ? (
                   <Check className="w-4 h-4 animate-bounce" />

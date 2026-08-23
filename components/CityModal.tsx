@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Search, Check, MapPin } from 'lucide-react';
 import { useCity } from '@/context/CityContext';
 import { CITIES_LIST } from '@/lib/mockData';
@@ -8,6 +8,15 @@ import { CITIES_LIST } from '@/lib/mockData';
 export function CityModal() {
   const { isModalOpen, closeModal, setCity, currentCity } = useCity();
   const [filter, setFilter] = useState('');
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, closeModal]);
 
   if (!isModalOpen) return null;
 

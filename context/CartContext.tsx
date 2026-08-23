@@ -60,7 +60,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         i.productId === itemData.productId &&
         i.width === itemData.width &&
         i.height === itemData.height &&
-        i.color.id === itemData.color.id &&
+        (i.color?.id ? i.color.id === itemData.color?.id : i.color?.name === itemData.color?.name) &&
         i.controlSide === itemData.controlSide &&
         i.fixationType === itemData.fixationType
     );

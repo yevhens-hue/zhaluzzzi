@@ -20,7 +20,7 @@ export function Header() {
   const { currentCity, openModal } = useCity();
   const { wishlistCount } = useWishlist();
   const { settings } = useSiteSettings();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const contacts = settings.contacts;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,14 +53,14 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-4 py-1.5 flex justify-between items-center">
           {/* Main info links */}
           <nav className="flex items-center space-x-5 font-medium text-gray-700">
-            <Link href="/" className="hover:text-blue-600 transition">Головна</Link>
-            <Link href="/aktsii" className="hover:text-blue-600 transition">Акції</Link>
-            <Link href="/zamir" className="hover:text-blue-600 transition">Замір</Link>
-            <Link href="/montaj" className="hover:text-blue-600 transition">Монтаж</Link>
-            <Link href="/sposobi_oplati" className="hover:text-blue-600 transition">Оплата</Link>
-            <Link href="/dostavka" className="hover:text-blue-600 transition">Доставка</Link>
-            <Link href="/pro_nas" className="hover:text-blue-600 transition">Про нас</Link>
-            <Link href="/zvyazok" className="hover:text-blue-600 transition">Контакти</Link>
+            <Link href="/" className="hover:text-blue-600 transition">{t('Головна', 'Главная')}</Link>
+            <Link href="/aktsii" className="hover:text-blue-600 transition">{t('Акції', 'Акции')}</Link>
+            <Link href="/zamir" className="hover:text-blue-600 transition">{t('Замір', 'Замер')}</Link>
+            <Link href="/montaj" className="hover:text-blue-600 transition">{t('Монтаж', 'Монтаж')}</Link>
+            <Link href="/sposobi_oplati" className="hover:text-blue-600 transition">{t('Оплата', 'Оплата')}</Link>
+            <Link href="/dostavka" className="hover:text-blue-600 transition">{t('Доставка', 'Доставка')}</Link>
+            <Link href="/pro_nas" className="hover:text-blue-600 transition">{t('Про нас', 'О нас')}</Link>
+            <Link href="/zvyazok" className="hover:text-blue-600 transition">{t('Контакти', 'Контакты')}</Link>
           </nav>
 
           {/* Right side: Instagram, phones, work hours */}
@@ -124,22 +124,6 @@ export function Header() {
             >
               <span>📦 ТТН</span>
             </button>
-
-            {/* Language Switcher */}
-            <div className="flex items-center bg-gray-200/70 p-0.5 rounded-lg text-[10px] font-bold">
-              <button
-                onClick={() => setLang('uk')}
-                className={`px-2 py-0.5 rounded-md transition ${lang === 'uk' ? 'bg-blue-600 text-white shadow-xs' : 'text-gray-600'}`}
-              >
-                UA
-              </button>
-              <button
-                onClick={() => setLang('ru')}
-                className={`px-2 py-0.5 rounded-md transition ${lang === 'ru' ? 'bg-blue-600 text-white shadow-xs' : 'text-gray-600'}`}
-              >
-                RU
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -168,7 +152,7 @@ export function Header() {
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
             }`}
           >
-            <span>Ролети</span>
+            <span>{t('Ролети', 'Роллеты')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'roleti' ? 'rotate-180' : ''}`} />
           </button>
 
@@ -180,7 +164,7 @@ export function Header() {
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
             }`}
           >
-            <span>Штори</span>
+            <span>{t('Штори', 'Шторы')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'shtori' ? 'rotate-180' : ''}`} />
           </button>
 
@@ -192,7 +176,7 @@ export function Header() {
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
             }`}
           >
-            <span>Жалюзі</span>
+            <span>{t('Жалюзі', 'Жалюзи')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'zhaluzi' ? 'rotate-180' : ''}`} />
           </button>
 
@@ -204,7 +188,7 @@ export function Header() {
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
             }`}
           >
-            <span>Закрита система</span>
+            <span>{t('Закрита система', 'Закрытая система')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'zakryta-sistema' ? 'rotate-180' : ''}`} />
           </button>
         </nav>
@@ -369,20 +353,31 @@ export function Header() {
             <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}>Адмін-панель</Link>
           </div>
 
-          {/* Phone call buttons */}
-          <div className="flex gap-2 pt-2">
-            <a
-              href="tel:0939128531"
-              className="flex-1 text-center py-2 bg-blue-50 text-blue-700 font-semibold rounded-lg text-xs"
+          {/* Phone call buttons & TTN Tracking */}
+          <div className="space-y-2 pt-2">
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsTrackingOpen(true);
+              }}
+              className="w-full text-center py-2.5 bg-red-50 text-red-600 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 border border-red-200"
             >
-              📞 (093) 912-85-31
-            </a>
-            <a
-              href="tel:0935105521"
-              className="flex-1 text-center py-2 bg-blue-50 text-blue-700 font-semibold rounded-lg text-xs"
-            >
-              📞 (093) 510-55-21
-            </a>
+              <span>📦 Відстежити ТТН (Нова Пошта)</span>
+            </button>
+            <div className="flex gap-2">
+              <a
+                href="tel:0939128531"
+                className="flex-1 text-center py-2 bg-blue-50 text-blue-700 font-semibold rounded-lg text-xs"
+              >
+                📞 (093) 912-85-31
+              </a>
+              <a
+                href="tel:0935105521"
+                className="flex-1 text-center py-2 bg-blue-50 text-blue-700 font-semibold rounded-lg text-xs"
+              >
+                📞 (093) 510-55-21
+              </a>
+            </div>
           </div>
         </div>
       )}

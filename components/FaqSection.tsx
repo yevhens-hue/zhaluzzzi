@@ -29,6 +29,7 @@ export function FaqSection() {
       <div className="max-w-3xl mx-auto space-y-3">
         {FAQ_ITEMS.map((item, idx) => {
           const isOpen = openIndex === idx;
+
           return (
             <div
               key={idx}
