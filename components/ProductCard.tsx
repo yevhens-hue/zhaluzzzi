@@ -25,7 +25,10 @@ export function ProductCard({ product: initialProduct }: ProductCardProps) {
 
   const product = React.useMemo(() => {
     const found = dynamicProducts?.find(
-      (p) => p.id === initialProduct.id || p.slug === initialProduct.slug || p.sku === initialProduct.sku
+      (p) =>
+        (p.id && initialProduct.id && p.id === initialProduct.id) ||
+        (p.slug && initialProduct.slug && p.slug === initialProduct.slug) ||
+        (Boolean(p.sku?.trim()) && Boolean(initialProduct.sku?.trim()) && p.sku?.trim() === initialProduct.sku?.trim())
     );
     return found || initialProduct;
   }, [dynamicProducts, initialProduct]);
