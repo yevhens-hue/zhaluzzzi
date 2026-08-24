@@ -9,6 +9,7 @@ import { MaterialsSection } from '@/components/MaterialsSection';
 import { PortfolioGallery } from '@/components/PortfolioGallery';
 import { FaqSection } from '@/components/FaqSection';
 import { ProductCard } from '@/components/ProductCard';
+import { HomeProductGrid } from '@/components/HomeProductGrid';
 import { getProducts, getCategories } from '@/lib/supabase';
 
 export const revalidate = 60; // ISR revalidation
@@ -95,45 +96,35 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {popularProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <HomeProductGrid initialProducts={popularProducts} filterType="popular" limit={8} />
       </div>
 
       {/* 4. Interactive Blind Size & Price Calculator */}
       <BlindCalculator />
 
       {/* 5. New Arrivals / Premium Collection */}
-      {newProducts.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                Свіжі надходження
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900">
-                Новинки каталогу
-              </h2>
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              Свіжі надходження
             </div>
-            <Link
-              href="/catalog?new=true"
-              className="text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 group"
-            >
-              <span>Всі новинки</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+              Новинки каталогу
+            </h2>
           </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {newProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <Link
+            href="/catalog?new=true"
+            className="text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 group"
+          >
+            <span>Всі новинки</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
-      )}
+
+        <HomeProductGrid initialProducts={newProducts} filterType="new" limit={4} />
+      </div>
 
       {/* 6. Why Us & Benefits Section */}
       <WhyUsSection />

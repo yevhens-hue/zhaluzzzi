@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 import type { Product } from '@/types/database';
@@ -15,6 +16,24 @@ function getAdminClient(): SupabaseClient | null {
     return _adminClient;
   } catch {
     return null;
+  }
+}
+
+function revalidateAllProductRoutes(slug?: string) {
+  try {
+    revalidatePath('/');
+    revalidatePath('/catalog');
+    revalidatePath('/roleti');
+    revalidatePath('/shtori');
+    revalidatePath('/zhaluzi');
+    revalidatePath('/zakryta-sistema');
+    revalidatePath('/aktsii');
+    revalidatePath('/sitemap.xml');
+    if (slug) {
+      revalidatePath(`/product/${slug}`);
+    }
+  } catch (err) {
+    console.warn('[Admin Products] Revalidation warning:', err);
   }
 }
 
@@ -65,6 +84,10 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    // Revalidate paths so new product is instantly visible across all cached routes
+    revalidateAllProductRoutes(product.slug);
+
     return NextResponse.json({ product: data });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -95,6 +118,9 @@ export async function DELETE(req: NextRequest) {
 
     const { error } = await query;
     if (error) throw error;
+
+    revalidateAllProductRoutes(slug || undefined);
+
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';

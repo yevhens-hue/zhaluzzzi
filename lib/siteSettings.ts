@@ -188,18 +188,25 @@ export async function saveDynamicProducts(
   // 2. Sync to Supabase — only the changed product (or all if doing bulk import)
   if (typeof window !== 'undefined') {
     const toSync = changedProduct ? [changedProduct] : products;
-    Promise.all(
-      toSync.map((product) =>
-        fetch('/api/admin/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product }),
-        }).catch((err) => console.warn('Supabase sync skipped (offline?):', err.message))
-      )
-    );
+    try {
+      await Promise.all(
+        toSync.map(async (product) => {
+          const res = await fetch('/api/admin/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            console.warn('Supabase product sync warning:', errData);
+          }
+        })
+      );
+    } catch (err) {
+      console.warn('Supabase sync network error:', err);
+    }
 
     // 3. On-demand ISR: revalidate catalog pages immediately
-    //    Fire-and-forget — never blocks the save
     fetch('/api/revalidate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

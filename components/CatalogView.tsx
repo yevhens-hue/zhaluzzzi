@@ -135,7 +135,7 @@ export function CatalogView({
 
     return list;
   }, [
-    initialProducts,
+    allProducts,
     categorySlug,
     selectedSubcategory,
     selectedDestination,
