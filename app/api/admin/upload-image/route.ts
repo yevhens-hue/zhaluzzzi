@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const adminSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+// Lazy initialization — avoids crashing at module load if SUPABASE_SERVICE_ROLE_KEY is missing
+let _adminClient: SupabaseClient | null = null;
+function getAdminClient(): SupabaseClient | null {
+  if (_adminClient) return _adminClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    _adminClient = createClient(url, key);
+    return _adminClient;
+  } catch {
+    return null;
+  }
+}
 
 /** POST /api/admin/upload-image
  * Accepts multipart/form-data with 'file' field
  * Returns { url: string } — public URL in Supabase Storage
  */
 export async function POST(req: NextRequest) {
-  if (!SUPABASE_URL) {
-    return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+  const client = getAdminClient();
+  if (!client) {
+    return NextResponse.json(
+      { error: 'Supabase Storage not configured — set SUPABASE_SERVICE_ROLE_KEY in Vercel env vars' },
+      { status: 503 }
+    );
   }
 
   try {
@@ -48,7 +60,7 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { error: uploadError } = await adminSupabase.storage
+    const { error: uploadError } = await client.storage
       .from('product-images')
       .upload(filename, buffer, {
         contentType: file.type,
@@ -58,7 +70,7 @@ export async function POST(req: NextRequest) {
     if (uploadError) throw uploadError;
 
     // Get public URL
-    const { data: urlData } = adminSupabase.storage
+    const { data: urlData } = client.storage
       .from('product-images')
       .getPublicUrl(filename);
 

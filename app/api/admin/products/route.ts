@@ -1,33 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 import type { Product } from '@/types/database';
 
-// Use service role key to bypass RLS for admin write operations
-const adminSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+// Lazy initialization — avoids crashing at module load if SUPABASE_SERVICE_ROLE_KEY is missing
+let _adminClient: SupabaseClient | null = null;
+function getAdminClient(): SupabaseClient | null {
+  if (_adminClient) return _adminClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    _adminClient = createClient(url, key);
+    return _adminClient;
+  } catch {
+    return null;
+  }
+}
 
-const isConfigured = Boolean(
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-/** GET /api/admin/products — fetch all products (admin + base) */
+/** GET /api/admin/products — fetch all products (DB + mocks fallback) */
 export async function GET() {
-  if (!isConfigured) {
+  const client = getAdminClient();
+  if (!client) {
     return NextResponse.json({ products: MOCK_PRODUCTS });
   }
 
   try {
-    const { data, error } = await adminSupabase
+    const { data, error } = await client
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    // Merge: DB products override mocks by slug, then append remaining mocks
+    // Merge: DB products first, then mocks not already in DB
     const dbSlugs = new Set((data || []).map((p: Product) => p.slug));
     const mocksOnly = MOCK_PRODUCTS.filter((m) => !dbSlugs.has(m.slug));
     return NextResponse.json({ products: [...(data || []), ...mocksOnly] });
@@ -39,8 +45,9 @@ export async function GET() {
 
 /** POST /api/admin/products — upsert one product */
 export async function POST(req: NextRequest) {
-  if (!isConfigured) {
-    return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+  const client = getAdminClient();
+  if (!client) {
+    return NextResponse.json({ error: 'Supabase not configured — set SUPABASE_SERVICE_ROLE_KEY in Vercel env vars' }, { status: 503 });
   }
 
   try {
@@ -51,7 +58,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields: id, title, slug' }, { status: 400 });
     }
 
-    const { data, error } = await adminSupabase
+    const { data, error } = await client
       .from('products')
       .upsert(product, { onConflict: 'slug' })
       .select()
@@ -66,9 +73,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/** DELETE /api/admin/products?slug=xxx */
+/** DELETE /api/admin/products?slug=xxx OR ?id=xxx */
 export async function DELETE(req: NextRequest) {
-  if (!isConfigured) {
+  const client = getAdminClient();
+  if (!client) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
   }
 
@@ -82,8 +90,8 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const query = slug
-      ? adminSupabase.from('products').delete().eq('slug', slug)
-      : adminSupabase.from('products').delete().eq('id', id!);
+      ? client.from('products').delete().eq('slug', slug)
+      : client.from('products').delete().eq('id', id!);
 
     const { error } = await query;
     if (error) throw error;
