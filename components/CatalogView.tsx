@@ -26,15 +26,27 @@ export function CatalogView({
   const { products: dynamicProducts } = useSiteSettings();
 
   const allProducts = useMemo(() => {
-    if (!dynamicProducts || dynamicProducts.length === 0) return initialProducts;
+    // Merge dynamic (client-fetched) with initial (SSR), deduplicate by id
+    const merged: Product[] = [];
+    const seenIds = new Set<string>();
 
-    // Dynamic products override mock products with the same ID
-    const overrideIds = new Set(dynamicProducts.map((p) => p.id));
-    const baseProducts = initialProducts.filter((p) => !overrideIds.has(p.id));
+    // Dynamic products take priority (most up-to-date, includes admin changes)
+    for (const p of dynamicProducts ?? []) {
+      if (!seenIds.has(p.id)) {
+        seenIds.add(p.id);
+        merged.push(p);
+      }
+    }
 
-    // On category pages: also include dynamic products matching ANY category
-    // so admin-added products always appear in /catalog and in their respective category page
-    return [...dynamicProducts, ...baseProducts];
+    // Add SSR products that are not already covered by dynamic
+    for (const p of initialProducts) {
+      if (!seenIds.has(p.id)) {
+        seenIds.add(p.id);
+        merged.push(p);
+      }
+    }
+
+    return merged;
   }, [dynamicProducts, initialProducts]);
 
   // URL query params

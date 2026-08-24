@@ -37,10 +37,21 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
       if (res.ok) {
         const { products: serverProducts } = await res.json();
         if (Array.isArray(serverProducts)) {
-          // Merge: server is source of truth, local-only products appended
+          // Merge: server is source of truth
+          // Exclude localStorage products that already exist in server by slug OR id
           const serverSlugs = new Set(serverProducts.map((p: Product) => p.slug));
-          const localOnly = getDynamicProducts().filter((p) => !serverSlugs.has(p.slug));
-          setProducts([...serverProducts, ...localOnly]);
+          const serverIds = new Set(serverProducts.map((p: Product) => p.id));
+          const localOnly = getDynamicProducts().filter(
+            (p) => !serverSlugs.has(p.slug) && !serverIds.has(p.id)
+          );
+          // Also deduplicate server products themselves (by id, keep first occurrence)
+          const seen = new Set<string>();
+          const dedupedServer = serverProducts.filter((p: Product) => {
+            if (seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+          });
+          setProducts([...dedupedServer, ...localOnly]);
           setIsLoading(false);
           return;
         }
@@ -49,8 +60,15 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
       // Supabase unavailable — fall through to localStorage
     }
 
-    // Fallback: localStorage
-    setProducts(getDynamicProducts());
+    // Fallback: localStorage — also deduplicate
+    const localProducts = getDynamicProducts();
+    const seenLocal = new Set<string>();
+    const dedupedLocal = localProducts.filter((p) => {
+      if (seenLocal.has(p.id)) return false;
+      seenLocal.add(p.id);
+      return true;
+    });
+    setProducts(dedupedLocal);
     setIsLoading(false);
   };
 
