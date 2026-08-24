@@ -261,19 +261,42 @@ export default function AdminPage() {
     showNotification('Фотогалерею реалізованих проєктів успішно оновлено!');
   };
 
+  const generateSlugFromTitle = (title: string, id: string): string => {
+    if (!title) return `product_${id}`;
+    const translitMap: Record<string, string> = {
+      'а': 'a', 'б': 'b', 'в': 'v', 'г': 'h', 'ґ': 'g', 'д': 'd', 'е': 'e', 'є': 'ye',
+      'ж': 'zh', 'з': 'z', 'и': 'y', 'і': 'i', 'ї': 'yi', 'й': 'y', 'к': 'k', 'л': 'l',
+      'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+      'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ь': '', 'ю': 'yu', 'я': 'ya'
+    };
+
+    const clean = title.toLowerCase().split('').map((ch) => translitMap[ch] || ch).join('');
+    const slugified = clean.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return slugified.length > 3 ? `${slugified}_${id.slice(-4)}` : `product_${id}`;
+  };
+
   // Save / Update a Product
   const handleSaveProduct = async (productToSave: Product) => {
+    const slug = generateSlugFromTitle(productToSave.title, productToSave.id);
+    const cleanedProduct: Product = {
+      ...productToSave,
+      slug: slug,
+      images: Array.isArray(productToSave.images) && productToSave.images.length > 0
+        ? productToSave.images
+        : [productToSave.main_image],
+    };
+
     let updated: Product[];
-    const exists = products.some((p) => p.id === productToSave.id);
+    const exists = products.some((p) => p.id === cleanedProduct.id);
     if (exists) {
-      updated = products.map((p) => (p.id === productToSave.id ? productToSave : p));
+      updated = products.map((p) => (p.id === cleanedProduct.id ? cleanedProduct : p));
     } else {
-      updated = [productToSave, ...products];
+      updated = [cleanedProduct, ...products];
     }
     await updateProducts(updated);
     setEditingProduct(null);
     setIsAddingNewProduct(false);
-    showNotification(`Товар "${productToSave.title}" збережено!`);
+    showNotification(`Товар "${cleanedProduct.title}" успішно збережено!`);
   };
 
   // Delete a Product
