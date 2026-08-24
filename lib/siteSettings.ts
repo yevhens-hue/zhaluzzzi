@@ -1,5 +1,4 @@
 import { Product } from '@/types/database';
-import { MOCK_PRODUCTS } from './mockData';
 import { supabase } from './supabase';
 import { logEvent } from './logger';
 
@@ -43,12 +42,48 @@ export interface GalleryItem {
   category: string;
 }
 
+export interface CatalogFilterItem {
+  id: string;
+  key: string;
+  labelUa: string;
+  labelRu: string;
+  enabled: boolean;
+}
+
+export interface CatalogFiltersSettings {
+  destinations: CatalogFilterItem[];
+  textures: CatalogFilterItem[];
+  blackoutLevels: CatalogFilterItem[];
+}
+
 export interface SiteSettings {
   contacts: SiteContacts;
   calculator: CalculatorRates;
   promo: PromoContent;
   gallery: GalleryItem[];
+  filters: CatalogFiltersSettings;
 }
+
+export const DEFAULT_CATALOG_FILTERS: CatalogFiltersSettings = {
+  destinations: [
+    { id: 'd1', key: 'na-kuhnju', labelUa: 'На кухню', labelRu: 'На кухню', enabled: true },
+    { id: 'd2', key: 'v-spalnju', labelUa: 'У спальню', labelRu: 'В спальню', enabled: true },
+    { id: 'd3', key: 'v-gostinnuju', labelUa: 'У вітальню', labelRu: 'В гостиную', enabled: true },
+    { id: 'd4', key: 'na-balkon', labelUa: 'На балкон / лоджію', labelRu: 'На балкон / лоджию', enabled: true },
+    { id: 'd5', key: 'v-ofis', labelUa: 'В офіс / кабінет', labelRu: 'В офис / кабинет', enabled: true },
+    { id: 'd6', key: 'v-detskuju', labelUa: 'У дитячу', labelRu: 'В детскую', enabled: true },
+    { id: 'd7', key: 'na-mansardu', labelUa: 'На мансарду', labelRu: 'На мансарду', enabled: true },
+  ],
+  textures: [
+    { id: 't1', key: 'plain', labelUa: 'Однотонні / Без малюнка', labelRu: 'Однотонные / Без рисунка', enabled: true },
+    { id: 't2', key: 'pattern', labelUa: 'З малюнком / Текстурні', labelRu: 'С рисунком / Текстурные', enabled: true },
+  ],
+  blackoutLevels: [
+    { id: 'b1', key: '100', labelUa: '100% Блекаут (Повна темрява)', labelRu: '100% Блэкаут (Полная темнота)', enabled: true },
+    { id: 'b2', key: 'dimout', labelUa: '60-80% Напівзатемнення (Dimout)', labelRu: '60-80% Полузатемнение (Dimout)', enabled: true },
+    { id: 'b3', key: 'light', labelUa: '40-50% Розсіювання світла', labelRu: '40-50% Рассеивание света', enabled: true },
+  ],
+};
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   contacts: {
@@ -110,6 +145,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
       category: 'Блекаут',
     },
   ],
+  filters: DEFAULT_CATALOG_FILTERS,
 };
 
 const SETTINGS_KEY = 'app_site_settings_v1';
@@ -126,6 +162,17 @@ export function getSiteSettings(): SiteSettings {
       calculator: { ...DEFAULT_SITE_SETTINGS.calculator, ...(parsed.calculator || {}) },
       promo: { ...DEFAULT_SITE_SETTINGS.promo, ...(parsed.promo || {}) },
       gallery: Array.isArray(parsed.gallery) && parsed.gallery.length > 0 ? parsed.gallery : DEFAULT_SITE_SETTINGS.gallery,
+      filters: {
+        destinations: Array.isArray(parsed.filters?.destinations) && parsed.filters.destinations.length > 0
+          ? parsed.filters.destinations
+          : DEFAULT_CATALOG_FILTERS.destinations,
+        textures: Array.isArray(parsed.filters?.textures) && parsed.filters.textures.length > 0
+          ? parsed.filters.textures
+          : DEFAULT_CATALOG_FILTERS.textures,
+        blackoutLevels: Array.isArray(parsed.filters?.blackoutLevels) && parsed.filters.blackoutLevels.length > 0
+          ? parsed.filters.blackoutLevels
+          : DEFAULT_CATALOG_FILTERS.blackoutLevels,
+      },
     };
   } catch {
     return DEFAULT_SITE_SETTINGS;

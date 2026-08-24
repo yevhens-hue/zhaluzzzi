@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Product, Category, Order, Lead, Review } from '@/types/database';
-import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_REVIEWS } from './mockData';
+import { MOCK_CATEGORIES } from './mockData';
 import { logEvent } from './logger';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -48,36 +48,7 @@ export async function getProducts(options?: {
   limit?: number;
 }): Promise<Product[]> {
   if (!supabase) {
-    let list = [...MOCK_PRODUCTS];
-
-    if (options?.categorySlug && options.categorySlug !== 'all') {
-      list = list.filter((p) => p.category_slug === options.categorySlug);
-    }
-    if (options?.subcategorySlug) {
-      list = list.filter((p) => p.subcategory_slug === options.subcategorySlug);
-    }
-    if (options?.isPopular) {
-      list = list.filter((p) => p.is_popular);
-    }
-    if (options?.isNew) {
-      list = list.filter((p) => p.is_new);
-    }
-    if (options?.destination) {
-      list = list.filter((p) => p.destinations?.includes(options.destination!));
-    }
-    if (options?.searchQuery) {
-      const q = options.searchQuery.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.sku.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q)
-      );
-    }
-    if (options?.limit) {
-      list = list.slice(0, options.limit);
-    }
-    return list;
+    return [];
   }
 
   try {
@@ -101,60 +72,19 @@ export async function getProducts(options?: {
     if (options?.searchQuery) {
       query = query.ilike('title', `%${options.searchQuery}%`);
     }
-    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-      setTimeout(() => resolve({ data: null, error: new Error('Supabase request timeout') }), 2500)
-    );
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
 
-    const { data, error } = (await Promise.race([query, timeoutPromise])) as any;
-
-    if (error || !data || data.length === 0) {
-      return getProductsFallback(options);
+    const { data, error } = await query;
+    if (error || !data) {
+      return [];
     }
     return data as Product[];
   } catch (err) {
-    console.warn('Using fallback products due to error:', err);
-    return getProductsFallback(options);
+    console.error('getProducts error:', err);
+    return [];
   }
-}
-
-function getProductsFallback(options?: {
-  categorySlug?: string;
-  subcategorySlug?: string;
-  isPopular?: boolean;
-  isNew?: boolean;
-  destination?: string;
-  searchQuery?: string;
-  limit?: number;
-}): Product[] {
-  let list = [...MOCK_PRODUCTS];
-  if (options?.categorySlug && options.categorySlug !== 'all') {
-    list = list.filter((p) => p.category_slug === options.categorySlug);
-  }
-  if (options?.subcategorySlug) {
-    list = list.filter((p) => p.subcategory_slug === options.subcategorySlug);
-  }
-  if (options?.isPopular) {
-    list = list.filter((p) => p.is_popular);
-  }
-  if (options?.isNew) {
-    list = list.filter((p) => p.is_new);
-  }
-  if (options?.destination) {
-    list = list.filter((p) => p.destinations?.includes(options.destination!));
-  }
-  if (options?.searchQuery) {
-    const q = options.searchQuery.toLowerCase();
-    list = list.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.sku.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q)
-    );
-  }
-  if (options?.limit) {
-    list = list.slice(0, options.limit);
-  }
-  return list;
 }
 
 /**
@@ -253,28 +183,22 @@ import { cache } from 'react';
  */
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   if (!supabase) {
-    return MOCK_PRODUCTS.find((p) => p.slug === slug) || createFallbackProduct(slug);
+    return createFallbackProduct(slug);
   }
   try {
-    const query = supabase
+    const { data, error } = await supabase
       .from('products')
       .select('*')
       .eq('slug', slug)
       .single();
 
-    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-      setTimeout(() => resolve({ data: null, error: new Error('Supabase request timeout') }), 2500)
-    );
-
-    const { data, error } = (await Promise.race([query, timeoutPromise])) as any;
-
     if (error || !data) {
-      return MOCK_PRODUCTS.find((p) => p.slug === slug) || createFallbackProduct(slug);
+      return createFallbackProduct(slug);
     }
     return data as Product;
   } catch (err) {
-    console.warn('Fallback product by slug due to error:', err);
-    return MOCK_PRODUCTS.find((p) => p.slug === slug) || createFallbackProduct(slug);
+    console.error('getProductBySlug error:', err);
+    return createFallbackProduct(slug);
   }
 });
 
@@ -430,27 +354,22 @@ export async function createLead(lead: Lead): Promise<{ success: boolean; error?
  */
 export const getProductReviews = cache(async (productId: string): Promise<Review[]> => {
   if (!supabase) {
-    return MOCK_REVIEWS.filter((r) => r.product_id === productId);
+    return [];
   }
   try {
-    const query = supabase
+    const { data, error } = await supabase
       .from('reviews')
       .select('*')
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
 
-    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-      setTimeout(() => resolve({ data: null, error: new Error('Supabase request timeout') }), 2500)
-    );
-
-    const { data, error } = (await Promise.race([query, timeoutPromise])) as any;
-
-    if (error || !data || data.length === 0) {
-      return MOCK_REVIEWS.filter((r) => r.product_id === productId);
+    if (error || !data) {
+      return [];
     }
     return data as Review[];
   } catch (err) {
-    return MOCK_REVIEWS.filter((r) => r.product_id === productId);
+    console.error('getProductReviews error:', err);
+    return [];
   }
 });
 
@@ -465,7 +384,6 @@ export async function addProductReview(review: Omit<Review, 'id' | 'created_at'>
   };
 
   if (!supabase) {
-    MOCK_REVIEWS.unshift(payload as Review);
     return true;
   }
 

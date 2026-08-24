@@ -23,8 +23,8 @@ export function CatalogView({
 }: CatalogViewProps) {
   const searchParams = useSearchParams();
   const { wishlistIds } = useWishlist();
-  const { t, tProdTitle } = useLanguage();
-  const { products: dynamicProducts } = useSiteSettings();
+  const { lang, t, tProdTitle } = useLanguage();
+  const { products: dynamicProducts, settings } = useSiteSettings();
 
   const allProducts = useMemo(() => {
     // Dynamic products override SSR initialProducts, strictly deduplicated by id, slug, and title
@@ -48,17 +48,39 @@ export function CatalogView({
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // Destinations options
-  const destinations = [
-    { key: 'all', label: t('Всі приміщення', 'Все помещения') },
-    { key: 'na-kuhnju', label: t('На кухню', 'На кухню') },
-    { key: 'v-spalnju', label: t('У спальню', 'В спальню') },
-    { key: 'v-gostinnuju', label: t('У вітальню', 'В гостиную') },
-    { key: 'na-balkon', label: t('На балкон', 'На балкон') },
-    { key: 'v-ofis', label: t('В офіс', 'В офис') },
-    { key: 'v-detskuju', label: t('У дитячу', 'В детскую') },
-    { key: 'na-mansardu', label: t('На мансарду', 'На мансарду') },
-  ];
+  // Dynamic filter options from CMS settings
+  const destinationOptions = useMemo(() => {
+    const list = (settings.filters?.destinations || []).filter((d) => d.enabled !== false);
+    return [
+      { key: 'all', label: t('Всі приміщення', 'Все помещения') },
+      ...list.map((d) => ({
+        key: d.key,
+        label: d.labelUa,
+      })),
+    ];
+  }, [settings.filters?.destinations, t]);
+
+  const textureOptions = useMemo(() => {
+    const list = (settings.filters?.textures || []).filter((tex) => tex.enabled !== false);
+    return [
+      { key: 'all', label: t('Всі варіанти', 'Все варианты') },
+      ...list.map((tex) => ({
+        key: tex.key,
+        label: tex.labelUa,
+      })),
+    ];
+  }, [settings.filters?.textures, t]);
+
+  const blackoutOptions = useMemo(() => {
+    const list = (settings.filters?.blackoutLevels || []).filter((b) => b.enabled !== false);
+    return [
+      { key: 'all', label: t('Всі рівні', 'Все уровни') },
+      ...list.map((b) => ({
+        key: b.key,
+        label: b.labelUa,
+      })),
+    ];
+  }, [settings.filters?.blackoutLevels, t]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -240,7 +262,7 @@ export function CatalogView({
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">{t('Призначення / Кімната', 'Назначение / Комната')}</label>
             <div className="space-y-1">
-              {destinations.map((dest) => (
+              {destinationOptions.map((dest) => (
                 <button
                   key={dest.key}
                   onClick={() => setSelectedDestination(dest.key)}
@@ -260,11 +282,7 @@ export function CatalogView({
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">{t('Фактура полотна', 'Фактура полотна')}</label>
             <div className="space-y-1">
-              {[
-                { key: 'all', label: t('Всі варіанти', 'Все варианты') },
-                { key: 'plain', label: t('Однотонні / Без малюнка', 'Однотонные / Без рисунка') },
-                { key: 'pattern', label: t('З малюнком / Текстурні', 'С рисунком / Текстурные') },
-              ].map((tex) => (
+              {textureOptions.map((tex) => (
                 <button
                   key={tex.key}
                   onClick={() => setSelectedTexture(tex.key)}
@@ -284,12 +302,7 @@ export function CatalogView({
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">{t('Рівень затемнення', 'Уровень затемнения')}</label>
             <div className="space-y-1">
-              {[
-                { key: 'all', label: t('Всі рівні', 'Все уровни') },
-                { key: '100', label: t('100% Блекаут (Повна темрява)', '100% Блэкаут (Полная темнота)') },
-                { key: 'dimout', label: t('60-80% Напівзатемнення', '60-80% Полузатемнение') },
-                { key: 'light', label: t('40-50% Розсіювання світла', '40-50% Рассеивание света') },
-              ].map((b) => (
+              {blackoutOptions.map((b) => (
                 <button
                   key={b.key}
                   onClick={() => setSelectedBlackout(b.key)}

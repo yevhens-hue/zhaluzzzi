@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { MOCK_PRODUCTS } from '@/lib/mockData';
 import type { Product } from '@/types/database';
 
 // Lazy initialization — avoids crashing at module load if SUPABASE_SERVICE_ROLE_KEY is missing
@@ -37,11 +36,11 @@ function revalidateAllProductRoutes(slug?: string) {
   }
 }
 
-/** GET /api/admin/products — fetch all products (DB + mocks fallback) */
+/** GET /api/admin/products — fetch all products from Supabase DB */
 export async function GET() {
   const client = getAdminClient();
   if (!client) {
-    return NextResponse.json({ products: MOCK_PRODUCTS });
+    return NextResponse.json({ products: [] });
   }
 
   try {
@@ -52,16 +51,10 @@ export async function GET() {
 
     if (error) throw error;
 
-    // Merge: DB products first, then mocks not already in DB by slug or id
-    const dbSlugs = new Set((data || []).map((p: Product) => p.slug));
-    const dbIds = new Set((data || []).map((p: Product) => String(p.id)));
-    const mocksOnly = MOCK_PRODUCTS.filter(
-      (m) => !dbSlugs.has(m.slug) && !dbIds.has(String(m.id))
-    );
-    return NextResponse.json({ products: [...(data || []), ...mocksOnly] });
+    return NextResponse.json({ products: data || [] });
   } catch (err) {
     console.error('[Admin Products GET]', err);
-    return NextResponse.json({ products: MOCK_PRODUCTS });
+    return NextResponse.json({ products: [] });
   }
 }
 
