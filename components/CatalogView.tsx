@@ -8,6 +8,7 @@ import { Filter, SlidersHorizontal, ArrowUpDown, Search } from 'lucide-react';
 import { useWishlist } from '@/context/WishlistContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { mergeAndDeduplicateProducts } from '@/lib/siteSettings';
 
 interface CatalogViewProps {
   initialProducts: Product[];
@@ -26,27 +27,8 @@ export function CatalogView({
   const { products: dynamicProducts } = useSiteSettings();
 
   const allProducts = useMemo(() => {
-    // Merge dynamic (client-fetched) with initial (SSR), deduplicate by id
-    const merged: Product[] = [];
-    const seenIds = new Set<string>();
-
-    // Dynamic products take priority (most up-to-date, includes admin changes)
-    for (const p of dynamicProducts ?? []) {
-      if (!seenIds.has(p.id)) {
-        seenIds.add(p.id);
-        merged.push(p);
-      }
-    }
-
-    // Add SSR products that are not already covered by dynamic
-    for (const p of initialProducts) {
-      if (!seenIds.has(p.id)) {
-        seenIds.add(p.id);
-        merged.push(p);
-      }
-    }
-
-    return merged;
+    // Dynamic products override SSR initialProducts, strictly deduplicated by id, slug, and title
+    return mergeAndDeduplicateProducts(dynamicProducts, initialProducts);
   }, [dynamicProducts, initialProducts]);
 
   // URL query params

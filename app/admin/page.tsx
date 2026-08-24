@@ -35,7 +35,7 @@ import {
   X,
 } from 'lucide-react';
 
-import { getSiteSettings, GalleryItem } from '@/lib/siteSettings';
+import { getSiteSettings, GalleryItem, deduplicateProducts, mergeAndDeduplicateProducts } from '@/lib/siteSettings';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 const ADMIN_LOGIN = 'admin';
@@ -94,12 +94,9 @@ export default function AdminPage() {
   // Analytics (product_id -> { views, orders })
   const [analytics, setAnalytics] = useState<Record<string, { views: number; orders: number }>>({});
 
-  // All products for display (mock base + admin overrides)
+  // All products for display (mock base + admin overrides, strictly deduplicated)
   const allAdminProducts = React.useMemo(() => {
-    if (!products || products.length === 0) return MOCK_PRODUCTS;
-    const overrideIds = new Set(products.map((p) => p.id));
-    const baseMocks = MOCK_PRODUCTS.filter((p) => !overrideIds.has(p.id));
-    return [...products, ...baseMocks];
+    return mergeAndDeduplicateProducts(products, MOCK_PRODUCTS);
   }, [products]);
 
   // Filtered products (search)
@@ -372,17 +369,24 @@ export default function AdminPage() {
 
       // Only save non-mock products + overrides to localStorage
       const isMock = MOCK_PRODUCTS.some((m) => m.id === cleanedProduct.id);
-      const existsInDynamic = products.some((p) => p.id === cleanedProduct.id);
+      const existsInDynamic = products.some(
+        (p) => p.id === cleanedProduct.id || p.slug === cleanedProduct.slug || (p.title?.trim().toLowerCase() === cleanedProduct.title?.trim().toLowerCase())
+      );
 
       let updated: Product[];
       if (existsInDynamic) {
-        updated = products.map((p) => (p.id === cleanedProduct.id ? cleanedProduct : p));
+        updated = products.map((p) =>
+          p.id === cleanedProduct.id || p.slug === cleanedProduct.slug || (p.title?.trim().toLowerCase() === cleanedProduct.title?.trim().toLowerCase())
+            ? cleanedProduct
+            : p
+        );
       } else {
         // New product or first edit of a mock product — add to dynamic list
         updated = [cleanedProduct, ...products];
       }
 
-      await updateProducts(updated, cleanedProduct);
+      const dedupedUpdated = deduplicateProducts(updated);
+      await updateProducts(dedupedUpdated, cleanedProduct);
       setEditingProduct(null);
       setIsAddingNewProduct(false);
       const label = isMock ? '(оновлено з базового каталогу)' : '';

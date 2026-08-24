@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Product } from '@/types/database';
 import { ProductCard } from './ProductCard';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { mergeAndDeduplicateProducts } from '@/lib/siteSettings';
 
 interface HomeProductGridProps {
   initialProducts: Product[];
@@ -19,13 +20,8 @@ export function HomeProductGrid({
   const { products: dynamicProducts } = useSiteSettings();
 
   const displayProducts = useMemo(() => {
-    if (!dynamicProducts || dynamicProducts.length === 0) {
-      return initialProducts.slice(0, limit);
-    }
-
-    const overrideIds = new Set(dynamicProducts.map((p) => p.id));
-    const baseProducts = initialProducts.filter((p) => !overrideIds.has(p.id));
-    const merged = [...dynamicProducts, ...baseProducts];
+    // Dynamic products take priority, strictly deduplicated against initial SSR products
+    const merged = mergeAndDeduplicateProducts(dynamicProducts, initialProducts);
 
     const filtered = merged.filter((p) => {
       if (filterType === 'popular') return p.is_popular;

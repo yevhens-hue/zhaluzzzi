@@ -155,13 +155,50 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<boolean>
   return true;
 }
 
+export function deduplicateProducts(products: Product[]): Product[] {
+  if (!Array.isArray(products)) return [];
+  const result: Product[] = [];
+  const seenIds = new Set<string>();
+  const seenSlugs = new Set<string>();
+  const seenTitles = new Set<string>();
+
+  for (const p of products) {
+    if (!p) continue;
+    const id = String(p.id || '').trim();
+    const slug = String(p.slug || '').trim().toLowerCase();
+    const title = String(p.title || '').trim().toLowerCase();
+
+    // Check if already seen by id, slug, or normalized title (if > 2 chars)
+    if (id && seenIds.has(id)) continue;
+    if (slug && seenSlugs.has(slug)) continue;
+    if (title && title.length > 2 && seenTitles.has(title)) continue;
+
+    if (id) seenIds.add(id);
+    if (slug) seenSlugs.add(slug);
+    if (title && title.length > 2) seenTitles.add(title);
+
+    result.push(p);
+  }
+
+  return result;
+}
+
+export function mergeAndDeduplicateProducts(
+  primary: Product[] = [],
+  secondary: Product[] = []
+): Product[] {
+  const pList = Array.isArray(primary) ? primary : [];
+  const sList = Array.isArray(secondary) ? secondary : [];
+  return deduplicateProducts([...pList, ...sList]);
+}
+
 export function getDynamicProducts(): Product[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(PRODUCTS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? deduplicateProducts(parsed) : [];
   } catch {
     return [];
   }

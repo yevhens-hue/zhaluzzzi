@@ -52,9 +52,12 @@ export async function GET() {
 
     if (error) throw error;
 
-    // Merge: DB products first, then mocks not already in DB
+    // Merge: DB products first, then mocks not already in DB by slug or id
     const dbSlugs = new Set((data || []).map((p: Product) => p.slug));
-    const mocksOnly = MOCK_PRODUCTS.filter((m) => !dbSlugs.has(m.slug));
+    const dbIds = new Set((data || []).map((p: Product) => String(p.id)));
+    const mocksOnly = MOCK_PRODUCTS.filter(
+      (m) => !dbSlugs.has(m.slug) && !dbIds.has(String(m.id))
+    );
     return NextResponse.json({ products: [...(data || []), ...mocksOnly] });
   } catch (err) {
     console.error('[Admin Products GET]', err);
