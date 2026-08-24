@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CheckCircle2, PhoneCall, Ruler, Sparkles } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 export interface MessageItem {
   id: string;
@@ -14,11 +14,13 @@ export interface MessageItem {
 interface MessageBubbleProps {
   message: MessageItem;
   onQuickAction?: (text: string) => void;
+  isStreaming?: boolean;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
-  onQuickAction,
+  onQuickAction: _onQuickAction,
+  isStreaming = false,
 }) => {
   const isUser = message.role === 'user';
 
@@ -31,7 +33,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             : 'bg-white text-gray-800 border border-gray-100 rounded-bl-xs'
         }`}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        {/* Message text with streaming cursor */}
+        <p className="whitespace-pre-wrap">
+          {message.content}
+          {isStreaming && (
+            <span className="inline-block w-0.5 h-4 bg-blue-500 ml-0.5 animate-pulse align-text-bottom" />
+          )}
+        </p>
 
         {/* Lead submission confirmation card */}
         {message.isLeadSubmitted && (
@@ -41,7 +49,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         )}
       </div>
-      <span className="text-[10px] text-gray-400 mt-1 px-1">{message.timestamp}</span>
+      {!isStreaming && message.timestamp && (
+        <span className="text-[10px] text-gray-400 mt-1 px-1">{message.timestamp}</span>
+      )}
     </div>
   );
 };

@@ -22,10 +22,10 @@ export const AI_TOOLS = [
           orderType: {
             type: "string",
             enum: [
-              "measurement_visit", // Виїзд замірника зі зразками (під ключ)
-              "custom_manufacturing", // Виготовлення за розмірами клієнта (доставка)
-              "price_calculation", // Точний розрахунок вартості
-              "call_consultation" // Зворотній дзвінок / консультація
+              "measurement_visit",
+              "custom_manufacturing",
+              "price_calculation",
+              "call_consultation"
             ],
             description: "Тип замовлення: виїзд замірника зі зразками, виготовлення за розмірами, точний розрахунок або консультація"
           },
@@ -49,6 +49,96 @@ export const AI_TOOLS = [
         required: ["phone", "orderType"]
       }
     }
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "calculatePrice",
+      description: "Розраховує точну вартість рулонної штори або жалюзі за розмірами клієнта та типом системи. Виклич ЦЕЙ ІНСТРУМЕНТ, якщо клієнт повідомив ширину та висоту вікна/стулки в сантиметрах.",
+      parameters: {
+        type: "object",
+        properties: {
+          widthCm: {
+            type: "number",
+            description: "Ширина вікна/стулки в сантиметрах (наприклад 120)"
+          },
+          heightCm: {
+            type: "number",
+            description: "Висота вікна/стулки в сантиметрах (наприклад 160)"
+          },
+          systemType: {
+            type: "string",
+            enum: [
+              "open-system",
+              "closed-system",
+              "day-night",
+              "pleats",
+              "aluminum-horizontal",
+              "roman"
+            ],
+            description: "Тип системи для розрахунку: open-system (відкриті), closed-system (закриті Uni), day-night (День-Ніч), pleats (Плісе), aluminum-horizontal (Горизонтальні алюмінієві 25мм), roman (Римські)"
+          },
+          quantity: {
+            type: "number",
+            description: "Кількість однакових вікон/стулок (за замовчуванням 1)"
+          },
+          withLine: {
+            type: "boolean",
+            description: "Чи потрібна фіксація на лісці (+60 грн). За замовчуванням false."
+          }
+        },
+        required: ["widthCm", "heightCm"]
+      }
+    }
   }
 ];
 
+// Price calculation engine — mirrors ProductDetailView.tsx formula
+const SYSTEM_PRICE_MAP: Record<string, { pricePerSqm: number; basePrice: number }> = {
+  "open-system":        { pricePerSqm: 720,  basePrice: 349 },
+  "closed-system":      { pricePerSqm: 980,  basePrice: 520 },
+  "day-night":          { pricePerSqm: 1100, basePrice: 680 },
+  "pleats":             { pricePerSqm: 1350, basePrice: 790 },
+  "aluminum-horizontal":{ pricePerSqm: 850,  basePrice: 490 },
+  "roman":              { pricePerSqm: 1250, basePrice: 750 },
+};
+
+export function executeTool(name: string, args: Record<string, unknown>): string {
+  if (name === "calculatePrice") {
+    const w = Number(args.widthCm) || 100;
+    const h = Number(args.heightCm) || 150;
+    const sys = (args.systemType as string) || "open-system";
+    const qty = Number(args.quantity) || 1;
+    const withLine = Boolean(args.withLine);
+
+    const { pricePerSqm, basePrice } = SYSTEM_PRICE_MAP[sys] || SYSTEM_PRICE_MAP["open-system"];
+    const area = Math.max(0.5, (w * h) / 10000);
+    let unitPrice = Math.round(pricePerSqm * area);
+    if (withLine) unitPrice += 60;
+    unitPrice = Math.max(basePrice, unitPrice);
+    const totalPrice = unitPrice * qty;
+
+    const sysNames: Record<string, string> = {
+      "open-system": "Рулонні штори відкриті (Міні)",
+      "closed-system": "Рулонні штори закриті (Uni з направляючими)",
+      "day-night": "Штори День-Ніч (Зебра)",
+      "pleats": "Жалюзі Плісе",
+      "aluminum-horizontal": "Горизонтальні алюмінієві жалюзі 25мм",
+      "roman": "Римські штори",
+    };
+    const lineNote = withLine ? " + ліска" : "";
+    const qtyNote = qty > 1 ? ` × ${qty} шт.` : "";
+
+    return JSON.stringify({
+      ok: true,
+      systemName: sysNames[sys] || sys,
+      widthCm: w,
+      heightCm: h,
+      unitPrice,
+      totalPrice,
+      qty,
+      message: `💰 Розрахунок для ${sysNames[sys] || sys}${lineNote} (${w}×${h} см${qtyNote}):\n**${totalPrice.toLocaleString("uk-UA")} грн** (${qty > 1 ? `${unitPrice.toLocaleString("uk-UA")} грн × ${qty} шт.` : `за 1 шт.`})\n\n✅ Мінімальне замовлення — від ${basePrice.toLocaleString("uk-UA")} грн. Термін виготовлення: 1–3 робочих дні.\n\nЩоб замовити або уточнити — підкажіть ваш номер телефону та зручний час для дзвінка!`
+    });
+  }
+  return JSON.stringify({ ok: false, error: "Unknown tool" });
+}

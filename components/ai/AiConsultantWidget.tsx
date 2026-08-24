@@ -1,10 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useCity } from '@/context/CityContext';
 import { MessageBubble, MessageItem } from './MessageBubble';
-import { MessageSquare, X, Send, Bot, Sparkles, RotateCcw } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Sparkles, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
+// ─── Lead qualification progress steps ───────────────────────────────────────
+const LEAD_STEPS = ['Тип системи', 'Розміри', 'Місто', 'Телефон'];
+
+// Detect completed lead-qualification steps from conversation history
+function detectLeadProgress(messages: MessageItem[]): number {
+  const fullText = messages.map((m) => m.content).join(' ').toLowerCase();
+  let steps = 0;
+  if (fullText.match(/день.ніч|блекаут|рулонн|жалюзі|закрит|відкрит|плісе|римськ/)) steps++;
+  if (fullText.match(/\d{2,3}\s*[хx×]\s*\d{2,3}|ширин|висот|розмір/)) steps++;
+  if (fullText.match(/дніпр|київ|харків|одес|львів|запоріж|місто|район/)) steps++;
+  if (fullText.match(/\b0\d{9}\b|\+?380\d{9}|телефон|номер|задзвон/)) steps++;
+  return steps;
+}
+
+// ─── Quick prompts ────────────────────────────────────────────────────────────
 const QUICK_PROMPTS = [
   '📐 Як правильно заміряти вікно?',
   '☀️ Яка тканина краще від спеки?',
@@ -12,88 +28,128 @@ const QUICK_PROMPTS = [
   '🚗 Як викликати замірника зі зразками?',
 ];
 
+// ─── Fabric quick-pick chips (for visual selection) ───────────────────────────
+const FABRIC_CHIPS = [
+  { label: 'Блекаут 100%', emoji: '🌑', prompt: 'Хочу тканину Blackout 100% затемнення' },
+  { label: 'День-Ніч', emoji: '🌗', prompt: 'Розкажіть про штори День-Ніч' },
+  { label: 'Льон/Натуральна', emoji: '🌿', prompt: 'Цікавить льняна тканина для ролет' },
+  { label: 'Прозора', emoji: '☁️', prompt: 'Хочу прозору тканину, яка пропускає світло' },
+];
+
+// ─── Page context detection ───────────────────────────────────────────────────
+function usePageContext() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/product/')) {
+    return { page: 'product', productSlug: pathname.split('/product/')[1] };
+  }
+  if (pathname === '/catalog') return { page: 'catalog' };
+  if (pathname === '/checkout') return { page: 'checkout' };
+  return { page: 'home' };
+}
+
+// ─── Main widget ──────────────────────────────────────────────────────────────
 export const AiConsultantWidget: React.FC = () => {
   const { currentCity } = useCity();
+  const pageCtx = usePageContext();
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [streamingContent, setStreamingContent] = useState(''); // live streaming buffer
+  const [showFabrics, setShowFabrics] = useState(false);
+  const [autoTriggered, setAutoTriggered] = useState(false);
 
-  // 1. Load chat history from localStorage on initial render
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const triggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Build welcome message ─────────────────────────────────────────────────
+  const buildWelcomeMessage = useCallback(
+    (slug?: string): string => {
+      const welcomeCityText =
+        currentCity && currentCity !== 'Місто' ? `у місті ${currentCity}` : 'по всій Україні';
+      if (slug) {
+        return `Вітаю! 👋 Бачу, що вас цікавить цей товар. Хочете, я розрахую точну вартість під ваші вікна ${welcomeCityText}?`;
+      }
+      return `Вітаю! 👋 Я AI-консультант фабрики «Жалюзи». Допоможу обрати рулонні штори або жалюзі ${welcomeCityText}, підкажу як зробити точний замір або оформити безкоштовний виїзд майстра зі зразками! Чим можу допомогти?`;
+    },
+    [currentCity]
+  );
+
+  // ── Load / init chat history ──────────────────────────────────────────────
   useEffect(() => {
     try {
-      const savedHistory = localStorage.getItem('zhaluzi_ai_chat_history_v1');
-      if (savedHistory) {
-        const parsed = JSON.parse(savedHistory);
+      const saved = localStorage.getItem('zhaluzi_ai_chat_history_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved) as MessageItem[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           setMessages(parsed);
           return;
         }
       }
-    } catch (err) {
-      console.warn('Failed to parse chat history from localStorage:', err);
+    } catch {
+      // ignore
     }
-
-    const welcomeCityText =
-      currentCity && currentCity !== 'Місто'
-        ? `у місті ${currentCity}`
-        : 'по всій Україні';
 
     setMessages([
       {
         id: 'welcome-1',
         role: 'assistant',
-        content: `Вітаю! 👋 Я AI-консультант фабрики «Жалюзи». Допоможу обрати рулонні штори або жалюзі ${welcomeCityText}, підкажу як зробити точний замір або оформити безкоштовний виїзд майстра зі зразками! Чим можу допомогти?`,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+        content: buildWelcomeMessage(pageCtx.productSlug),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
-  }, [currentCity]);
+  }, [buildWelcomeMessage, pageCtx.productSlug]);
 
-  // 2. Persist chat history to localStorage whenever messages update
+  // ── Persist chat history ──────────────────────────────────────────────────
   useEffect(() => {
     if (messages.length > 0) {
       try {
         localStorage.setItem('zhaluzi_ai_chat_history_v1', JSON.stringify(messages));
-      } catch (err) {
-        console.warn('Failed to save chat history to localStorage:', err);
-      }
+      } catch { /* ignore */ }
     }
   }, [messages]);
 
-  // 3. Clear chat history handler
+  // ── Behavioral trigger: auto-open after 45 sec on product page ───────────
+  useEffect(() => {
+    if (pageCtx.page === 'product' && !autoTriggered && !isOpen) {
+      triggerTimerRef.current = setTimeout(() => {
+        setIsOpen(true);
+        setAutoTriggered(true);
+        setHasUnread(true);
+      }, 45000);
+    }
+    return () => {
+      if (triggerTimerRef.current) clearTimeout(triggerTimerRef.current);
+    };
+  }, [pageCtx.page, autoTriggered, isOpen]);
+
+  // ── Clear unread badge on open ────────────────────────────────────────────
+  useEffect(() => {
+    if (isOpen) {
+      setHasUnread(false);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen, messages]);
+
+  // ── Clear history ─────────────────────────────────────────────────────────
   const handleClearHistory = () => {
-    try {
-      localStorage.removeItem('zhaluzi_ai_chat_history_v1');
-    } catch (e) {}
-    const welcomeCityText =
-      currentCity && currentCity !== 'Місто'
-        ? `у місті ${currentCity}`
-        : 'по всій Україні';
+    try { localStorage.removeItem('zhaluzi_ai_chat_history_v1'); } catch { /* ignore */ }
     setMessages([
       {
         id: 'welcome-reset-' + Date.now(),
         role: 'assistant',
-        content: `Історію чату очищено. 👋 Чим можу допомогти ${welcomeCityText}?`,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+        content: buildWelcomeMessage(),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      setHasUnread(false);
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [isOpen, messages]);
-
+  // ── Send message with SSE streaming ──────────────────────────────────────
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
     if (!text || isLoading) return;
@@ -102,93 +158,123 @@ export const AiConsultantWidget: React.FC = () => {
       id: Date.now().toString(),
       role: 'user',
       content: text,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
+    setStreamingContent('');
+    setShowFabrics(false);
 
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: newMessages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          cityContext:
-            currentCity && currentCity !== 'Місто' ? currentCity : 'Україна',
+          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          cityContext: currentCity && currentCity !== 'Місто' ? currentCity : 'Україна',
+          pageContext: pageCtx,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
+      if (!response.ok) throw new Error('Failed to get response');
+      if (!response.body) throw new Error('No response body');
+
+      const reader = response.body.getReader();
+      const dec = new TextDecoder();
+      let accumulated = '';
+      let leadSubmitted = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const raw = dec.decode(value, { stream: true });
+        const lines = raw.split('\n');
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+
+            if (event.type === 'delta') {
+              accumulated += event.text;
+              setStreamingContent(accumulated);
+            } else if (event.type === 'done') {
+              leadSubmitted = event.leadSubmitted ?? false;
+            } else if (event.type === 'price_result') {
+              // Price was already streamed as text — nothing extra needed
+            }
+          } catch { /* ignore malformed lines */ }
+        }
       }
 
-      const data = await response.json();
-
+      // Commit streamed message into history
       const assistantMsg: MessageItem = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.content,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        isLeadSubmitted: data.leadSubmitted,
+        content: accumulated || "Дякуємо! Вашу заявку зафіксовано. Наш менеджер зв'яжеться з вами найближчим часом.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isLeadSubmitted: leadSubmitted,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
+      setStreamingContent('');
       if (!isOpen) setHasUnread(true);
-    } catch (err) {
-      console.error('Chat error:', err);
+
+      // Show fabric chips if context is about fabric selection
+      if (accumulated.toLowerCase().match(/тканин|блекаут|день.ніч|прозор|льон/)) {
+        setShowFabrics(true);
+      }
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content:
-            "Вибачте, виникла тимчасова помилка з'єднання. Ви можете зателефонувати нам або залишити номер у формі зворотного зв'язку!",
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
+          content: "Вибачте, виникла тимчасова помилка з'єднання. Ви можете зателефонувати нам або залишити номер у формі зворотного зв'язку!",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
+      setStreamingContent('');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const leadProgress = detectLeadProgress(messages);
+  const showLeadBar = messages.length >= 3 && leadProgress < 4;
+
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end font-sans">
-      {/* Chat Window */}
+      {/* ── Chat Window ───────────────────────────────────────────────────── */}
       {isOpen && (
-        <div className="mb-3 w-[92vw] sm:w-[390px] h-[530px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-chat-title"
+          className="mb-3 w-[92vw] sm:w-[390px] h-[560px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
+        >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-4 text-white flex items-center justify-between shadow-md">
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg backdrop-blur-sm border border-white/30">
-                  <Bot className="w-5 h-5 text-white" />
+                  <Bot className="w-5 h-5 text-white" aria-hidden="true" />
                 </div>
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full"></span>
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
               </div>
               <div>
-                <h3 className="font-bold text-sm leading-tight flex items-center gap-1.5">
+                <h3 id="ai-chat-title" className="font-bold text-sm leading-tight flex items-center gap-1.5">
                   <span>AI-Консультант</span>
                   <span className="text-[10px] bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> Oracle Certified
+                    <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" aria-hidden="true" /> Онлайн
                   </span>
                 </h3>
-                <p className="text-xs text-blue-100 flex items-center gap-1 mt-0.5">
-                  Онлайн {currentCity && currentCity !== 'Місто' ? `• ${currentCity}` : '• Україна'}
+                <p className="text-xs text-blue-100 mt-0.5">
+                  {currentCity && currentCity !== 'Місто' ? `• ${currentCity}` : '• Україна'}
                 </p>
               </div>
             </div>
@@ -196,7 +282,6 @@ export const AiConsultantWidget: React.FC = () => {
               <button
                 onClick={handleClearHistory}
                 className="p-2 rounded-full hover:bg-white/20 transition text-white/80 hover:text-white"
-                title="Очистити історію чату"
                 aria-label="Очистити історію чату"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -211,30 +296,90 @@ export const AiConsultantWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* Messages Body */}
+          {/* ── Lead Qualification Progress Bar ────────────────────────── */}
+          {showLeadBar && (
+            <div className="px-4 py-2.5 bg-blue-50 border-b border-blue-100">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Прогрес заявки</span>
+                <span className="text-[10px] font-bold text-blue-700">{leadProgress}/{LEAD_STEPS.length}</span>
+              </div>
+              <div className="flex gap-1">
+                {LEAD_STEPS.map((step, i) => (
+                  <div key={step} className="flex-1 flex flex-col items-center gap-0.5">
+                    <div
+                      className={`h-1.5 w-full rounded-full transition-all duration-300 ${
+                        i < leadProgress ? 'bg-blue-500' : 'bg-blue-100'
+                      }`}
+                    />
+                    <span
+                      className={`text-[9px] font-semibold leading-tight text-center ${
+                        i < leadProgress ? 'text-blue-600' : 'text-gray-400'
+                      }`}
+                    >
+                      {i < leadProgress ? <CheckCircle2 className="w-2.5 h-2.5 inline text-blue-500" /> : step}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Messages Body ─────────────────────────────────────────────── */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60">
             {messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                onQuickAction={handleSendMessage}
-              />
+              <MessageBubble key={msg.id} message={msg} onQuickAction={handleSendMessage} />
             ))}
 
-            {isLoading && (
+            {/* Streaming bubble */}
+            {streamingContent && (
+              <MessageBubble
+                message={{
+                  id: 'streaming',
+                  role: 'assistant',
+                  content: streamingContent,
+                  timestamp: '',
+                }}
+                onQuickAction={handleSendMessage}
+                isStreaming
+              />
+            )}
+
+            {/* Typing indicator (before first chunk arrives) */}
+            {isLoading && !streamingContent && (
               <div className="flex items-start space-x-2">
                 <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3 rounded-bl-none shadow-xs flex items-center space-x-1.5">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Prompts */}
-          {messages.length <= 2 && (
+          {/* ── Fabric Quick Picker ───────────────────────────────────────── */}
+          {showFabrics && (
+            <div className="px-3 py-2 bg-amber-50 border-t border-amber-100">
+              <p className="text-[10px] font-bold text-amber-700 mb-1.5 uppercase tracking-wide">🎨 Оберіть тканину:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {FABRIC_CHIPS.map((chip) => (
+                  <button
+                    key={chip.label}
+                    onClick={() => {
+                      setShowFabrics(false);
+                      handleSendMessage(chip.prompt);
+                    }}
+                    className="text-xs bg-white border border-amber-200 text-amber-800 px-2.5 py-1 rounded-full font-semibold hover:bg-amber-100 transition active:scale-95"
+                  >
+                    {chip.emoji} {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Quick Prompts ─────────────────────────────────────────────── */}
+          {messages.length <= 2 && !showFabrics && (
             <div className="p-2.5 bg-white border-t border-gray-100 flex gap-1.5 overflow-x-auto no-scrollbar">
               {QUICK_PROMPTS.map((prompt, idx) => (
                 <button
@@ -248,22 +393,21 @@ export const AiConsultantWidget: React.FC = () => {
             </div>
           )}
 
-          {/* Input Box */}
+          {/* ── Input Box ─────────────────────────────────────────────────── */}
           <div className="p-3 bg-white border-t border-gray-100">
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
+              onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
               className="flex items-center gap-2"
             >
               <input
+                ref={inputRef}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Запитайте про замір, штори чи ціну..."
-                className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900 font-medium"
+                className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900 font-medium"
                 disabled={isLoading}
+                aria-label="Введіть повідомлення AI-консультанту"
               />
               <button
                 type="submit"
@@ -278,27 +422,30 @@ export const AiConsultantWidget: React.FC = () => {
         </div>
       )}
 
-      {/* Floating AI Agent Teaser Pill */}
+      {/* ── Teaser pill (desktop only) ─────────────────────────────────────── */}
       {!isOpen && (
-        <div className="mb-2 hidden sm:flex items-center gap-2 bg-slate-900/90 text-white backdrop-blur-md border border-indigo-500/40 px-3.5 py-1.5 rounded-full shadow-lg text-xs font-medium animate-bounce duration-1000 cursor-pointer hover:bg-slate-900 transition-all"
-             onClick={() => setIsOpen(true)}>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+        <div
+          className="mb-2 hidden sm:flex items-center gap-2 bg-slate-900/90 text-white backdrop-blur-md border border-indigo-500/40 px-3.5 py-1.5 rounded-full shadow-lg text-xs font-medium cursor-pointer hover:bg-slate-900 transition-all"
+          onClick={() => setIsOpen(true)}
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" aria-hidden="true" />
           <span>✨ <b>AI-Консультант</b> • Замір за 10 сек</span>
         </div>
       )}
 
-      {/* Floating Holographic AI Toggle Button */}
+      {/* ── Toggle Button ─────────────────────────────────────────────────── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="h-13 px-4 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] hover:shadow-[0_0_35px_rgba(99,102,241,0.8)] flex items-center justify-center gap-2.5 transition-all duration-300 hover:scale-105 active:scale-95 group relative border border-white/20"
-        title="AI-Консультант (онлайн)"
-        aria-label="Відкрити онлайн AI-консультант"
+        aria-label={isOpen ? 'Закрити AI-консультант' : 'Відкрити онлайн AI-консультант'}
+        aria-expanded={isOpen}
+        aria-controls="ai-chat-title"
       >
-        <span className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full opacity-40 group-hover:opacity-80 blur-md transition duration-500 pointer-events-none animate-pulse"></span>
+        <span className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full opacity-40 group-hover:opacity-80 blur-md transition duration-500 pointer-events-none animate-pulse" />
 
         {hasUnread && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white rounded-full z-20"></span>
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white rounded-full z-20" aria-label="Нове повідомлення" />
         )}
 
         {isOpen ? (
@@ -309,8 +456,8 @@ export const AiConsultantWidget: React.FC = () => {
               <Sparkles className="w-4 h-4 text-amber-300 animate-spin [animation-duration:6s]" />
             </div>
             <span className="z-10 font-bold text-xs tracking-wide flex items-center gap-1.5">
-              <span>AI Эксперт</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>AI Eксперт</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
             </span>
           </>
         )}
