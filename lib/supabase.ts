@@ -157,6 +157,77 @@ function getProductsFallback(options?: {
   return list;
 }
 
+/**
+ * Generate a dynamic fallback product for custom or newly created admin slugs
+ */
+export function createFallbackProduct(slug: string): Product {
+  const isShtori = slug.includes('shtor') || slug.includes('den') || slug.includes('len');
+  const isZhaluzi = slug.includes('zhaluz') || slug.includes('derev') || slug.includes('alyum');
+  const isZakryta = slug.includes('zakryt') || slug.includes('uni') || slug.includes('kaseta');
+
+  const category_slug = isZakryta ? 'zakryta-sistema' : isZhaluzi ? 'zhaluzi' : isShtori ? 'shtori' : 'roleti';
+  const categoryTitle = isZakryta ? 'Закрита система' : isZhaluzi ? 'Жалюзі' : isShtori ? 'Рулонні штори' : 'Тканинні ролети';
+
+  const cleanTitle = slug
+    .replace(/^product-\d+/, 'Виріб за індивідуальними розмірами')
+    .replace(/_/g, ' ')
+    .replace(/-/g, ' ');
+
+  const title = cleanTitle.length > 3
+    ? cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1)
+    : `${categoryTitle} Дніпро`;
+
+  return {
+    id: slug,
+    slug: slug,
+    title: title,
+    sku: `ZR-${slug.slice(-6).toUpperCase()}`,
+    category_slug: category_slug,
+    subcategory_slug: 'rulonni',
+    base_price: 349,
+    old_price: 450,
+    price_unit: 'грн',
+    min_width: 20,
+    max_width: 240,
+    min_height: 30,
+    max_height: 300,
+    base_width: 50,
+    base_height: 150,
+    price_per_sqm: 480,
+    fabric: 'Преміум тканина',
+    texture: 'Без малюнка',
+    blackout_percent: 50,
+    color_name: 'Бежевий',
+    color_hex: '#D7BA9D',
+    available_colors: [
+      { id: 'c1', name: 'Бежевий', code: 'C-01', hex: '#D7BA9D', inStock: true, image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80' },
+      { id: 'c2', name: 'Графіт', code: 'C-02', hex: '#4A4C50', inStock: true, image: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80' },
+      { id: 'c3', name: 'Білий', code: 'C-03', hex: '#FFFFFF', inStock: true, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80' },
+    ],
+    main_image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+    ],
+    is_popular: true,
+    is_new: true,
+    is_offer_of_day: false,
+    in_stock: true,
+    rating: 5.0,
+    reviews_count: 14,
+    destinations: ['na-kuhnju', 'v-spalnju', 'v-gostinnuju', 'v-ofis'],
+    description: 'Виріб преміум-якості за індивідуальними розмірами у м. Дніпро. Безкоштовний замір та швидке виготовлення за 2-4 дні.',
+    characteristics: {
+      'Фактура': 'Без малюнка',
+      'Тканина': 'Преміум',
+      'Затемнення': '50%',
+      'Система': 'Відкрита Mini',
+      'Гарантія': '24 місяці',
+    },
+  };
+}
+
 import { cache } from 'react';
 
 /**
@@ -164,7 +235,7 @@ import { cache } from 'react';
  */
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   if (!supabase) {
-    return MOCK_PRODUCTS.find((p) => p.slug === slug) || null;
+    return MOCK_PRODUCTS.find((p) => p.slug === slug) || createFallbackProduct(slug);
   }
   try {
     const query = supabase
@@ -180,12 +251,12 @@ export const getProductBySlug = cache(async (slug: string): Promise<Product | nu
     const { data, error } = (await Promise.race([query, timeoutPromise])) as any;
 
     if (error || !data) {
-      return MOCK_PRODUCTS.find((p) => p.slug === slug) || null;
+      return MOCK_PRODUCTS.find((p) => p.slug === slug) || createFallbackProduct(slug);
     }
     return data as Product;
   } catch (err) {
     console.warn('Fallback product by slug due to error:', err);
-    return MOCK_PRODUCTS.find((p) => p.slug === slug) || null;
+    return MOCK_PRODUCTS.find((p) => p.slug === slug) || createFallbackProduct(slug);
   }
 });
 
