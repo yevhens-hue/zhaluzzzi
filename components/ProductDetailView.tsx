@@ -57,11 +57,18 @@ export function ProductDetailView({
     });
   }, [product.available_colors]);
 
-  // Gallery images
+  // Gallery images (filtering out invalid/test base64 uploads to guarantee clean product photos)
   const allImages = useMemo(() => {
-    return product.images && product.images.length > 0
+    const rawList = product.images && product.images.length > 0
       ? product.images
       : [product.main_image];
+
+    const valid = rawList.filter(
+      (img) => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/'))
+    );
+    return valid.length > 0
+      ? valid
+      : [product.main_image || 'https://manov.com.ua/image/cache/catalog/roller-blind/rb-len-7439-800x800.jpg'];
   }, [product]);
 
   const [activeImage, setActiveImage] = useState(allImages[0]);

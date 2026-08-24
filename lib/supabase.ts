@@ -177,6 +177,28 @@ export function createFallbackProduct(slug: string): Product {
     ? cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1)
     : `${categoryTitle} Дніпро`;
 
+  const fallbackImages = isZhaluzi
+    ? [
+        'https://manov.com.ua/image/cache/catalog/%20жалюзи%20/12%20Белые%20/900-318x480.jpg',
+        'https://manov.com.ua/image/cache/catalog/%20145254/%20жалюзи%2025мм/25mm%20Цвет%2025-318x480.jpg',
+      ]
+    : isZakryta
+    ? [
+        'https://manov.com.ua/image/cache/catalog/roller-blind/close-system/cs-rb-len-0881-318x480.jpg',
+        'https://manov.com.ua/image/cache/catalog/roller-blind/rb-len-7439-800x800.jpg',
+      ]
+    : isShtori
+    ? [
+        'https://manov.com.ua/image/cache/catalog/day-night/secret-208-dn-318x480.jpg',
+        'https://manov.com.ua/image/cache/catalog/day-night/akvarel-vn-1208-318x480.jpg',
+        'https://manov.com.ua/image/cache/catalog/blackout/roller-blind/rb-Umbra-BO-graphity-318x480.jpg',
+      ]
+    : [
+        'https://manov.com.ua/image/cache/catalog/roller-blind/rb-len-7439-800x800.jpg',
+        'https://manov.com.ua/image/cache/catalog/roller-blind/roller-blind-berlin-0842-318x480.jpg',
+        'https://manov.com.ua/image/cache/catalog/roller-blind/close-system/cs-rb-len-0881-318x480.jpg',
+      ];
+
   return {
     id: slug,
     slug: slug,
@@ -197,19 +219,15 @@ export function createFallbackProduct(slug: string): Product {
     fabric: 'Преміум тканина',
     texture: 'Без малюнка',
     blackout_percent: 50,
-    color_name: 'Бежевий',
-    color_hex: '#D7BA9D',
+    color_name: 'Коричневий',
+    color_hex: '#6A4E38',
     available_colors: [
-      { id: 'c1', name: 'Бежевий', code: 'C-01', hex: '#D7BA9D', inStock: true, image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80' },
-      { id: 'c2', name: 'Графіт', code: 'C-02', hex: '#4A4C50', inStock: true, image: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80' },
-      { id: 'c3', name: 'Білий', code: 'C-03', hex: '#FFFFFF', inStock: true, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80' },
+      { id: 'c1', name: 'Коричневий', code: 'C-01', hex: '#6A4E38', inStock: true, image: fallbackImages[0] },
+      { id: 'c2', name: 'Графіт', code: 'C-02', hex: '#4A4C50', inStock: true, image: fallbackImages[1] || fallbackImages[0] },
+      { id: 'c3', name: 'Бежевий', code: 'C-03', hex: '#D7BA9D', inStock: true, image: fallbackImages[2] || fallbackImages[0] },
     ],
-    main_image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-    ],
+    main_image: fallbackImages[0],
+    images: fallbackImages,
     is_popular: true,
     is_new: true,
     is_offer_of_day: false,
