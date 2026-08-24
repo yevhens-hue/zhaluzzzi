@@ -197,10 +197,19 @@ export async function saveDynamicProducts(
         }).catch((err) => console.warn('Supabase sync skipped (offline?):', err.message))
       )
     );
+
+    // 3. On-demand ISR: revalidate catalog pages immediately
+    //    Fire-and-forget — never blocks the save
+    fetch('/api/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET || 'reval_zhaluzi_2026_secret' }),
+    }).catch(() => null);
   }
 
   return true;
 }
+
 
 export function resetSiteSettingsToDefault(): void {
   if (typeof window !== 'undefined') {

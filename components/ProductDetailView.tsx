@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Product, ProductColor, Review } from '@/types/database';
@@ -9,7 +9,6 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
-import { addProductReview } from '@/lib/supabase';
 import {
   Star,
   Heart,
@@ -20,6 +19,7 @@ import {
   Minus,
   Send,
   Sparkles,
+  MessageCircle,
 } from 'lucide-react';
 
 interface ProductDetailViewProps {
@@ -36,7 +36,7 @@ export function ProductDetailView({
   const { addItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { t, tProdTitle, tColorName, tCharKey, tCharVal } = useLanguage();
-  const { products: dynamicProducts } = useSiteSettings();
+  const { products: dynamicProducts, settings } = useSiteSettings();
 
   const product = useMemo(() => {
     const found = dynamicProducts?.find(
@@ -44,6 +44,16 @@ export function ProductDetailView({
     );
     return found || initialProduct;
   }, [dynamicProducts, initialProduct]);
+
+  // Track product view — fire-and-forget, non-blocking
+  useEffect(() => {
+    fetch('/api/analytics/view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: product.id }),
+    }).catch(() => null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
 
   // Deduplicate available colors
   const uniqueColors = useMemo(() => {
@@ -138,13 +148,18 @@ export function ProductDetailView({
     e.preventDefault();
     if (!reviewName || !reviewComment) return;
 
-    await addProductReview({
-      product_id: product.id,
-      author_name: reviewName,
-      city: reviewCity || undefined,
-      rating: reviewRating,
-      comment: reviewComment,
-    });
+    // Use API route with service_role to bypass RLS restrictions
+    await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: product.id,
+        author_name: reviewName,
+        city: reviewCity || null,
+        rating: reviewRating,
+        comment: reviewComment,
+      }),
+    }).catch(() => null);
 
     const newReviewObj: Review = {
       id: Date.now().toString(),
@@ -486,6 +501,28 @@ export function ProductDetailView({
                 {t('Купити в 1 клік', 'Купить в 1 клик')}
               </button>
             </div>
+
+            {/* WhatsApp Quick Order */}
+            {(() => {
+              const rawPhone = settings?.contacts?.phone1 || '+380939128531';
+              const waPhone = rawPhone.replace(/[^0-9]/g, '');
+              const productUrl = typeof window !== 'undefined' ? window.location.href : '';
+              const msg = encodeURIComponent(
+                `Привіт! Хочу замовити:\n📦 ${product.title}\n💰 ${totalPrice.toLocaleString('uk-UA')} грн\n📐 ${width}×${height} см\n🔗 ${productUrl}`
+              );
+              const waUrl = `https://wa.me/${waPhone}?text=${msg}`;
+              return (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] hover:bg-[#20c05b] text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-95"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  {t('Замовити у WhatsApp', 'Заказать в WhatsApp')}
+                </a>
+              );
+            })()}
           </div>
         </div>
       </div>

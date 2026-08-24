@@ -157,46 +157,32 @@ export default function AdminPage() {
     setGalleryForm(settings.gallery || []);
   }, [settings]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanLogin = normalizeInput(loginInput).toLowerCase();
-    const cleanPass = normalizeInput(passwordInput);
+    setAuthError('');
+    const login = normalizeInput(loginInput).toLowerCase();
+    const password = normalizeInput(passwordInput);
 
-    const validLogins = [
-      ADMIN_LOGIN.toLowerCase(),
-      'admin',
-      'administrator',
-      'адмін',
-      'админ',
-      (process.env.NEXT_PUBLIC_ADMIN_LOGIN || '').toLowerCase(),
-    ].filter(Boolean);
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login, password }),
+      });
 
-    const validPasswords = [
-      ADMIN_PASS,
-      'Dnipro2026!',
-      'dnipro2026!',
-      'Dnipro2026',
-      'dnipro2026',
-      'дніпро2026!',
-      'дніпро2026',
-      process.env.NEXT_PUBLIC_ADMIN_PASS || '',
-    ].filter(Boolean);
-
-    const isLoginValid = validLogins.includes(cleanLogin);
-    const isPassValid =
-      validPasswords.includes(cleanPass) ||
-      validPasswords.includes(passwordInput.trim());
-
-    if (isLoginValid && isPassValid) {
-      setIsAuthenticated(true);
-      setAuthError('');
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(SESSION_AUTH_KEY, 'true');
-        localStorage.setItem(SESSION_AUTH_KEY, 'true');
+      if (res.ok) {
+        setIsAuthenticated(true);
+        setAuthError('');
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(SESSION_AUTH_KEY, 'true');
+        }
+        loadData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setAuthError(data.error || 'Невірний логін або пароль адміністратора.');
       }
-      loadData();
-    } else {
-      setAuthError('Невірний логін або пароль адміністратора.');
+    } catch {
+      setAuthError('Помилка підключення. Спробуйте ще раз.');
     }
   };
 
@@ -206,10 +192,11 @@ export default function AdminPage() {
     setPasswordInput('');
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(SESSION_AUTH_KEY);
-      localStorage.removeItem(SESSION_AUTH_KEY);
-      localStorage.removeItem('app_admin_authenticated');
     }
+    // Clear server-side httpOnly cookie
+    fetch('/api/admin/auth', { method: 'DELETE' }).catch(() => null);
   };
+
 
   const loadData = async () => {
     setIsLoading(true);
