@@ -261,6 +261,29 @@ export default function AdminPage() {
     showNotification('Фотогалерею реалізованих проєктів успішно оновлено!');
   };
 
+  // Compress a base64 image to JPEG max 800px wide at 0.75 quality
+  const compressBase64Image = (base64: string, maxWidth = 800, quality = 0.75): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64.startsWith('data:image')) {
+        resolve(base64);
+        return;
+      }
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(base64); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(base64);
+      img.src = base64;
+    });
+  };
+
   const generateSlugFromTitle = (title: string, id: string): string => {
     if (!title) return `product_${id}`;
     const translitMap: Record<string, string> = {
@@ -277,26 +300,69 @@ export default function AdminPage() {
 
   // Save / Update a Product
   const handleSaveProduct = async (productToSave: Product) => {
-    const slug = generateSlugFromTitle(productToSave.title, productToSave.id);
-    const cleanedProduct: Product = {
-      ...productToSave,
-      slug: slug,
-      images: Array.isArray(productToSave.images) && productToSave.images.length > 0
-        ? productToSave.images
-        : [productToSave.main_image],
-    };
-
-    let updated: Product[];
-    const exists = products.some((p) => p.id === cleanedProduct.id);
-    if (exists) {
-      updated = products.map((p) => (p.id === cleanedProduct.id ? cleanedProduct : p));
-    } else {
-      updated = [cleanedProduct, ...products];
+    // Validation
+    if (!productToSave.title?.trim()) {
+      showNotification('❌ Помилка: заповніть назву товару!');
+      return;
     }
-    await updateProducts(updated);
-    setEditingProduct(null);
-    setIsAddingNewProduct(false);
-    showNotification(`Товар "${cleanedProduct.title}" успішно збережено!`);
+    if (!productToSave.base_price || productToSave.base_price <= 0) {
+      showNotification('❌ Помилка: вкажіть коректну ціну товару!');
+      return;
+    }
+    if (!productToSave.main_image?.trim()) {
+      showNotification('❌ Помилка: додайте головне фото товару!');
+      return;
+    }
+
+    showNotification('⏳ Зберігаємо товар...');
+
+    try {
+      // Compress base64 images to avoid localStorage overflow
+      let compressedMainImage = productToSave.main_image;
+      if (productToSave.main_image.startsWith('data:image')) {
+        compressedMainImage = await compressBase64Image(productToSave.main_image);
+      }
+
+      const compressedGallery = await Promise.all(
+        (productToSave.images || []).map((img) =>
+          img.startsWith('data:image') ? compressBase64Image(img) : Promise.resolve(img)
+        )
+      );
+
+      const slug = generateSlugFromTitle(productToSave.title, productToSave.id);
+      const cleanedProduct: Product = {
+        ...productToSave,
+        slug,
+        main_image: compressedMainImage,
+        images: compressedGallery.length > 0 ? compressedGallery : [compressedMainImage],
+        characteristics: {
+          fabric: productToSave.characteristics?.fabric || productToSave.characteristics?.material || 'Поліестер',
+          texture: productToSave.texture || productToSave.characteristics?.texture || 'Однотонний',
+          color: productToSave.characteristics?.color || '',
+          blackout: productToSave.blackout_percent ? `${productToSave.blackout_percent}%` : '70%',
+          system: productToSave.characteristics?.system || 'Стандарт',
+          manufacturer: productToSave.characteristics?.manufacturer || productToSave.characteristics?.country || 'Україна',
+          warranty: productToSave.characteristics?.warranty || '24 місяці',
+          ...productToSave.characteristics,
+        },
+      };
+
+      let updated: Product[];
+      const exists = products.some((p) => p.id === cleanedProduct.id);
+      if (exists) {
+        updated = products.map((p) => (p.id === cleanedProduct.id ? cleanedProduct : p));
+      } else {
+        updated = [cleanedProduct, ...products];
+      }
+
+      await updateProducts(updated);
+      setEditingProduct(null);
+      setIsAddingNewProduct(false);
+      showNotification(`✅ Товар "${cleanedProduct.title}" успішно збережено!`);
+    } catch (err) {
+      console.error('handleSaveProduct error:', err);
+      showNotification('❌ Помилка збереження! Можливо, фото надто велике. Спробуйте вказати URL замість завантаження файлу.');
+    }
   };
 
   // Delete a Product
@@ -957,16 +1023,19 @@ export default function AdminPage() {
                             type="file"
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
+                                // Limit to 10MB
+                                if (file.size > 10 * 1024 * 1024) {
+                                  showNotification('❌ Файл надто великий! Максимум 10 МБ.');
+                                  return;
+                                }
                                 const reader = new FileReader();
-                                reader.onload = (ev) => {
+                                reader.onload = async (ev) => {
                                   if (ev.target?.result) {
-                                    setEditingProduct({
-                                      ...editingProduct,
-                                      main_image: ev.target.result as string,
-                                    });
+                                    const compressed = await compressBase64Image(ev.target.result as string);
+                                    setEditingProduct((prev) => prev ? { ...prev, main_image: compressed } : prev);
                                   }
                                 };
                                 reader.readAsDataURL(file);
@@ -1010,24 +1079,28 @@ export default function AdminPage() {
                         accept="image/*"
                         multiple
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const files = Array.from(e.target.files || []);
-                          files.forEach((file) => {
+                          for (const file of files) {
+                            if (file.size > 10 * 1024 * 1024) {
+                              showNotification('❌ Файл надто великий! Максимум 10 МБ.');
+                              continue;
+                            }
                             const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              if (ev.target?.result) {
-                                setEditingProduct((prev) => {
-                                  if (!prev) return prev;
-                                  const currentImgs = prev.images || [];
-                                  return {
-                                    ...prev,
-                                    images: [...currentImgs, ev.target!.result as string],
-                                  };
-                                });
-                              }
-                            };
-                            reader.readAsDataURL(file);
-                          });
+                            await new Promise<void>((res) => {
+                              reader.onload = async (ev) => {
+                                if (ev.target?.result) {
+                                  const compressed = await compressBase64Image(ev.target.result as string);
+                                  setEditingProduct((prev) => {
+                                    if (!prev) return prev;
+                                    return { ...prev, images: [...(prev.images || []), compressed] };
+                                  });
+                                }
+                                res();
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                          }
                         }}
                       />
                     </label>

@@ -169,7 +169,12 @@ export function getDynamicProducts(): Product[] {
 
 export async function saveDynamicProducts(products: Product[]): Promise<boolean> {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    try {
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    } catch (storageError) {
+      console.error('localStorage quota exceeded when saving products:', storageError);
+      throw new Error('localStorage_quota_exceeded');
+    }
     window.dispatchEvent(new Event('site_products_updated'));
   }
 
@@ -179,7 +184,7 @@ export async function saveDynamicProducts(products: Product[]): Promise<boolean>
     try {
       await supabase.from('products').upsert(products);
     } catch {
-      // Continue
+      // Continue even if Supabase is unavailable
     }
   }
 
