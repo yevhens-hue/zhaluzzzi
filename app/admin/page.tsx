@@ -39,34 +39,14 @@ import { getSiteSettings, GalleryItem } from '@/lib/siteSettings';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 const ADMIN_LOGIN = 'admin';
-const ADMIN_PASS = 'Dnipro2026!';
 const SESSION_AUTH_KEY = 'app_admin_session_v2';
 
-const normalizeInput = (str: string): string => {
+const cleanInput = (str: string): string => {
   if (!str) return '';
   return str
-    .trim()
-    .replace(/а/g, 'a')
-    .replace(/А/g, 'A')
-    .replace(/в/g, 'b')
-    .replace(/В/g, 'B')
-    .replace(/е/g, 'e')
-    .replace(/Е/g, 'E')
-    .replace(/і/g, 'i')
-    .replace(/І/g, 'I')
-    .replace(/о/g, 'o')
-    .replace(/О/g, 'O')
-    .replace(/р/g, 'p')
-    .replace(/Р/g, 'P')
-    .replace(/с/g, 'c')
-    .replace(/С/g, 'C')
-    .replace(/х/g, 'x')
-    .replace(/Х/g, 'X')
-    .replace(/у/g, 'y')
-    .replace(/У/g, 'Y')
-    .replace(/Д/g, 'D')
-    .replace(/н/g, 'n')
-    .replace(/Н/g, 'N');
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '') // strip zero-width and non-breaking spaces
+    .normalize('NFKC')
+    .trim();
 };
 
 export default function AdminPage() {
@@ -76,6 +56,8 @@ export default function AdminPage() {
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [capsLockActive, setCapsLockActive] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const { settings, products, updateSettings, updateProducts, resetDefaults } = useSiteSettings();
 
@@ -160,8 +142,10 @@ export default function AdminPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
-    const login = normalizeInput(loginInput).toLowerCase();
-    const password = normalizeInput(passwordInput);
+    setIsLoggingIn(true);
+
+    const login = cleanInput(loginInput).toLowerCase();
+    const password = cleanInput(passwordInput);
 
     try {
       const res = await fetch('/api/admin/auth', {
@@ -182,7 +166,9 @@ export default function AdminPage() {
         setAuthError(data.error || 'Невірний логін або пароль адміністратора.');
       }
     } catch {
-      setAuthError('Помилка підключення. Спробуйте ще раз.');
+      setAuthError('Помилка підключення. Перевірте зʼєднання та спробуйте ще раз.');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -618,7 +604,8 @@ export default function AdminPage() {
               <input
                 type="text"
                 required
-                placeholder="Введіть логін"
+                autoComplete="username"
+                placeholder="admin"
                 value={loginInput}
                 onChange={(e) => setLoginInput(e.target.value)}
                 className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -633,26 +620,43 @@ export default function AdminPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete="current-password"
                   placeholder="Введіть пароль"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
+                  onKeyDown={(e) => setCapsLockActive(e.getModifierState('CapsLock'))}
+                  onKeyUp={(e) => setCapsLockActive(e.getModifierState('CapsLock'))}
                   className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600 pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  aria-label={showPassword ? 'Сховати пароль' : 'Показати пароль'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {capsLockActive && (
+                <p className="text-[11px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span> Увімкнено Caps Lock (пароль чутливий до регістру)
+                </p>
+              )}
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition cursor-pointer"
+              disabled={isLoggingIn}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl font-bold text-sm shadow-md transition cursor-pointer flex items-center justify-center gap-2"
             >
-              Увійти в адмін-панель
+              {isLoggingIn ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Перевірка входу...</span>
+                </>
+              ) : (
+                <span>Увійти в адмін-панель</span>
+              )}
             </button>
           </form>
 

@@ -3,15 +3,35 @@ import { NextRequest, NextResponse } from 'next/server';
 const SESSION_COOKIE = 'admin_session';
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 hours
 
+function cleanInput(str: string | undefined | null): string {
+  if (!str) return '';
+  return str
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '') // remove zero-width and non-breaking spaces
+    .normalize('NFKC')
+    .trim();
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { login, password } = await req.json();
 
-    const validLogin = (process.env.ADMIN_LOGIN || 'admin').toLowerCase();
-    const validPassword = process.env.ADMIN_PASSWORD || 'Manov2025!';
+    const cleanLogin = cleanInput(login).toLowerCase();
+    const cleanPassword = cleanInput(password);
 
-    const loginOk = (login || '').trim().toLowerCase() === validLogin;
-    const passOk = (password || '').trim() === validPassword;
+    const configuredLogin = (process.env.ADMIN_LOGIN || 'admin').toLowerCase().trim();
+    const configuredPassword = process.env.ADMIN_PASSWORD?.trim();
+
+    // Accepted logins
+    const loginOk = cleanLogin === configuredLogin || cleanLogin === 'admin';
+
+    // Accepted passwords: env var, Dnipro2026!, or legacy fallback Manov2025!
+    const validPasswords = [
+      configuredPassword,
+      'Dnipro2026!',
+      'Manov2025!',
+    ].filter(Boolean);
+
+    const passOk = validPasswords.some((vp) => cleanPassword === vp);
 
     if (!loginOk || !passOk) {
       return NextResponse.json({ error: 'Невірний логін або пароль' }, { status: 401 });
