@@ -157,19 +157,27 @@ function getProductsFallback(options?: {
   return list;
 }
 
+import { cache } from 'react';
+
 /**
- * Get product by slug
+ * Get product by slug (cached per request)
  */
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   if (!supabase) {
     return MOCK_PRODUCTS.find((p) => p.slug === slug) || null;
   }
   try {
-    const { data, error } = await supabase
+    const query = supabase
       .from('products')
       .select('*')
       .eq('slug', slug)
       .single();
+
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: new Error('Supabase request timeout') }), 2500)
+    );
+
+    const { data, error } = (await Promise.race([query, timeoutPromise])) as any;
 
     if (error || !data) {
       return MOCK_PRODUCTS.find((p) => p.slug === slug) || null;
@@ -179,7 +187,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     console.warn('Fallback product by slug due to error:', err);
     return MOCK_PRODUCTS.find((p) => p.slug === slug) || null;
   }
-}
+});
 
 import { validateAndNormalizeUaPhone } from './phoneValidator';
 import { sendOrderNotification, sendLeadNotification } from './notifications';
@@ -329,18 +337,24 @@ export async function createLead(lead: Lead): Promise<{ success: boolean; error?
 }
 
 /**
- * Get reviews for product
+ * Get reviews for product (cached per request)
  */
-export async function getProductReviews(productId: string): Promise<Review[]> {
+export const getProductReviews = cache(async (productId: string): Promise<Review[]> => {
   if (!supabase) {
     return MOCK_REVIEWS.filter((r) => r.product_id === productId);
   }
   try {
-    const { data, error } = await supabase
+    const query = supabase
       .from('reviews')
       .select('*')
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
+
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: new Error('Supabase request timeout') }), 2500)
+    );
+
+    const { data, error } = (await Promise.race([query, timeoutPromise])) as any;
 
     if (error || !data || data.length === 0) {
       return MOCK_REVIEWS.filter((r) => r.product_id === productId);
@@ -349,7 +363,7 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
   } catch (err) {
     return MOCK_REVIEWS.filter((r) => r.product_id === productId);
   }
-}
+});
 
 /**
  * Submit review
