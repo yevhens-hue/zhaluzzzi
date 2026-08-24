@@ -6,6 +6,37 @@ import { MessageBubble, MessageItem } from './MessageBubble';
 import { MessageSquare, X, Send, Bot, Sparkles, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
+// ─── FAQ In-memory cache (avoid repeated API calls for common questions) ────
+const FAQ_CACHE = new Map<string, { answer: string; ts: number }>();
+const FAQ_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+const FAQ_PATTERNS: Array<{ re: RegExp; answer: string }> = [
+  {
+    re: /як.{0,10}заміряти|як.{0,10}міряти|замір.{0,10}вікн|инструкц.{0,10}замір/i,
+    answer: '📐 **Як заміряти вікно:**\n1. Використовуйте металеву рулетку (не швейний сантиметр).\n2. Виміряйте ширину по стиках штапика з рамою з обох боків (скло + штапик).\n3. Висота — від верху до низу всієї стулки.\n4. Додайте 10-20 мм запасу до ширини для відкритих систем.\n\nПідкажіть ваші розміри — порахую точну вартість!',
+  },
+  {
+    re: /гарантія|гарантия/i,
+    answer: '✅ **Гарантія:** 12–24 місяці на механізми та фурнітуру. Виробничий шлюб замінюємо безкоштовно протягом усього гарантійного строку.',
+  },
+  {
+    re: /доставк|відправк|нова пошт|нп/i,
+    answer: '🚚 **Доставка:** Нова Пошта по всій Україні. Відправляємо за 1-3 робочих дні після виготовлення. Оплата при отриманні (накладений платіж) або онлайн карткою.',
+  },
+];
+
+function getCachedFaq(text: string): string | null {
+  const key = text.trim().toLowerCase();
+  for (const { re, answer } of FAQ_PATTERNS) {
+    if (re.test(key)) {
+      const cached = FAQ_CACHE.get(answer);
+      if (cached && Date.now() - cached.ts < FAQ_TTL_MS) return cached.answer;
+      FAQ_CACHE.set(answer, { answer, ts: Date.now() });
+      return answer;
+    }
+  }
+  return null;
+}
+
 // ─── Lead qualification progress steps ───────────────────────────────────────
 const LEAD_STEPS = ['Тип системи', 'Розміри', 'Місто', 'Телефон'];
 
@@ -136,7 +167,22 @@ export const AiConsultantWidget: React.FC = () => {
     }
   }, [isOpen, messages]);
 
+  // ── Listen for Cart → AI prefill event (Cart → Chat bridge) ───────────
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { prompt } = (e as CustomEvent<{ prompt: string }>).detail;
+      if (prompt) {
+        setIsOpen(true);
+        setInputValue(prompt);
+        setTimeout(() => inputRef.current?.focus(), 150);
+      }
+    };
+    window.addEventListener('ai-chat-prefill', handler);
+    return () => window.removeEventListener('ai-chat-prefill', handler);
+  }, []);
+
   // ── Clear history ─────────────────────────────────────────────────────────
+
   const handleClearHistory = () => {
     try { localStorage.removeItem('zhaluzi_ai_chat_history_v1'); } catch { /* ignore */ }
     setMessages([
@@ -149,7 +195,7 @@ export const AiConsultantWidget: React.FC = () => {
     ]);
   };
 
-  // ── Send message with SSE streaming ──────────────────────────────────────
+  // ── Send message with SSE streaming + FAQ cache ───────────────────────
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
     if (!text || isLoading) return;
@@ -167,6 +213,24 @@ export const AiConsultantWidget: React.FC = () => {
     setIsLoading(true);
     setStreamingContent('');
     setShowFabrics(false);
+
+    // ── Check FAQ cache first ───────────────────────────────────────────
+    const faqHit = getCachedFaq(text);
+    if (faqHit) {
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant' as const,
+            content: faqHit,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+        setIsLoading(false);
+      }, 120); // short delay for UX realism
+      return;
+    }
 
     try {
       const response = await fetch('/api/chat', {

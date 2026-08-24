@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Truck } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Truck, Bot } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -187,6 +187,25 @@ export function CartDrawer() {
                 <span>{t('Оформити замовлення', 'Оформить заказ')}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
+
+              {/* Chat-to-cart: send cart to AI consultant */}
+              <button
+                onClick={() => {
+                  closeCart();
+                  // Build a compact summary of cart items for the AI chat
+                  const cartSummary = items
+                    .map((item) => `• ${item.title} — ${item.width}×${item.height} см, ${item.totalPrice.toLocaleString('uk-UA')} грн`)
+                    .join('\n');
+                  const prompt = `Мій кошик:\n${cartSummary}\n\nЗагальна сума: ${totalAmount.toLocaleString('uk-UA')} грн. Допоможіть оформити замовлення!`;
+                  // Dispatch custom event to trigger chat with pre-filled message
+                  window.dispatchEvent(new CustomEvent('ai-chat-prefill', { detail: { prompt } }));
+                }}
+                className="w-full py-2.5 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 border border-blue-200 transition active:scale-98"
+                aria-label="Надіслати вміст кошика AI-консультанту"
+              >
+                <Bot className="w-3.5 h-3.5" />
+                {t('Запитати AI про замовлення', 'Спросить AI о заказе')}
+              </button>
 
               {/* Continue shopping */}
               <button
