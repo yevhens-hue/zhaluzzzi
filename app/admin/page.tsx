@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 
 import { getSiteSettings, GalleryItem } from '@/lib/siteSettings';
+import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 const ADMIN_LOGIN = 'admin';
 const ADMIN_PASS = 'Dnipro2026!';
@@ -95,6 +96,15 @@ export default function AdminPage() {
   // Product editing modal / inline state
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNewProduct, setIsAddingNewProduct] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // All products for display (mock base + admin overrides)
+  const allAdminProducts = React.useMemo(() => {
+    if (!products || products.length === 0) return MOCK_PRODUCTS;
+    const overrideIds = new Set(products.map((p) => p.id));
+    const baseMocks = MOCK_PRODUCTS.filter((p) => !overrideIds.has(p.id));
+    return [...products, ...baseMocks];
+  }, [products]);
 
   // Logs filters
   const [logFilter, setLogFilter] = useState<'ALL' | 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'>('ALL');
@@ -314,6 +324,7 @@ export default function AdminPage() {
       return;
     }
 
+    setIsSaving(true);
     showNotification('⏳ Зберігаємо товар...');
 
     try {
@@ -347,21 +358,28 @@ export default function AdminPage() {
         },
       };
 
+      // Only save non-mock products + overrides to localStorage
+      const isMock = MOCK_PRODUCTS.some((m) => m.id === cleanedProduct.id);
+      const existsInDynamic = products.some((p) => p.id === cleanedProduct.id);
+
       let updated: Product[];
-      const exists = products.some((p) => p.id === cleanedProduct.id);
-      if (exists) {
+      if (existsInDynamic) {
         updated = products.map((p) => (p.id === cleanedProduct.id ? cleanedProduct : p));
       } else {
+        // New product or first edit of a mock product — add to dynamic list
         updated = [cleanedProduct, ...products];
       }
 
       await updateProducts(updated);
       setEditingProduct(null);
       setIsAddingNewProduct(false);
-      showNotification(`✅ Товар "${cleanedProduct.title}" успішно збережено!`);
+      const label = isMock ? '(оновлено з базового каталогу)' : '';
+      showNotification(`✅ Товар "${cleanedProduct.title}" збережено! ${label}`);
     } catch (err) {
       console.error('handleSaveProduct error:', err);
-      showNotification('❌ Помилка збереження! Можливо, фото надто велике. Спробуйте вказати URL замість завантаження файлу.');
+      showNotification('❌ Помилка збереження! Спробуйте вказати URL-посилання на фото замість завантаження файлу.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -853,7 +871,13 @@ export default function AdminPage() {
                     value={editingProduct.title}
                     onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value })}
                     className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
+                    placeholder="Рулонні штори Блекаут Антрацит"
                   />
+                  {editingProduct.title?.trim() && (
+                    <div className="mt-1 text-[11px] text-gray-400 font-mono">
+                      🔗 URL: /product/{generateSlugFromTitle(editingProduct.title, editingProduct.id)}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1169,74 +1193,101 @@ export default function AdminPage() {
 
                 <button
                   type="button"
+                  disabled={isSaving}
                   onClick={() => handleSaveProduct(editingProduct)}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-wait text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>Зберегти товар</span>
+                  {isSaving ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                      <span>Зберігаємо...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>{isAddingNewProduct ? 'Створити картку товару' : 'Зберегти зміни'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Products List Table / Cards */}
+          {/* Products List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {products.map((p) => (
-              <div
-                key={p.id}
-                className="bg-white rounded-2xl p-4 border border-gray-200/80 shadow-xs flex flex-col justify-between space-y-3"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={p.main_image}
-                      alt={p.title}
-                      className="w-14 h-14 object-cover rounded-xl border border-gray-100 shrink-0"
-                    />
-                    <div>
-                      <span className="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-                        {p.category_slug}
-                      </span>
-                      <h4 className="font-bold text-gray-900 text-xs mt-1 line-clamp-1">{p.title}</h4>
-                      <div className="flex items-baseline gap-2 mt-0.5">
-                        <span className="font-black text-sm text-gray-900">{p.base_price} грн</span>
-                        {p.old_price && (
-                          <span className="text-[11px] text-gray-400 line-through">{p.old_price} грн</span>
-                        )}
+            {allAdminProducts.map((p) => {
+              const isCustom = products.some((d) => d.id === p.id);
+              return (
+                <div
+                  key={p.id}
+                  className={`bg-white rounded-2xl p-4 border shadow-xs flex flex-col justify-between space-y-3 ${
+                    isCustom ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-200/80'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={p.main_image}
+                        alt={p.title}
+                        className="w-14 h-14 object-cover rounded-xl border border-gray-100 shrink-0"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                            {p.category_slug}
+                          </span>
+                          {isCustom && (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                              ✏️ Ваш товар
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-bold text-gray-900 text-xs mt-1 line-clamp-1">{p.title}</h4>
+                        <div className="flex items-baseline gap-2 mt-0.5">
+                          <span className="font-black text-sm text-gray-900">{p.base_price} грн</span>
+                          {p.old_price && (
+                            <span className="text-[11px] text-gray-400 line-through">{p.old_price} грн</span>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    <p className="text-[11px] text-gray-500 line-clamp-2">{p.description}</p>
                   </div>
 
-                  <p className="text-[11px] text-gray-500 line-clamp-2">{p.description}</p>
-                </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
+                    <span className={`text-[11px] font-bold ${p.in_stock ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {p.in_stock ? '● В наявності' : '○ Під замовлення'}
+                    </span>
 
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
-                  <span className={`text-[11px] font-bold ${p.in_stock ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {p.in_stock ? '● В наявності' : '○ Під замовлення'}
-                  </span>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingProduct(p);
-                        setIsAddingNewProduct(false);
-                      }}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                      title="Редагувати"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(p.id)}
-                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
-                      title="Видалити"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingProduct(p);
+                          setIsAddingNewProduct(false);
+                        }}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        title="Редагувати"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      {isCustom && (
+                        <button
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
+                          title="Видалити"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

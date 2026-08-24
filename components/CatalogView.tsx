@@ -26,7 +26,11 @@ export function CatalogView({
   const { products: dynamicProducts } = useSiteSettings();
 
   const allProducts = useMemo(() => {
-    return dynamicProducts && dynamicProducts.length > 0 ? dynamicProducts : initialProducts;
+    if (!dynamicProducts || dynamicProducts.length === 0) return initialProducts;
+    // Dynamic products override mock products with same ID, and appear first
+    const overrideIds = new Set(dynamicProducts.map((p) => p.id));
+    const baseProducts = initialProducts.filter((p) => !overrideIds.has(p.id));
+    return [...dynamicProducts, ...baseProducts];
   }, [dynamicProducts, initialProducts]);
 
   // URL query params

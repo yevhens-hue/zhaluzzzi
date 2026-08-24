@@ -156,14 +156,14 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<boolean>
 }
 
 export function getDynamicProducts(): Product[] {
-  if (typeof window === 'undefined') return MOCK_PRODUCTS;
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(PRODUCTS_KEY);
-    if (!raw) return MOCK_PRODUCTS;
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : MOCK_PRODUCTS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return MOCK_PRODUCTS;
+    return [];
   }
 }
 
