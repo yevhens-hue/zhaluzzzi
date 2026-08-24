@@ -167,7 +167,11 @@ export function getDynamicProducts(): Product[] {
   }
 }
 
-export async function saveDynamicProducts(products: Product[]): Promise<boolean> {
+export async function saveDynamicProducts(
+  products: Product[],
+  /** Pass the single product that changed to avoid syncing the entire list to Supabase */
+  changedProduct?: Product
+): Promise<boolean> {
   // 1. Save to localStorage (fast cache, works offline)
   if (typeof window !== 'undefined') {
     try {
@@ -181,11 +185,11 @@ export async function saveDynamicProducts(products: Product[]): Promise<boolean>
 
   logEvent('SUCCESS', 'PRODUCTS_UPDATED', `Оновлено каталог товарів (${products.length} позицій)`);
 
-  // 2. Sync each product to Supabase via admin API route (uses service role key)
-  //    Fire-and-forget: don't block on network failures
+  // 2. Sync to Supabase — only the changed product (or all if doing bulk import)
   if (typeof window !== 'undefined') {
+    const toSync = changedProduct ? [changedProduct] : products;
     Promise.all(
-      products.map((product) =>
+      toSync.map((product) =>
         fetch('/api/admin/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

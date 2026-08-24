@@ -16,7 +16,7 @@ interface SiteSettingsContextType {
   settings: SiteSettings;
   products: Product[];
   updateSettings: (newSettings: SiteSettings) => Promise<void>;
-  updateProducts: (newProducts: Product[]) => Promise<void>;
+  updateProducts: (newProducts: Product[], changedProduct?: Product) => Promise<void>;
   resetDefaults: () => void;
   isLoading: boolean;
 }
@@ -59,7 +59,8 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
 
     // Same-tab events (dispatched by saveDynamicProducts / saveSiteSettings)
     const handleSettingsChange = () => setSettings(getSiteSettings());
-    const handleProductsChange = () => setProducts(getDynamicProducts());
+    // Re-fetch from Supabase API instead of localStorage to keep merged view accurate
+    const handleProductsChange = () => reloadData();
 
     window.addEventListener('site_settings_updated', handleSettingsChange);
     window.addEventListener('site_products_updated', handleProductsChange);
@@ -83,9 +84,9 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     await saveSiteSettings(newSettings);
   };
 
-  const updateProducts = async (newProducts: Product[]) => {
+  const updateProducts = async (newProducts: Product[], changedProduct?: Product) => {
     setProducts(newProducts);
-    await saveDynamicProducts(newProducts);
+    await saveDynamicProducts(newProducts, changedProduct);
   };
 
   const resetDefaults = () => {

@@ -396,7 +396,7 @@ export default function AdminPage() {
         updated = [cleanedProduct, ...products];
       }
 
-      await updateProducts(updated);
+      await updateProducts(updated, cleanedProduct);
       setEditingProduct(null);
       setIsAddingNewProduct(false);
       const label = isMock ? '(оновлено з базового каталогу)' : '';
@@ -428,10 +428,13 @@ export default function AdminPage() {
     );
     // Also update mock overrides in admin view
     const targetInMocks = MOCK_PRODUCTS.find((m) => m.id === productId);
+    const toggledProduct = products.find((p) => p.id === productId) || (targetInMocks && { ...targetInMocks, [field]: value });
     if (targetInMocks && !products.find((p) => p.id === productId)) {
-      await updateProducts([{ ...targetInMocks, [field]: value }, ...products]);
+      const override = { ...targetInMocks, [field]: value } as typeof targetInMocks;
+      await updateProducts([override, ...products], override);
     } else {
-      await updateProducts(updated);
+      const toggled = updated.find((p) => p.id === productId);
+      await updateProducts(updated, toggled);
     }
     // Sync to Supabase
     fetch(`/api/admin/products/${productId}/toggle`, {
