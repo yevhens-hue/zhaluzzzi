@@ -19,7 +19,7 @@ import {
   Minus,
   Send,
   Sparkles,
-  MessageCircle,
+  Phone,
 } from 'lucide-react';
 
 interface ProductDetailViewProps {
@@ -502,24 +502,23 @@ export function ProductDetailView({
               </button>
             </div>
 
-            {/* WhatsApp Quick Order */}
+            {/* Viber Quick Order */}
             {(() => {
-              const rawPhone = settings?.contacts?.phone1 || '+380939128531';
-              const waPhone = rawPhone.replace(/[^0-9]/g, '');
-              const productUrl = typeof window !== 'undefined' ? window.location.href : '';
+              const rawPhone = settings?.contacts?.viberNumber || settings?.contacts?.phone1 || '+380939128531';
+              const viberPhone = rawPhone.replace(/[^0-9+]/g, '');
               const msg = encodeURIComponent(
-                `Привіт! Хочу замовити:\n📦 ${product.title}\n💰 ${totalPrice.toLocaleString('uk-UA')} грн\n📐 ${width}×${height} см\n🔗 ${productUrl}`
+                `Привіт! Хочу замовити:\n📦 ${product.title}\n💰 ${totalPrice.toLocaleString('uk-UA')} грн\n📐 ${width}×${height} см`
               );
-              const waUrl = `https://wa.me/${waPhone}?text=${msg}`;
+              // viber:// deep link — works on mobile (opens Viber app)
+              // On desktop falls back gracefully to nothing, so we show a tel: link instead
+              const viberUrl = `viber://chat?number=${encodeURIComponent(viberPhone)}&text=${msg}`;
               return (
                 <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#25D366] hover:bg-[#20c05b] text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-95"
+                  href={viberUrl}
+                  className="flex items-center justify-center gap-2.5 w-full py-3.5 bg-[#7360F2] hover:bg-[#5a4bd1] text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition active:scale-95"
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  {t('Замовити у WhatsApp', 'Заказать в WhatsApp')}
+                  <Phone className="w-5 h-5" />
+                  {t('Замовити у Viber', 'Заказать в Viber')}
                 </a>
               );
             })()}

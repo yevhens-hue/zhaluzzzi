@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     revalidatePath('/catalog');
     revalidatePath('/aktsii');
     revalidatePath('/product', 'layout');
+    revalidatePath('/sitemap.xml');
     return NextResponse.json({ revalidated: true, timestamp: Date.now() });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
