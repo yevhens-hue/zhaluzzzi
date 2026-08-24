@@ -14,7 +14,12 @@ export function CartDrawer() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cart-drawer-title"
+    >
       {/* Backdrop */}
       <div
         onClick={closeCart}
@@ -27,15 +32,15 @@ export function CartDrawer() {
           <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-gray-900 text-lg">{t('Кошик покупок', 'Корзина покупок')}</h3>
+              <h3 id="cart-drawer-title" className="font-bold text-gray-900 text-lg">{t('Кошик покупок', 'Корзина покупок')}</h3>
               <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full">
                 {totalCount}
               </span>
             </div>
             <button
               onClick={closeCart}
-              className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-200 transition"
-              aria-label={t('Закрити', 'Закрыть')}
+              className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-200 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
+              aria-label={t('Закрити кошик', 'Закрыть корзину')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -86,7 +91,8 @@ export function CartDrawer() {
                         </h4>
                         <button
                           onClick={() => removeItem(item.id)}
-                          className="text-gray-300 hover:text-red-500 p-1 transition"
+                          className="text-gray-300 hover:text-red-500 p-1 transition cursor-pointer"
+                          aria-label={`Видалити ${tProdTitle(item.title)} з кошика`}
                           title={t('Видалити', 'Удалить')}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -117,7 +123,8 @@ export function CartDrawer() {
                       <div className="flex items-center border border-gray-200 rounded-lg bg-gray-50">
                         <button
                           onClick={() => updateQuantity(item.id, -1)}
-                          className="p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-l-lg transition"
+                          aria-label={`Зменшити кількість для ${tProdTitle(item.title)}`}
+                          className="p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-l-lg transition cursor-pointer"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
@@ -126,7 +133,8 @@ export function CartDrawer() {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-r-lg transition"
+                          aria-label={`Збільшити кількість для ${tProdTitle(item.title)}`}
+                          className="p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-r-lg transition cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
                         </button>

@@ -71,6 +71,7 @@ export function Header() {
               target="_blank"
               rel="noopener noreferrer"
               title="Instagram"
+              aria-label="Instagram профіль Жалюзі та Ролети Дніпро"
               className="flex items-center gap-1.5 text-pink-600 hover:text-pink-700 font-semibold transition"
             >
               <InstagramIcon className="w-3.5 h-3.5" />
@@ -84,6 +85,7 @@ export function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Telegram"
+                aria-label="Написати майстру у Telegram"
                 className="text-[#2CA5E0] hover:opacity-80 transition"
               >
                 <div className="w-5 h-5 rounded-full bg-[#2CA5E0] text-white flex items-center justify-center">
@@ -93,6 +95,7 @@ export function Header() {
               <a
                 href={`viber://chat?number=${encodeURIComponent(contacts.viberNumber || '+380939128531')}`}
                 title="Viber"
+                aria-label="Написати майстру у Viber"
                 className="w-5 h-5 rounded-full bg-[#7F4DA0] text-white flex items-center justify-center text-[10px] font-bold"
               >
                 V
@@ -102,11 +105,11 @@ export function Header() {
             {/* Phones: Master */}
             <div className="flex items-center space-x-1 text-gray-800 font-bold">
               <Phone className="w-3.5 h-3.5 text-blue-600 mr-0.5" />
-              <a href={`tel:${contacts.phone1.replace(/[^0-9]/g, '')}`} className="hover:text-blue-600">{contacts.phone1}</a>
+              <a href={`tel:${contacts.phone1.replace(/[^0-9]/g, '')}`} aria-label={`Зателефонувати ${contacts.phone1}`} className="hover:text-blue-600">{contacts.phone1}</a>
               {contacts.phone2 && (
                 <>
                   <span className="text-gray-300">/</span>
-                  <a href={`tel:${contacts.phone2.replace(/[^0-9]/g, '')}`} className="hover:text-blue-600">{contacts.phone2}</a>
+                  <a href={`tel:${contacts.phone2.replace(/[^0-9]/g, '')}`} aria-label={`Зателефонувати ${contacts.phone2}`} className="hover:text-blue-600">{contacts.phone2}</a>
                 </>
               )}
             </div>
@@ -120,7 +123,8 @@ export function Header() {
             {/* Nova Poshta Tracking Button */}
             <button
               onClick={() => setIsTrackingOpen(true)}
-              className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-lg transition flex items-center gap-1"
+              aria-label="Відстеження посилки за номером ТТН Нова Пошта"
+              className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-red-500"
             >
               <span>📦 ТТН</span>
             </button>
@@ -133,8 +137,9 @@ export function Header() {
         {/* Mobile menu button */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden p-2 text-gray-700 hover:text-blue-600"
-          aria-label="Меню"
+          className="md:hidden p-2 text-gray-700 hover:text-blue-600 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
+          aria-label={isMobileMenuOpen ? "Закрити меню сайту" : "Відкрити навігаційне меню"}
+          aria-expanded={isMobileMenuOpen}
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -143,10 +148,12 @@ export function Header() {
         <Logo />
 
         {/* Desktop Navigation Category Tabs */}
-        <nav className="hidden lg:flex items-center space-x-2 text-sm font-semibold">
+        <nav aria-label="Головні категорії товарів" className="hidden lg:flex items-center space-x-2 text-sm font-semibold">
           <button
             onClick={() => toggleMenu('roleti')}
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 ${
+            aria-expanded={activeMenu === 'roleti'}
+            aria-haspopup="true"
+            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
               activeMenu === 'roleti'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
@@ -158,19 +165,37 @@ export function Header() {
 
           <button
             onClick={() => toggleMenu('shtori')}
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 ${
+            aria-expanded={activeMenu === 'shtori'}
+            aria-haspopup="true"
+            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
               activeMenu === 'shtori'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
             }`}
           >
-            <span>{t('Штори', 'Шторы')}</span>
+            <span>{t('Рулонні штори', 'Рулонные шторы')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'shtori' ? 'rotate-180' : ''}`} />
           </button>
 
           <button
+            onClick={() => toggleMenu('den-nich')}
+            aria-expanded={activeMenu === 'den-nich'}
+            aria-haspopup="true"
+            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+              activeMenu === 'den-nich'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+            }`}
+          >
+            <span>{t('День-Ніч', 'День-Ночь')}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'den-nich' ? 'rotate-180' : ''}`} />
+          </button>
+
+          <button
             onClick={() => toggleMenu('zhaluzi')}
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 ${
+            aria-expanded={activeMenu === 'zhaluzi'}
+            aria-haspopup="true"
+            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
               activeMenu === 'zhaluzi'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
@@ -181,22 +206,25 @@ export function Header() {
           </button>
 
           <button
-            onClick={() => toggleMenu('zakryta-sistema')}
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 ${
-              activeMenu === 'zakryta-sistema'
+            onClick={() => toggleMenu('zakryta')}
+            aria-expanded={activeMenu === 'zakryta'}
+            aria-haspopup="true"
+            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+              activeMenu === 'zakryta'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
             }`}
           >
             <span>{t('Закрита система', 'Закрытая система')}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'zakryta-sistema' ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'zakryta' ? 'rotate-180' : ''}`} />
           </button>
         </nav>
 
-        {/* City selector button */}
+        {/* City Selector */}
         <button
           onClick={openModal}
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-full text-xs font-medium text-gray-700 hover:border-blue-500 hover:text-blue-600 bg-gray-50/70 transition"
+          aria-label="Вибрати місто для доставки або виклику замірника"
+          className="hidden xl:flex items-center gap-1.5 text-xs text-gray-700 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
         >
           <span className="text-gray-400">📍</span>
           <span>{currentCity === 'Місто' ? 'Дніпро' : currentCity}</span>
@@ -204,15 +232,17 @@ export function Header() {
         </button>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-xs relative hidden md:block">
+        <form onSubmit={handleSearch} role="search" className="flex-1 max-w-xs relative hidden md:block">
           <input
-            type="text"
+            type="search"
+            name="q"
+            aria-label="Пошук у каталозі жалюзі та ролет"
             placeholder="Пошук у каталозі..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-full text-xs text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition"
+            className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-full text-xs text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30 transition"
           />
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         </form>
 
         {/* Action icons (Wishlist, Admin/Cabinet, Cart) */}
@@ -220,7 +250,8 @@ export function Header() {
           {/* Wishlist */}
           <Link
             href="/catalog?wishlist=true"
-            className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-full relative transition"
+            aria-label={`Обрані товари (${wishlistCount})`}
+            className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-full relative transition focus-visible:ring-2 focus-visible:ring-red-500"
             title="Закладки"
           >
             <Heart className="w-5 h-5" />
@@ -234,7 +265,8 @@ export function Header() {
           {/* Admin / Cabinet */}
           <Link
             href="/admin"
-            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+            aria-label="Кабінет адміністратора та керування магазином"
+            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition focus-visible:ring-2 focus-visible:ring-blue-600"
             title="Кабінет / Замовлення"
           >
             <User className="w-5 h-5" />
@@ -243,8 +275,8 @@ export function Header() {
           {/* Cart button */}
           <button
             onClick={toggleCart}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3.5 py-2 rounded-full font-medium text-xs shadow-xs hover:shadow-md transition active:scale-95"
-            aria-label="Кошик"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3.5 py-2 rounded-full font-medium text-xs shadow-xs hover:shadow-md transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
+            aria-label={`Кошик покупок, ${totalCount} товарів на суму ${totalAmount} грн`}
           >
             <div className="relative">
               <ShoppingBag className="w-4 h-4" />

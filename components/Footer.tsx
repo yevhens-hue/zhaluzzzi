@@ -61,6 +61,7 @@ export function Footer() {
                 href={contacts.instagramUrl || 'https://www.instagram.com/zhaluzi.rollety.dnipro'}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Instagram профіль Жалюзі та Ролети Дніпро"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:opacity-90 text-white rounded-lg font-bold text-[11px]"
               >
                 <InstagramIcon className="w-3.5 h-3.5" />
@@ -70,6 +71,7 @@ export function Footer() {
                 href={contacts.telegramUrl || 'https://t.me/+380939128531'}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Написати у Telegram майстру"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2CA5E0] hover:opacity-90 text-white rounded-lg font-bold text-[11px]"
               >
                 <Send className="w-3 h-3" />
@@ -77,6 +79,7 @@ export function Footer() {
               </a>
               <a
                 href={`viber://chat?number=${encodeURIComponent(contacts.viberNumber || '+380939128531')}`}
+                aria-label="Написати у Viber майстру"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#7F4DA0] hover:opacity-90 text-white rounded-lg font-bold text-[11px]"
               >
                 <span>Viber</span>

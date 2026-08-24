@@ -81,11 +81,17 @@ export function OneClickModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="oneclick-modal-title"
+    >
       <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
+          aria-label="Закрити модальне вікно"
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
         >
           <X className="w-5 h-5" />
         </button>
@@ -95,7 +101,7 @@ export function OneClickModal({
             <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">{t('Дякуємо за замовлення!', 'Спасибо за заказ!')}</h3>
+            <h3 id="oneclick-modal-title" className="text-xl font-bold text-gray-900">{t('Дякуємо за замовлення!', 'Спасибо за заказ!')}</h3>
             <p className="text-xs text-gray-600">
               {t('Наш менеджер зв\'яжеться з вами за номером', 'Наш менеджер свяжется с вами по номеру')}{' '}
               <strong>{phoneValidation.formattedPhone || phone}</strong>{' '}
@@ -106,7 +112,7 @@ export function OneClickModal({
                 setIsSuccess(false);
                 onClose();
               }}
-              className="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition"
+              className="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
             >
               {t('Зрозуміло', 'Понятно')}
             </button>
@@ -115,7 +121,7 @@ export function OneClickModal({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-amber-500" />
-              <h3 className="text-lg font-bold text-gray-900">{t('Швидке замовлення в 1 клік', 'Быстрый заказ в 1 клик')}</h3>
+              <h3 id="oneclick-modal-title" className="text-lg font-bold text-gray-900">{t('Швидке замовлення в 1 клік', 'Быстрый заказ в 1 клик')}</h3>
             </div>
             <p className="text-xs text-gray-500 mb-4">
               {t(

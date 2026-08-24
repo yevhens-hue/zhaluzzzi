@@ -78,10 +78,12 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label htmlFor="admin-login-input" className="block text-xs font-bold text-gray-700 mb-1">
               Логін адміністратора
             </label>
             <input
+              id="admin-login-input"
+              name="username"
               type="text"
               required
               autoComplete="username"
@@ -93,11 +95,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label htmlFor="admin-password-input" className="block text-xs font-bold text-gray-700 mb-1">
               Пароль
             </label>
             <div className="relative">
               <input
+                id="admin-password-input"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="current-password"
@@ -111,7 +115,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer"
                 aria-label={showPassword ? 'Сховати пароль' : 'Показати пароль'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
