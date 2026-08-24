@@ -168,6 +168,7 @@ export function getDynamicProducts(): Product[] {
 }
 
 export async function saveDynamicProducts(products: Product[]): Promise<boolean> {
+  // 1. Save to localStorage (fast cache, works offline)
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
@@ -180,12 +181,18 @@ export async function saveDynamicProducts(products: Product[]): Promise<boolean>
 
   logEvent('SUCCESS', 'PRODUCTS_UPDATED', `Оновлено каталог товарів (${products.length} позицій)`);
 
-  if (supabase) {
-    try {
-      await supabase.from('products').upsert(products);
-    } catch {
-      // Continue even if Supabase is unavailable
-    }
+  // 2. Sync each product to Supabase via admin API route (uses service role key)
+  //    Fire-and-forget: don't block on network failures
+  if (typeof window !== 'undefined') {
+    Promise.all(
+      products.map((product) =>
+        fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product }),
+        }).catch((err) => console.warn('Supabase sync skipped (offline?):', err.message))
+      )
+    );
   }
 
   return true;

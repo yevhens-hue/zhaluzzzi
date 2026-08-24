@@ -98,6 +98,20 @@ export default function AdminPage() {
   const [isAddingNewProduct, setIsAddingNewProduct] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Search
+  const [productSearch, setProductSearch] = useState('');
+
+  // Image upload
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // CSV import
+  const [csvPreview, setCsvPreview] = useState<Record<string, string>[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+
+  // Analytics (product_id -> { views, orders })
+  const [analytics, setAnalytics] = useState<Record<string, { views: number; orders: number }>>({});
+
   // All products for display (mock base + admin overrides)
   const allAdminProducts = React.useMemo(() => {
     if (!products || products.length === 0) return MOCK_PRODUCTS;
@@ -105,6 +119,18 @@ export default function AdminPage() {
     const baseMocks = MOCK_PRODUCTS.filter((p) => !overrideIds.has(p.id));
     return [...products, ...baseMocks];
   }, [products]);
+
+  // Filtered products (search)
+  const filteredAdminProducts = React.useMemo(() => {
+    if (!productSearch.trim()) return allAdminProducts;
+    const q = productSearch.toLowerCase();
+    return allAdminProducts.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.category_slug?.toLowerCase().includes(q)
+    );
+  }, [allAdminProducts, productSearch]);
 
   // Logs filters
   const [logFilter, setLogFilter] = useState<'ALL' | 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'>('ALL');
@@ -383,14 +409,151 @@ export default function AdminPage() {
     }
   };
 
+
   // Delete a Product
   const handleDeleteProduct = async (productId: string) => {
-    if (confirm('Видалити цей товар з каталогу?')) {
-      const updated = products.filter((p) => p.id !== productId);
+    if (!confirm('Видалити цей товар з каталогу?')) return;
+    const updated = products.filter((p) => p.id !== productId);
+    await updateProducts(updated);
+    // Also delete from Supabase
+    fetch(`/api/admin/products?id=${productId}`, { method: 'DELETE' }).catch(() => null);
+    showNotification('Товар видалено з каталогу.');
+  };
+
+  // Quick toggle: is_popular / is_new / in_stock
+  const handleToggleFlag = async (productId: string, field: 'is_popular' | 'is_new' | 'in_stock', value: boolean) => {
+    // Optimistic UI update
+    const updated = products.map((p) =>
+      p.id === productId ? { ...p, [field]: value } : p
+    );
+    // Also update mock overrides in admin view
+    const targetInMocks = MOCK_PRODUCTS.find((m) => m.id === productId);
+    if (targetInMocks && !products.find((p) => p.id === productId)) {
+      await updateProducts([{ ...targetInMocks, [field]: value }, ...products]);
+    } else {
       await updateProducts(updated);
-      showNotification('Товар видалено з каталогу.');
+    }
+    // Sync to Supabase
+    fetch(`/api/admin/products/${productId}/toggle`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, value }),
+    }).catch(() => null);
+    showNotification(`✅ ${field === 'is_popular' ? '⭐ Популярне' : field === 'is_new' ? '🆕 Новинка' : '✅ В наявності'}: ${value ? 'увімкнено' : 'вимкнено'}`);
+  };
+
+  // Upload image to Supabase Storage
+  const handleUploadImage = async (file: File): Promise<string | null> => {
+    setIsUploading(true);
+    setUploadProgress(10);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      setUploadProgress(40);
+      const res = await fetch('/api/admin/upload-image', { method: 'POST', body: formData });
+      setUploadProgress(90);
+      if (!res.ok) {
+        const { error } = await res.json();
+        showNotification(`❌ Помилка завантаження: ${error}`);
+        return null;
+      }
+      const { url } = await res.json();
+      setUploadProgress(100);
+      showNotification('✅ Фото завантажено в хмару!');
+      return url as string;
+    } catch (err) {
+      showNotification('❌ Помилка завантаження фото.');
+      console.error(err);
+      return null;
+    } finally {
+      setTimeout(() => { setIsUploading(false); setUploadProgress(0); }, 1000);
     }
   };
+
+  // Download CSV template
+  const downloadCSVTemplate = () => {
+    const headers = 'title,sku,category_slug,base_price,old_price,main_image,description,is_popular,is_new';
+    const example = 'Ролет Льон 7439,L-7439,roleti,349,450,https://manov.com.ua/image/cache/catalog/roller-blind/rb-len-7439-800x800.jpg,Тканинний ролет преміум якості,true,false';
+    const blob = new Blob([headers + '\n' + example], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'products_template.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Parse and preview CSV
+  const handleCSVFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter(Boolean);
+      if (lines.length < 2) { showNotification('❌ CSV порожній або неправильний формат'); return; }
+      const headers = lines[0].split(',').map((h) => h.trim());
+      const rows = lines.slice(1).map((line) => {
+        const values = line.split(',');
+        return Object.fromEntries(headers.map((h, i) => [h, (values[i] || '').trim()]));
+      });
+      setCsvPreview(rows);
+      showNotification(`📋 CSV зчитано: ${rows.length} рядків. Перевірте і натисніть "Імпортувати".`);
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
+  // Import CSV rows as products
+  const handleCSVImport = async () => {
+    if (csvPreview.length === 0) return;
+    setIsImporting(true);
+    try {
+      const newProducts: Product[] = csvPreview.map((row) => {
+        const id = `product-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const title = row.title || 'Новий товар';
+        const slug = generateSlugFromTitle(title, id);
+        return {
+          id, slug, title,
+          sku: row.sku || id,
+          category_slug: row.category_slug || 'roleti',
+          base_price: parseFloat(row.base_price) || 349,
+          old_price: row.old_price ? parseFloat(row.old_price) : undefined,
+          main_image: row.main_image || 'https://manov.com.ua/image/cache/catalog/roller-blind/rb-len-7439-800x800.jpg',
+          images: [row.main_image || 'https://manov.com.ua/image/cache/catalog/roller-blind/rb-len-7439-800x800.jpg'],
+          description: row.description || '',
+          is_popular: row.is_popular === 'true',
+          is_new: row.is_new === 'true',
+          in_stock: true,
+          rating: 5,
+          reviews_count: 0,
+          price_unit: 'грн',
+          characteristics: {},
+        } as Product;
+      });
+      await updateProducts([...newProducts, ...products]);
+      setCsvPreview([]);
+      showNotification(`✅ Імпортовано ${newProducts.length} товарів!`);
+    } catch (err) {
+      console.error(err);
+      showNotification('❌ Помилка імпорту');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Load analytics from Supabase
+  const handleLoadAnalytics = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/product_analytics?select=product_id,views,orders`, {
+        headers: {
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+        },
+      });
+      if (!res.ok) return;
+      const data: { product_id: string; views: number; orders: number }[] = await res.json();
+      const map: Record<string, { views: number; orders: number }> = {};
+      data.forEach((row) => { map[row.product_id] = { views: row.views, orders: row.orders }; });
+      setAnalytics(map);
+    } catch { /* Supabase unavailable */ }
+  };
+
+
 
   // Clear Logs
   const handleClearLogs = () => {
@@ -785,65 +948,153 @@ export default function AdminPage() {
       {/* ----------------- 3. PRODUCTS & PRICING CMS ----------------- */}
       {activeTab === 'products' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-gray-200">
-            <div>
-              <h2 className="text-base font-bold text-gray-900">Каталог товарів та розцінки</h2>
-              <p className="text-xs text-gray-500">
-                Змінюйте ціни, фото, назви, наявність або додавайте нові позиції на сайт
-              </p>
+          {/* Toolbar */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-200 space-y-3">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Каталог товарів та розцінки</h2>
+                <p className="text-xs text-gray-500">
+                  {filteredAdminProducts.length} з {allAdminProducts.length} товарів
+                  {products.length > 0 && <span className="text-blue-600 font-bold"> · {products.length} ваших</span>}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleLoadAnalytics()}
+                  className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-purple-200"
+                  title="Завантажити аналітику переглядів"
+                >
+                  📊 Аналітика
+                </button>
+                <button
+                  onClick={downloadCSVTemplate}
+                  className="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-gray-200"
+                >
+                  ⬇️ Шаблон CSV
+                </button>
+                <label className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-emerald-200 cursor-pointer">
+                  📥 Імпорт CSV
+                  <input
+                    type="file"
+                    accept=".csv"
+                    className="sr-only"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCSVFile(f); e.target.value = ''; }}
+                  />
+                </label>
+                <button
+                  onClick={() => {
+                    const id = `product-${Date.now()}`;
+                    setEditingProduct({
+                      id,
+                      slug: id,
+                      title: '',
+                      sku: '',
+                      category_slug: 'roleti',
+                      base_price: 349,
+                      old_price: 450,
+                      price_unit: 'грн',
+                      min_width: 20, max_width: 240,
+                      min_height: 30, max_height: 300,
+                      base_width: 50, base_height: 150,
+                      price_per_sqm: 450,
+                      available_colors: [],
+                      main_image: 'https://manov.com.ua/image/cache/catalog/roller-blind/rb-len-7439-800x800.jpg',
+                      images: [],
+                      is_popular: false,
+                      is_new: true,
+                      in_stock: true,
+                      rating: 5.0,
+                      reviews_count: 1,
+                      description: 'Виготовлення за індивідуальними розмірами замовника.',
+                      blackout_percent: 70,
+                      texture: 'Однотонний / Без малюнка',
+                      destinations: ['na-kuhnju', 'v-spalnju', 'v-gostinnuju', 'na-balkon', 'v-ofis'],
+                      characteristics: {
+                        type: 'Тканинні ролети',
+                        material: 'Поліестер 100%',
+                        country: 'Німеччина',
+                        care: 'Суха чистка',
+                        warranty: '24 місяці',
+                      },
+                    } as Product);
+                    setIsAddingNewProduct(true);
+                  }}
+                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Додати товар</span>
+                </button>
+              </div>
             </div>
 
-            <button
-              onClick={() => {
-                const newId = String(Date.now());
-                setEditingProduct({
-                  id: newId,
-                  slug: `product-${newId}`,
-                  sku: `ZR-${Math.floor(100 + Math.random() * 900)}`,
-                  title: 'Новий виріб (Ролета / Штора / Жалюзі)',
-                  category_slug: 'roleti',
-                  base_price: 550,
-                  old_price: 680,
-                  price_unit: 'грн/шт',
-                  min_width: 25,
-                  max_width: 240,
-                  min_height: 30,
-                  max_height: 300,
-                  base_width: 50,
-                  base_height: 130,
-                  price_per_sqm: 550,
-                  available_colors: [
-                    { id: 'c1', name: 'Білий', hex: '#FFFFFF', code: '01' },
-                    { id: 'c2', name: 'Бежевий', hex: '#E5DCC5', code: '02' },
-                    { id: 'c3', name: 'Графіт', hex: '#374151', code: '03' },
-                  ],
-                  main_image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
-                  images: [],
-                  in_stock: true,
-                  is_popular: false,
-                  is_new: true,
-                  rating: 5.0,
-                  reviews_count: 1,
-                  description: 'Виготовлення за індивідуальними розмірами замовника.',
-                  blackout_percent: 70,
-                  texture: 'Однотонний / Без малюнка',
-                  destinations: ['na-kuhnju', 'v-spalnju', 'v-gostinnuju', 'na-balkon', 'v-ofis'],
-                  characteristics: {
-                    type: 'Тканинні ролети',
-                    material: 'Поліестер 100%',
-                    country: 'Німеччина',
-                    care: 'Суха чистка',
-                    warranty: '24 місяці',
-                  },
-                });
-                setIsAddingNewProduct(true);
-              }}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Додати новий товар</span>
-            </button>
+            {/* Search */}
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+              <input
+                type="text"
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                placeholder="Пошук по назві, SKU або категорії..."
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:border-blue-400 outline-none transition"
+              />
+              {productSearch && (
+                <button
+                  onClick={() => setProductSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* CSV Preview */}
+          {csvPreview.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-amber-900 text-sm">📋 Попередній перегляд CSV ({csvPreview.length} рядків)</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCsvPreview([])}
+                    className="text-xs text-amber-600 hover:text-amber-900 font-bold"
+                  >
+                    Скасувати
+                  </button>
+                  <button
+                    onClick={handleCSVImport}
+                    disabled={isImporting}
+                    className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white rounded-lg font-bold text-xs"
+                  >
+                    {isImporting ? '⏳ Імпортуємо...' : `✅ Імпортувати ${csvPreview.length} товарів`}
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-amber-200">
+                <table className="text-[11px] w-full">
+                  <thead className="bg-amber-100">
+                    <tr>{Object.keys(csvPreview[0]).map((h) => <th key={h} className="px-3 py-1.5 text-left font-bold text-amber-800">{h}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {csvPreview.slice(0, 5).map((row, i) => (
+                      <tr key={i} className="border-t border-amber-100 bg-white">
+                        {Object.values(row).map((v, j) => <td key={j} className="px-3 py-1.5 text-gray-700 max-w-[120px] truncate">{v}</td>)}
+                      </tr>
+                    ))}
+                    {csvPreview.length > 5 && (
+                      <tr className="border-t border-amber-100 bg-amber-50">
+                        <td colSpan={Object.keys(csvPreview[0]).length} className="px-3 py-1.5 text-amber-600 font-bold text-center">
+                          + ще {csvPreview.length - 5} рядків...
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+
 
           {/* Product Edit / Add Modal */}
           {editingProduct && (
@@ -1066,23 +1317,47 @@ export default function AdminPage() {
                               if (file) {
                                 // Limit to 10MB
                                 if (file.size > 10 * 1024 * 1024) {
-                                  showNotification('❌ Файл надто великий! Максимум 10 МБ.');
+                                  showNotification('❌ Файл надто великий! Максимум 5 МБ.');
                                   return;
                                 }
-                                const reader = new FileReader();
-                                reader.onload = async (ev) => {
-                                  if (ev.target?.result) {
-                                    const compressed = await compressBase64Image(ev.target.result as string);
-                                    setEditingProduct((prev) => prev ? { ...prev, main_image: compressed } : prev);
-                                  }
-                                };
-                                reader.readAsDataURL(file);
+                                // Try CDN upload first (Supabase Storage)
+                                const cdnUrl = await handleUploadImage(file);
+                                if (cdnUrl) {
+                                  setEditingProduct((prev) => prev ? { ...prev, main_image: cdnUrl } : prev);
+                                } else {
+                                  // Fallback: base64 (offline/local)
+                                  const reader = new FileReader();
+                                  reader.onload = async (ev) => {
+                                    if (ev.target?.result) {
+                                      const compressed = await compressBase64Image(ev.target.result as string);
+                                      setEditingProduct((prev) => prev ? { ...prev, main_image: compressed } : prev);
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
                               }
                             }}
                           />
                         </label>
+
+                        {/* Upload progress */}
+                        {isUploading && (
+                          <div className="mt-2">
+                            <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                              <span>☁️ Завантаження в хмару...</span>
+                              <span>{uploadProgress}%</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500 transition-all duration-300 rounded-full"
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         <span className="text-[11px] text-gray-500 block mt-1">
-                          Підтримуються файли JPG, PNG, WEBP.
+                          Файл завантажується в хмару Supabase Storage та зберігається як URL.
                         </span>
                       </div>
 
@@ -1232,7 +1507,7 @@ export default function AdminPage() {
 
           {/* Products List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allAdminProducts.map((p) => {
+            {filteredAdminProducts.map((p) => {
               const isCustom = products.some((d) => d.id === p.id);
               return (
                 <div
@@ -1299,6 +1574,51 @@ export default function AdminPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Quick Toggles */}
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => handleToggleFlag(p.id, 'is_popular', !p.is_popular)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        p.is_popular
+                          ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                          : 'bg-gray-50 text-gray-400 border border-gray-200 hover:bg-amber-50 hover:text-amber-600'
+                      }`}
+                      title="Переключити: Популярний товар"
+                    >
+                      ⭐ {p.is_popular ? 'Популярне' : 'Не популярне'}
+                    </button>
+                    <button
+                      onClick={() => handleToggleFlag(p.id, 'is_new', !p.is_new)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        p.is_new
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                          : 'bg-gray-50 text-gray-400 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-600'
+                      }`}
+                      title="Переключити: Новинка"
+                    >
+                      🆕 {p.is_new ? 'Новинка' : 'Не новинка'}
+                    </button>
+                    <button
+                      onClick={() => handleToggleFlag(p.id, 'in_stock', !p.in_stock)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        p.in_stock
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'bg-red-50 text-red-600 border border-red-200'
+                      }`}
+                      title="Переключити: В наявності"
+                    >
+                      {p.in_stock ? '✅ В наявності' : '❌ Немає'}
+                    </button>
+                  </div>
+
+                  {/* Analytics (shown if loaded) */}
+                  {analytics[p.id] && (
+                    <div className="flex gap-3 pt-1 text-[11px] text-gray-500">
+                      <span>👁 {analytics[p.id].views} переглядів</span>
+                      <span>🛒 {analytics[p.id].orders} замовлень</span>
+                    </div>
+                  )}
                 </div>
               );
             })}

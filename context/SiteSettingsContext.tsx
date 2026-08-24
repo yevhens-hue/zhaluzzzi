@@ -28,8 +28,28 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const reloadData = () => {
+  const reloadData = async () => {
     setSettings(getSiteSettings());
+
+    // Try loading products from Supabase API (cross-device sync)
+    try {
+      const res = await fetch('/api/admin/products', { cache: 'no-store' });
+      if (res.ok) {
+        const { products: serverProducts } = await res.json();
+        if (Array.isArray(serverProducts)) {
+          // Merge: server is source of truth, local-only products appended
+          const serverSlugs = new Set(serverProducts.map((p: Product) => p.slug));
+          const localOnly = getDynamicProducts().filter((p) => !serverSlugs.has(p.slug));
+          setProducts([...serverProducts, ...localOnly]);
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch {
+      // Supabase unavailable — fall through to localStorage
+    }
+
+    // Fallback: localStorage
     setProducts(getDynamicProducts());
     setIsLoading(false);
   };
