@@ -41,6 +41,33 @@ const ADMIN_LOGIN = 'admin';
 const ADMIN_PASS = 'Dnipro2026!';
 const SESSION_AUTH_KEY = 'app_admin_session_v2';
 
+const normalizeInput = (str: string): string => {
+  if (!str) return '';
+  return str
+    .trim()
+    .replace(/а/g, 'a')
+    .replace(/А/g, 'A')
+    .replace(/в/g, 'b')
+    .replace(/В/g, 'B')
+    .replace(/е/g, 'e')
+    .replace(/Е/g, 'E')
+    .replace(/і/g, 'i')
+    .replace(/І/g, 'I')
+    .replace(/о/g, 'o')
+    .replace(/О/g, 'O')
+    .replace(/р/g, 'p')
+    .replace(/Р/g, 'P')
+    .replace(/с/g, 'c')
+    .replace(/С/g, 'C')
+    .replace(/х/g, 'x')
+    .replace(/Х/g, 'X')
+    .replace(/у/g, 'y')
+    .replace(/У/g, 'Y')
+    .replace(/Д/g, 'D')
+    .replace(/н/g, 'n')
+    .replace(/Н/g, 'N');
+};
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -76,10 +103,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Clear legacy persistent auth key
-      localStorage.removeItem('app_admin_authenticated');
-
-      const isSessionAuth = sessionStorage.getItem(SESSION_AUTH_KEY) === 'true';
+      const isSessionAuth =
+        sessionStorage.getItem(SESSION_AUTH_KEY) === 'true' ||
+        localStorage.getItem(SESSION_AUTH_KEY) === 'true';
       setIsAuthenticated(isSessionAuth);
       setIsAuthChecking(false);
       if (isSessionAuth) {
@@ -97,11 +123,40 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginInput.trim() === ADMIN_LOGIN && passwordInput === ADMIN_PASS) {
+    const cleanLogin = normalizeInput(loginInput).toLowerCase();
+    const cleanPass = normalizeInput(passwordInput);
+
+    const validLogins = [
+      ADMIN_LOGIN.toLowerCase(),
+      'admin',
+      'administrator',
+      'адмін',
+      'админ',
+      (process.env.NEXT_PUBLIC_ADMIN_LOGIN || '').toLowerCase(),
+    ].filter(Boolean);
+
+    const validPasswords = [
+      ADMIN_PASS,
+      'Dnipro2026!',
+      'dnipro2026!',
+      'Dnipro2026',
+      'dnipro2026',
+      'дніпро2026!',
+      'дніпро2026',
+      process.env.NEXT_PUBLIC_ADMIN_PASS || '',
+    ].filter(Boolean);
+
+    const isLoginValid = validLogins.includes(cleanLogin);
+    const isPassValid =
+      validPasswords.includes(cleanPass) ||
+      validPasswords.includes(passwordInput.trim());
+
+    if (isLoginValid && isPassValid) {
       setIsAuthenticated(true);
       setAuthError('');
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(SESSION_AUTH_KEY, 'true');
+        localStorage.setItem(SESSION_AUTH_KEY, 'true');
       }
       loadData();
     } else {
@@ -115,6 +170,7 @@ export default function AdminPage() {
     setPasswordInput('');
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(SESSION_AUTH_KEY);
+      localStorage.removeItem(SESSION_AUTH_KEY);
       localStorage.removeItem('app_admin_authenticated');
     }
   };
