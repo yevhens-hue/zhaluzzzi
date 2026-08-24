@@ -367,22 +367,35 @@ export default function AdminPage() {
       );
 
       const slug = generateSlugFromTitle(productToSave.title, productToSave.id);
+
+      // Clean characteristics: remove empty values and old alias keys that duplicate standard keys
+      const rawChars: Record<string, string> = Object.fromEntries(
+        Object.entries(productToSave.characteristics || {}).filter(([, v]) => v != null)
+      ) as Record<string, string>;
+      // Migrate legacy alias keys → canonical keys (only if canonical doesn't already exist)
+      const migratedChars: Record<string, string> = { ...rawChars };
+      if (!migratedChars.fabric && migratedChars.material) { migratedChars.fabric = migratedChars.material; }
+      if (!migratedChars.manufacturer && migratedChars.country) { migratedChars.manufacturer = migratedChars.country; }
+      // Remove purely redundant alias keys that are now covered by canonical keys
+      const ALIAS_KEYS = ['material', 'type', 'country'];
+      ALIAS_KEYS.forEach((alias) => {
+        if (migratedChars[alias] && (alias === 'material' ? migratedChars.fabric : migratedChars.manufacturer)) {
+          delete migratedChars[alias];
+        }
+      });
+      // Remove empty-value entries
+      const cleanChars = Object.fromEntries(
+        Object.entries(migratedChars).filter(([, v]) => v && String(v).trim() !== '')
+      );
+
       const cleanedProduct: Product = {
         ...productToSave,
         slug,
         main_image: compressedMainImage,
         images: compressedGallery.length > 0 ? compressedGallery : [compressedMainImage],
-        characteristics: {
-          fabric: productToSave.characteristics?.fabric || productToSave.characteristics?.material || 'Поліестер',
-          texture: productToSave.texture || productToSave.characteristics?.texture || 'Однотонний',
-          color: productToSave.characteristics?.color || '',
-          blackout: productToSave.blackout_percent ? `${productToSave.blackout_percent}%` : '70%',
-          system: productToSave.characteristics?.system || 'Стандарт',
-          manufacturer: productToSave.characteristics?.manufacturer || productToSave.characteristics?.country || 'Україна',
-          warranty: productToSave.characteristics?.warranty || '24 місяці',
-          ...productToSave.characteristics,
-        },
+        characteristics: cleanChars,
       };
+
 
       // Only save non-mock products + overrides to localStorage
       const isMock = MOCK_PRODUCTS.some((m) => m.id === cleanedProduct.id);
@@ -1014,9 +1027,11 @@ export default function AdminPage() {
                       texture: 'Однотонний / Без малюнка',
                       destinations: ['na-kuhnju', 'v-spalnju', 'v-gostinnuju', 'na-balkon', 'v-ofis'],
                       characteristics: {
-                        type: 'Тканинні ролети',
-                        material: 'Поліестер 100%',
-                        country: 'Німеччина',
+                        fabric: 'Поліестер 100%',
+                        blackout: '70%',
+                        system: 'Стандарт',
+                        manufacturer: '',
+                        country: '',
                         care: 'Суха чистка',
                         warranty: '24 місяці',
                       },
@@ -1467,9 +1482,178 @@ export default function AdminPage() {
                     value={editingProduct.description}
                     onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
                     className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 bg-white font-medium"
+                    placeholder="Детальний опис товару, переваги, особливості..."
                   />
                 </div>
               </div>
+
+                {/* ===== CHARACTERISTICS EDITOR ===== */}
+                <div className="sm:col-span-3 bg-amber-50/60 border border-amber-200 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wider">
+                      <span>📋 Характеристики товару</span>
+                    </div>
+                    <span className="text-[10px] text-amber-700 font-medium">Відображаються на вкладці «Характеристики» сторінки товару</span>
+                  </div>
+
+                  {/* Quick-add standard fields */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { key: 'fabric', label: 'Тканина' },
+                      { key: 'texture', label: 'Текстура' },
+                      { key: 'color', label: 'Колір' },
+                      { key: 'blackout', label: 'Затемнення' },
+                      { key: 'system', label: 'Система' },
+                      { key: 'manufacturer', label: 'Виробник' },
+                      { key: 'country', label: 'Країна' },
+                      { key: 'care', label: 'Догляд' },
+                      { key: 'warranty', label: 'Гарантія' },
+                      { key: 'width_range', label: 'Ширина' },
+                      { key: 'height_range', label: 'Висота' },
+                      { key: 'drive', label: 'Привід' },
+                      { key: 'installation', label: 'Монтаж' },
+                      { key: 'collection', label: 'Колекція' },
+                    ].map(({ key, label }) => {
+                      const alreadyHas = key in (editingProduct.characteristics || {});
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          disabled={alreadyHas}
+                          onClick={() => setEditingProduct({
+                            ...editingProduct,
+                            characteristics: { ...(editingProduct.characteristics || {}), [key]: '' },
+                          })}
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold transition ${
+                            alreadyHas
+                              ? 'bg-amber-200 border-amber-300 text-amber-700 cursor-default'
+                              : 'bg-white border-gray-300 text-gray-600 hover:bg-amber-100 hover:border-amber-400 cursor-pointer'
+                          }`}
+                        >
+                          {alreadyHas ? '✓ ' : '+ '}{label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Existing characteristics — editable rows */}
+                  <div className="space-y-2">
+                    {Object.entries(editingProduct.characteristics || {}).map(([charKey, charVal]) => {
+                      const KNOWN_LABELS: Record<string, string> = {
+                        fabric: 'Тканина / Матеріал', material: 'Матеріал', texture: 'Текстура',
+                        color: 'Основний колір', blackout: 'Світлоізоляція', system: 'Система керування',
+                        manufacturer: 'Виробник', country: 'Країна виробника', care: 'Догляд та чищення',
+                        warranty: 'Гарантія', type: 'Тип виробу', width_range: 'Діапазон ширини',
+                        height_range: 'Діапазон висоти', weight: 'Вага (кг/м²)', fire_class: 'Клас горючості',
+                        eco: 'Екологічність', light: 'Пропускання світла', noise: 'Шумопоглинання',
+                        installation: 'Спосіб монтажу', drive: 'Привід', collection: 'Колекція',
+                        code: 'Код тканини', thickness: 'Товщина',
+                      };
+                      const isKnown = charKey in KNOWN_LABELS;
+                      return (
+                        <div key={charKey} className="flex items-center gap-2">
+                          {/* Key */}
+                          {isKnown ? (
+                            <div className="w-44 shrink-0 px-3 py-2 bg-amber-100 border border-amber-200 rounded-xl text-[11px] font-bold text-amber-900 truncate">
+                              {KNOWN_LABELS[charKey]}
+                            </div>
+                          ) : (
+                            <input
+                              type="text"
+                              value={charKey}
+                              placeholder="Ключ"
+                              className="w-44 shrink-0 px-3 py-2 border border-gray-300 rounded-xl text-[11px] font-mono text-gray-700 bg-white"
+                              onChange={(e) => {
+                                const newKey = e.target.value.replace(/\s+/g, '_').toLowerCase();
+                                const chars = { ...(editingProduct.characteristics || {}) };
+                                const entries = Object.entries(chars);
+                                const idx = entries.findIndex(([k]) => k === charKey);
+                                entries.splice(idx, 1, [newKey, charVal]);
+                                setEditingProduct({ ...editingProduct, characteristics: Object.fromEntries(entries) });
+                              }}
+                            />
+                          )}
+                          {/* Value */}
+                          <input
+                            type="text"
+                            value={charVal}
+                            placeholder="Значення..."
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 bg-white font-medium"
+                            onChange={(e) => setEditingProduct({
+                              ...editingProduct,
+                              characteristics: { ...(editingProduct.characteristics || {}), [charKey]: e.target.value },
+                            })}
+                          />
+                          {/* Delete row */}
+                          <button
+                            type="button"
+                            title="Видалити характеристику"
+                            onClick={() => {
+                              const chars = { ...(editingProduct.characteristics || {}) };
+                              delete chars[charKey];
+                              setEditingProduct({ ...editingProduct, characteristics: chars });
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition shrink-0"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    {Object.keys(editingProduct.characteristics || {}).length === 0 && (
+                      <div className="text-[11px] text-gray-400 italic py-2">
+                        Характеристики не задані. Натисніть «+ Поле» вище або додайте власне:
+                      </div>
+                    )}
+
+                    {/* Add custom row */}
+                    <button
+                      type="button"
+                      onClick={() => setEditingProduct({
+                        ...editingProduct,
+                        characteristics: {
+                          ...(editingProduct.characteristics || {}),
+                          [`custom_${Date.now()}`]: '',
+                        },
+                      })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-dashed border-gray-300 rounded-xl text-[11px] font-bold text-gray-500 hover:border-amber-400 hover:text-amber-700 hover:bg-amber-50 transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Додати власну характеристику
+                    </button>
+                  </div>
+
+                  {/* Live preview */}
+                  {Object.keys(editingProduct.characteristics || {}).length > 0 && (
+                    <details className="text-[11px]">
+                      <summary className="cursor-pointer text-amber-700 font-bold hover:underline">
+                        👁 Переглянути як виглядатиме на сайті
+                      </summary>
+                      <table className="mt-2 w-full max-w-sm text-xs border-collapse">
+                        <tbody>
+                          {Object.entries(editingProduct.characteristics || {}).map(([k, v]) => {
+                            const LABELS: Record<string, string> = {
+                              fabric:'Тканина / Матеріал', material:'Матеріал', texture:'Текстура',
+                              color:'Основний колір', blackout:'Світлоізоляція', system:'Система керування',
+                              manufacturer:'Виробник', country:'Країна виробника', care:'Догляд та чищення',
+                              warranty:'Гарантія', type:'Тип виробу', width_range:'Діапазон ширини',
+                              height_range:'Діапазон висоти', drive:'Привід', installation:'Спосіб монтажу',
+                              collection:'Колекція', code:'Код тканини',
+                            };
+                            return v ? (
+                              <tr key={k} className="border-b border-gray-100">
+                                <td className="py-1.5 pr-4 text-gray-500">{LABELS[k] ?? k}</td>
+                                <td className="py-1.5 font-bold text-gray-900">{v}</td>
+                              </tr>
+                            ) : null;
+                          })}
+                        </tbody>
+                      </table>
+                    </details>
+                  )}
+                </div>
+
 
               <div className="flex gap-3 justify-end pt-2">
                 <button

@@ -26,7 +26,37 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const t = (ukText: string) => ukText;
   const tProdTitle = (title: string) => title;
   const tColorName = (color: string) => color;
-  const tCharKey = (key: string) => key;
+  // Maps internal characteristic keys → Ukrainian labels for display on product pages
+  const CHAR_KEY_MAP: Record<string, string> = {
+    // Standard product characteristics
+    fabric:       'Тканина / Матеріал',
+    material:     'Матеріал',
+    texture:      'Текстура',
+    color:        'Основний колір',
+    blackout:     'Світлоізоляція',
+    system:       'Система керування',
+    manufacturer: 'Виробник',
+    country:      'Країна виробника',
+    care:         'Догляд та чищення',
+    warranty:     'Гарантія',
+    type:         'Тип виробу',
+    width:        'Ширина',
+    height:       'Висота',
+    width_range:  'Діапазон ширини',
+    height_range: 'Діапазон висоти',
+    weight:       'Вага (кг/м²)',
+    fire_class:   'Клас горючості',
+    eco:          'Екологічність',
+    light:        'Пропускання світла',
+    noise:        'Шумопоглинання',
+    installation: 'Спосіб монтажу',
+    drive:        'Привід',
+    collection:   'Колекція',
+    code:         'Код тканини',
+    thickness:    'Товщина',
+  };
+
+  const tCharKey = (key: string): string => CHAR_KEY_MAP[key] ?? key;
   const tCharVal = (val: string) => val;
 
   return (
