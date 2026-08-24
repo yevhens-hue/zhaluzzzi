@@ -848,16 +848,23 @@ export default function AdminPage() {
           {/* Product Edit / Add Modal */}
           {editingProduct && (
             <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-blue-500 shadow-xl space-y-6">
-              <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-                <h3 className="font-extrabold text-lg text-gray-900">
-                  {isAddingNewProduct ? '✨ Додавання нового товару' : `✏️ Редагування товару: ${editingProduct.title}`}
-                </h3>
+              <div className="flex justify-between items-start pb-4 border-b border-gray-100">
+                <div>
+                  <h3 className="font-extrabold text-lg text-gray-900">
+                    {isAddingNewProduct ? '✨ Додавання нового товару' : `✏️ Редагування: ${editingProduct.title}`}
+                  </h3>
+                  {isAddingNewProduct && (
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      💡 Після збереження товар з'явиться на сайті миттєво — відкрийте вкладку /catalog або сторінку категорії без перезавантаження.
+                    </p>
+                  )}
+                </div>
                 <button
                   onClick={() => {
                     setEditingProduct(null);
                     setIsAddingNewProduct(false);
                   }}
-                  className="text-xs text-gray-400 hover:text-gray-700"
+                  className="text-xs text-gray-400 hover:text-gray-700 shrink-0 ml-4"
                 >
                   Скасувати
                 </button>
@@ -898,11 +905,18 @@ export default function AdminPage() {
                     onChange={(e) => setEditingProduct({ ...editingProduct, category_slug: e.target.value })}
                     className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 bg-white"
                   >
-                    <option value="roleti">Тканинні ролети (roleti)</option>
-                    <option value="shtori">Штори День-Ніч (shtori)</option>
-                    <option value="zhaluzi">Жалюзі (zhaluzi)</option>
-                    <option value="zakryta-sistema">Закрита система (zakryta-sistema)</option>
+                    <option value="roleti">🏠 Тканинні ролети (roleti)</option>
+                    <option value="shtori">🌟 Штори День-Ніч (shtori)</option>
+                    <option value="zhaluzi">💠 Жалюзі (zhaluzi)</option>
+                    <option value="zakryta-sistema">🔒 Закрита система (zakryta-sistema)</option>
                   </select>
+                  <div className="mt-1 text-[11px] text-blue-600 font-semibold">
+                    📌 Товар з'явиться на:{' '}
+                    <a href="/catalog" target="_blank" className="underline">/catalog</a>{' та '}
+                    <a href={`/${editingProduct.category_slug}`} target="_blank" className="underline">
+                      /{editingProduct.category_slug}
+                    </a>
+                  </div>
                 </div>
 
                 <div>

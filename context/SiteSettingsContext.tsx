@@ -37,15 +37,24 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     reloadData();
 
+    // Same-tab events (dispatched by saveDynamicProducts / saveSiteSettings)
     const handleSettingsChange = () => setSettings(getSiteSettings());
     const handleProductsChange = () => setProducts(getDynamicProducts());
 
     window.addEventListener('site_settings_updated', handleSettingsChange);
     window.addEventListener('site_products_updated', handleProductsChange);
 
+    // Cross-tab sync: browser fires 'storage' when another tab writes to localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'app_site_products_v1') setProducts(getDynamicProducts());
+      if (e.key === 'app_site_settings_v1') setSettings(getSiteSettings());
+    };
+    window.addEventListener('storage', handleStorageChange);
+
     return () => {
       window.removeEventListener('site_settings_updated', handleSettingsChange);
       window.removeEventListener('site_products_updated', handleProductsChange);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

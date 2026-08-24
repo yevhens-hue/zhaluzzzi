@@ -27,9 +27,13 @@ export function CatalogView({
 
   const allProducts = useMemo(() => {
     if (!dynamicProducts || dynamicProducts.length === 0) return initialProducts;
-    // Dynamic products override mock products with same ID, and appear first
+
+    // Dynamic products override mock products with the same ID
     const overrideIds = new Set(dynamicProducts.map((p) => p.id));
     const baseProducts = initialProducts.filter((p) => !overrideIds.has(p.id));
+
+    // On category pages: also include dynamic products matching ANY category
+    // so admin-added products always appear in /catalog and in their respective category page
     return [...dynamicProducts, ...baseProducts];
   }, [dynamicProducts, initialProducts]);
 
