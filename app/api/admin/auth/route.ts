@@ -24,11 +24,10 @@ export async function POST(req: NextRequest) {
     // Accepted logins
     const loginOk = cleanLogin === configuredLogin || cleanLogin === 'admin';
 
-    // Accepted passwords: env var, Dnipro2026!, or legacy fallback Manov2025!
+    // Accepted passwords: env var or default 'Dnipro2026!'
     const validPasswords = [
       configuredPassword,
       'Dnipro2026!',
-      'Manov2025!',
     ].filter(Boolean);
 
     const passOk = validPasswords.some((vp) => cleanPassword === vp);
