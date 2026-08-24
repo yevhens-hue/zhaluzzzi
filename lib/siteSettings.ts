@@ -193,15 +193,13 @@ export function mergeAndDeduplicateProducts(
 }
 
 export function getDynamicProducts(): Product[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(PRODUCTS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? deduplicateProducts(parsed) : [];
-  } catch {
-    return [];
+  // Products are strictly served from Supabase — no localStorage caching
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem(PRODUCTS_KEY);
+    } catch {}
   }
+  return [];
 }
 
 export async function saveDynamicProducts(
@@ -209,20 +207,17 @@ export async function saveDynamicProducts(
   /** Pass the single product that changed to avoid syncing the entire list to Supabase */
   changedProduct?: Product
 ): Promise<boolean> {
-  // 1. Save to localStorage (fast cache, works offline)
+  // Clear any legacy product cache from localStorage
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-    } catch (storageError) {
-      console.error('localStorage quota exceeded when saving products:', storageError);
-      throw new Error('localStorage_quota_exceeded');
-    }
+      localStorage.removeItem(PRODUCTS_KEY);
+    } catch {}
     window.dispatchEvent(new Event('site_products_updated'));
   }
 
-  logEvent('SUCCESS', 'PRODUCTS_UPDATED', `Оновлено каталог товарів (${products.length} позицій)`);
+  logEvent('SUCCESS', 'PRODUCTS_UPDATED', `Оновлено каталог товарів (${products.length} позицій) в Supabase`);
 
-  // 2. Sync to Supabase — only the changed product (or all if doing bulk import)
+  // Direct persistence to Supabase via API
   if (typeof window !== 'undefined') {
     const toSync = changedProduct ? [changedProduct] : products;
     try {
@@ -243,7 +238,7 @@ export async function saveDynamicProducts(
       console.warn('Supabase sync network error:', err);
     }
 
-    // 3. On-demand ISR: revalidate catalog pages immediately
+    // On-demand ISR: revalidate catalog pages immediately
     fetch('/api/revalidate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -253,7 +248,6 @@ export async function saveDynamicProducts(
 
   return true;
 }
-
 
 export function resetSiteSettingsToDefault(): void {
   if (typeof window !== 'undefined') {

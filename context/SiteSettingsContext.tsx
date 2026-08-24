@@ -33,43 +33,43 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
   const reloadData = async () => {
     setSettings(getSiteSettings());
 
-    // Try loading products from Supabase API (cross-device sync)
+    // Clean up any legacy localStorage product caches in user browsers
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('app_site_products_v1');
+      } catch {}
+    }
+
+    // Load products directly from Supabase API (Single Source of Truth)
     try {
       const res = await fetch('/api/admin/products', { cache: 'no-store' });
       if (res.ok) {
         const { products: serverProducts } = await res.json();
         if (Array.isArray(serverProducts)) {
-          // Merge: server is source of truth, deduplicated across id, slug, and title
-          const localProducts = getDynamicProducts();
-          const merged = mergeAndDeduplicateProducts(serverProducts, localProducts);
-          setProducts(merged);
+          setProducts(deduplicateProducts(serverProducts));
           setIsLoading(false);
           return;
         }
       }
-    } catch {
-      // Supabase unavailable — fall through to localStorage
+    } catch (err) {
+      console.warn('Failed to fetch products from Supabase API:', err);
     }
 
-    // Fallback: localStorage — strictly deduplicated
-    setProducts(deduplicateProducts(getDynamicProducts()));
     setIsLoading(false);
   };
 
   useEffect(() => {
     reloadData();
 
-    // Same-tab events (dispatched by saveDynamicProducts / saveSiteSettings)
+    // Same-tab events (dispatched on changes)
     const handleSettingsChange = () => setSettings(getSiteSettings());
-    // Re-fetch from Supabase API instead of localStorage to keep merged view accurate
     const handleProductsChange = () => reloadData();
 
     window.addEventListener('site_settings_updated', handleSettingsChange);
     window.addEventListener('site_products_updated', handleProductsChange);
 
-    // Cross-tab sync: browser fires 'storage' when another tab writes to localStorage
+    // Cross-tab sync: settings updates
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'app_site_products_v1') setProducts(getDynamicProducts());
       if (e.key === 'app_site_settings_v1') setSettings(getSiteSettings());
     };
     window.addEventListener('storage', handleStorageChange);
