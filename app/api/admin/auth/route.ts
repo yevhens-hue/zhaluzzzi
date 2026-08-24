@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const SESSION_COOKIE = 'admin_session';
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 hours
@@ -12,6 +13,15 @@ function cleanInput(str: string | undefined | null): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Brute-force protection: max 8 login attempts per 3 minutes per IP
+  const rateCheck = checkRateLimit(req, 8, 3 * 60 * 1000);
+  if (rateCheck.isLimited) {
+    return NextResponse.json(
+      { error: 'Забагато спроб входу. Зачекайте 3 хвилини перед наступною спробою.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { login, password } = await req.json();
 

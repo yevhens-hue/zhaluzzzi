@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { verifyAdminSession } from '@/lib/adminAuth';
 
 // Lazy initialization — avoids crashing at module load if env vars are missing
 let _adminClient: SupabaseClient | null = null;
@@ -23,6 +24,10 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!verifyAdminSession(req)) {
+    return NextResponse.json({ error: 'Unauthorized: Admin authentication required' }, { status: 401 });
+  }
+
   const client = getAdminClient();
   if (!client) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });

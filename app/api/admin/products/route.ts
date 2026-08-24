@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Product } from '@/types/database';
+import { verifyAdminSession } from '@/lib/adminAuth';
 
 // Lazy initialization — avoids crashing at module load if SUPABASE_SERVICE_ROLE_KEY is missing
 let _adminClient: SupabaseClient | null = null;
@@ -60,6 +61,10 @@ export async function GET() {
 
 /** POST /api/admin/products — upsert one product */
 export async function POST(req: NextRequest) {
+  if (!verifyAdminSession(req)) {
+    return NextResponse.json({ error: 'Unauthorized: Admin authentication required' }, { status: 401 });
+  }
+
   const client = getAdminClient();
   if (!client) {
     return NextResponse.json({ error: 'Supabase not configured — set SUPABASE_SERVICE_ROLE_KEY in Vercel env vars' }, { status: 503 });
@@ -94,6 +99,10 @@ export async function POST(req: NextRequest) {
 
 /** DELETE /api/admin/products?slug=xxx OR ?id=xxx */
 export async function DELETE(req: NextRequest) {
+  if (!verifyAdminSession(req)) {
+    return NextResponse.json({ error: 'Unauthorized: Admin authentication required' }, { status: 401 });
+  }
+
   const client = getAdminClient();
   if (!client) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });

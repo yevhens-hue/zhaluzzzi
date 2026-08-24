@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -9,6 +10,15 @@ function getAdminClient() {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit: max 5 reviews per 2 minutes per IP
+  const rateCheck = checkRateLimit(req, 5, 2 * 60 * 1000);
+  if (rateCheck.isLimited) {
+    return NextResponse.json(
+      { error: 'Забагато спроб залишити відгук. Будь ласка, зачекайте кілька хвилин.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json();
     const { product_id, author_name, city, rating, comment } = body;
@@ -22,13 +32,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, note: 'no-db fallback' });
     }
 
+    const cleanAuthor = String(author_name).replace(/<[^>]*>?/gm, '').trim().slice(0, 80);
+    const cleanCity = city ? String(city).replace(/<[^>]*>?/gm, '').trim().slice(0, 50) : null;
+    const cleanComment = String(comment).replace(/<[^>]*>?/gm, '').trim().slice(0, 1000);
+
     const payload = {
       id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       product_id,
-      author_name: String(author_name).slice(0, 80),
-      city: city ? String(city).slice(0, 50) : null,
+      author_name: cleanAuthor,
+      city: cleanCity,
       rating: Math.min(5, Math.max(1, Number(rating) || 5)),
-      comment: String(comment).slice(0, 1000),
+      comment: cleanComment,
       created_at: new Date().toISOString(),
     };
 

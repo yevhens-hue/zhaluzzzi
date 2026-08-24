@@ -92,6 +92,10 @@ export default function RootLayout({
   return (
     <html lang="uk" className={inter.className}>
       <head>
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://kapkqziyceefxluxlvqc.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://kapkqziyceefxluxlvqc.supabase.co" />
         <LocalBusinessJsonLd />
         <WebSiteJsonLd />
       </head>
