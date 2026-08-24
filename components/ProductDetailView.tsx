@@ -193,7 +193,7 @@ export function ProductDetailView({
               fill
               className="object-cover"
               priority
-              unoptimized
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
           </div>
 
@@ -213,7 +213,7 @@ export function ProductDetailView({
                     alt={`${tProdTitle(product.title)} ${idx + 1}`}
                     fill
                     className="object-cover"
-                    unoptimized
+                    sizes="80px"
                   />
                 </button>
               ))}
@@ -659,7 +659,7 @@ export function ProductDetailView({
                       alt={tProdTitle(item.title)}
                       fill
                       className="object-cover"
-                      unoptimized
+                      sizes="(max-width: 640px) 50vw, 25vw"
                     />
                   </div>
                   <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{tProdTitle(item.title)}</h4>

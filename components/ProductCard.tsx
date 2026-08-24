@@ -124,7 +124,6 @@ export function ProductCard({ product: initialProduct }: ProductCardProps) {
             fill
             className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            unoptimized
           />
 
           {/* Installment Stickers (Privat / Mono) */}

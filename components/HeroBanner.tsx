@@ -76,7 +76,7 @@ export function HeroBanner() {
                 fill
                 priority={idx === 0}
                 className="object-cover object-center scale-105 transition-transform duration-10000 ease-out"
-                unoptimized
+                sizes="100vw"
               />
 
               {/* Gradient Overlay */}

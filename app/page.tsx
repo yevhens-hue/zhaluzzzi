@@ -56,7 +56,7 @@ export default async function HomePage() {
                   alt={cat.title_ua}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  unoptimized
+                  sizes="(max-width: 640px) 50vw, 25vw"
                 />
               </div>
 

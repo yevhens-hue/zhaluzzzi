@@ -394,7 +394,7 @@ export default function CheckoutPage() {
                     alt={tProdTitle(item.title)}
                     fill
                     className="object-cover"
-                    unoptimized
+                    sizes="60px"
                   />
                 </div>
                 <div className="flex-1">

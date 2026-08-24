@@ -73,7 +73,7 @@ export function CartDrawer() {
                       alt={tProdTitle(item.title)}
                       fill
                       className="object-cover"
-                      unoptimized
+                      sizes="80px"
                     />
                   </div>
 

@@ -101,11 +101,11 @@ export async function getProducts(options?: {
     if (options?.searchQuery) {
       query = query.ilike('title', `%${options.searchQuery}%`);
     }
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: new Error('Supabase request timeout') }), 2500)
+    );
 
-    const { data, error } = await query;
+    const { data, error } = (await Promise.race([query, timeoutPromise])) as any;
 
     if (error || !data || data.length === 0) {
       return getProductsFallback(options);

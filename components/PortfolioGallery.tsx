@@ -69,7 +69,7 @@ export function PortfolioGallery() {
               alt={item.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-700"
-              unoptimized
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-5">
               <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider mb-1">
@@ -105,7 +105,7 @@ export function PortfolioGallery() {
               alt="Галерея"
               fill
               className="object-contain"
-              unoptimized
+              sizes="(max-width: 1024px) 100vw, 1200px"
             />
           </div>
         </div>
