@@ -17,7 +17,7 @@ export function AktsiiClient({ saleProducts }: { saleProducts: Product[] }) {
           <Flame className="w-4 h-4 fill-white" />
           <span>{t('Гарячі пропозиції місяця', 'Горячие предложения месяца')}</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-black">
+        <h1 className="text-2xl sm:text-4xl font-serif-editorial font-bold">
           {t('Акції та спеціальні ціни від виробника', 'Акции и специальные цены от производителя')}
         </h1>
         <p className="text-xs sm:text-sm text-amber-100 max-w-2xl leading-relaxed">
@@ -81,7 +81,7 @@ export function AktsiiClient({ saleProducts }: { saleProducts: Product[] }) {
 
       {/* Sale Products Grid */}
       <div className="space-y-6">
-        <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+        <h2 className="text-xl sm:text-2xl font-serif-editorial font-bold text-gray-900">
           {t('Товари за акційними цінами', 'Товары по акционным ценам')}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">

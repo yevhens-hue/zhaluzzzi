@@ -49,7 +49,7 @@ export function PortfolioGallery() {
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
           <span>{t('Наші реалізовані проєкти', 'Наши реализованные проекты')}</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
+        <h2 className="text-2xl sm:text-3xl font-serif-editorial font-bold text-gray-900">
           {t('Фотогалерея робіт у будинках та квартирах', 'Фотогалерея работ в домах и квартирах')}
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 mt-2">

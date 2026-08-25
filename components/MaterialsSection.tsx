@@ -46,7 +46,7 @@ export function MaterialsSection() {
           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
           <span>{t('Європейські сертифіковані тканини', 'Европейские сертифицированные ткани')}</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
+        <h2 className="text-2xl sm:text-3xl font-serif-editorial font-bold text-gray-900">
           {t('Вибір матеріалу та його особливості', 'Выбор материала и его особенности')}
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 mt-2">

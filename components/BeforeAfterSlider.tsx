@@ -41,7 +41,7 @@ export function BeforeAfterSlider() {
           <Sparkles className="w-3.5 h-3.5 text-amber-600" />
           <span>Інтерактивне порівняння</span>
         </div>
-        <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+        <h2 className="text-2xl sm:text-4xl font-serif-editorial font-bold text-gray-900 tracking-tight">
           Відчуйте різницю: До та Після 100% Блекауту
         </h2>
         <p className="text-xs sm:text-sm text-gray-600 max-w-xl mx-auto">

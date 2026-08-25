@@ -182,7 +182,7 @@ export function CatalogView({
       {/* Header and Breadcrumbs */}
       <div className="bg-gray-50/80 rounded-2xl p-6 border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-serif-editorial font-bold text-gray-900">
             {displayTitle}
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">

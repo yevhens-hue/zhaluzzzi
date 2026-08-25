@@ -284,7 +284,7 @@ export function ProductDetailView({
           {/* Header info */}
           <div>
             <div className="flex justify-between items-start gap-4">
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 leading-snug">
+              <h1 className="text-xl sm:text-2xl font-serif-editorial font-bold text-gray-900 leading-snug">
                 {tProdTitle(product.title)}
               </h1>
 
@@ -714,7 +714,7 @@ export function ProductDetailView({
       {/* Recommended Products */}
       {relatedProducts.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+          <h2 className="text-xl sm:text-2xl font-serif-editorial font-bold text-gray-900">
             {t('Схожі моделі та рекомендації', 'Похожие модели и рекомендации')}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">

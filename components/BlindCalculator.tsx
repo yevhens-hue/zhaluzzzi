@@ -165,7 +165,7 @@ export function BlindCalculator() {
             <Calculator className="w-4 h-4 text-amber-400" />
             <span>Інтерактивний 3D-онлайн калькулятор</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+          <h2 className="text-2xl sm:text-4xl font-serif-editorial font-bold tracking-tight text-white">
             Розрахуйте точну вартість під ваші розміри
           </h2>
           <p className="text-xs sm:text-sm text-gray-300 mt-2 leading-relaxed">
