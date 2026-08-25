@@ -369,7 +369,7 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="block p-2 hover:bg-blue-50 rounded-lg text-blue-900"
             >
-              Жалюзі (горизонтальні, дерев’яні, бамбукові)
+              Жалюзі (горизонтальні алюмінієві та вертикальні)
             </Link>
             <Link
               href="/zakryta-sistema"

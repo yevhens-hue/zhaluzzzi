@@ -126,10 +126,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
       category: 'День-Ніч',
     },
     {
-      id: 2,
-      title: 'Дерев’яні жалюзі 50 мм у кабінеті',
-      city: 'м. Київ, Печерськ',
-      image: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=800&q=80',
+      id: 'gal-2',
+      title: 'Алюмінієві жалюзі Classic 25 мм у кабінеті',
+      city: 'м. Дніпро, вул. Січових Стрільців',
+      image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80',
       category: 'Жалюзі',
     },
     {

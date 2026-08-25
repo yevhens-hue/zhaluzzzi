@@ -40,16 +40,16 @@ export function HeroBanner() {
     },
     {
       id: 3,
-      tag: t('Преміум колекція', 'Премиум коллекция'),
-      title: t('Дерев’яні та Бамбукові Жалюзі 25мм та 50мм', 'Деревянные и Бамбуковые Жалюзи 25мм и 50мм'),
-      subtitle: t('100% натуральна канадська липа та бамбук. Елегантний акцент, який підкреслює статус вашого дому або кабінету.', '100% натуральная канадская липа и бамбук. Элегантный акцент, подчеркивающий статус вашего дома или кабинета.'),
-      highlight: t('Гарантія 24 місяці від виробника', 'Гарантия 24 месяца от производителя'),
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80',
+      tag: t('Практичність та надійність', 'Практичность и надежность'),
+      title: t('Горизонтальні та Вертикальні Жалюзі', 'Горизонтальные и Вертикальные Жалюзи'),
+      subtitle: t('Надійні алюмінієві жалюзі 25 мм для дому та офісу, а також практичні вертикальні тканинні жалюзі 89 мм і 127 мм від виробника.', 'Надежные алюминиевые жалюзи 25 мм для дома и офиса, а также практичные вертикальные тканевые жалюзи 89 мм и 127 мм от производителя.'),
+      highlight: t('Вигідна ціна від 420 грн/м² • Швидкий монтаж', 'Выгодная цена от 420 грн/м² • Быстрый монтаж'),
+      image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1920&q=80',
       ctaText: t('Каталог жалюзі', 'Каталог жалюзи'),
       ctaLink: '/zhaluzi',
       secondaryText: t('Консультація майстра', 'Консультация мастера'),
       secondaryLink: '/zvyazok',
-      accentColor: 'from-amber-950/95 via-slate-900/80 to-amber-950/40',
+      accentColor: 'from-slate-950/95 via-slate-900/80 to-slate-950/40',
     },
   ];
 
@@ -226,7 +226,7 @@ export function HeroBanner() {
           href="/zhaluzi"
           className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-blue-500 hover:text-blue-600 hover:shadow-xs transition shrink-0 flex items-center gap-1.5"
         >
-          <span>🪵 Жалюзі</span>
+          <span>🏢 Жалюзі</span>
         </Link>
         <a
           href="#calculator"

@@ -212,7 +212,7 @@ export default function ProductEditModal({
                 <option value="Однотонний / Без малюнка">Однотонні / Без малюнка</option>
                 <option value="З малюнком / Текстурний">З малюнком / Текстурні</option>
                 <option value="День-Ніч (Смугастий)">День-Ніч (Смугастий)</option>
-                <option value="Дерев'яний / Бамбуковий">Дерев'яний / Бамбуковий</option>
+                <option value="Алюмінієвий / Металік">Алюмінієвий / Металік</option>
               </select>
             </div>
 

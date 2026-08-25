@@ -97,13 +97,13 @@ export function MegaMenu({ activeMenu, onClose }: MegaMenuProps) {
               </div>
 
               <div>
-                <Link href="/roleti?sub=bambukovi" onClick={onClose} className="font-bold text-gray-900 hover:text-blue-600 block mb-2 text-base">
-                  {t('Бамбукові ролети', 'Бамбуковые роллеты')}
+                <Link href="/roleti?sub=blackout" onClick={onClose} className="font-bold text-gray-900 hover:text-blue-600 block mb-2 text-base">
+                  {t('100% Блекаут', '100% Блекаут')}
                 </Link>
                 <ul className="space-y-1.5 text-gray-600 text-xs">
-                  <li><Link href="/roleti?sub=bambukovi&dest=na-kuhnju" onClick={onClose} className="hover:text-blue-600">{t('На кухню', 'На кухню')}</Link></li>
-                  <li><Link href="/roleti?sub=bambukovi&dest=v-spalnju" onClick={onClose} className="hover:text-blue-600">{t('В спальню', 'В спальню')}</Link></li>
-                  <li><Link href="/roleti?sub=bambukovi&dest=v-gostinnuju" onClick={onClose} className="hover:text-blue-600">{t('У вітальню', 'В гостиную')}</Link></li>
+                  <li><Link href="/catalog?search=Блекаут&dest=v-spalnju" onClick={onClose} className="hover:text-blue-600">{t('У спальню', 'В спальню')}</Link></li>
+                  <li><Link href="/catalog?search=Блекаут&dest=v-dityachu" onClick={onClose} className="hover:text-blue-600">{t('У дитячу', 'В детскую')}</Link></li>
+                  <li><Link href="/catalog?search=Блекаут&dest=na-balkon" onClick={onClose} className="hover:text-blue-600">{t('На балкон', 'На балкон')}</Link></li>
                 </ul>
               </div>
             </div>
@@ -240,22 +240,22 @@ export function MegaMenu({ activeMenu, onClose }: MegaMenuProps) {
               </div>
 
               <div>
-                <Link href="/zhaluzi?sub=bambukovi_zhalyuzi" onClick={onClose} className="font-bold text-gray-900 hover:text-blue-600 block mb-2 text-base">
-                  {t('Бамбукові 25 / 50 мм', 'Бамбуковые 25 / 50 мм')}
+                <Link href="/zhaluzi?sub=venus" onClick={onClose} className="font-bold text-gray-900 hover:text-blue-600 block mb-2 text-base">
+                  {t('Жалюзі Venus (на стулку)', 'Жалюзи Venus (на створку)')}
                 </Link>
                 <ul className="space-y-1.5 text-gray-600 text-xs">
-                  <li><Link href="/zhaluzi?sub=bambukovi_zhalyuzi&dest=v-spalnju" onClick={onClose} className="hover:text-blue-600">{t('У спальню', 'В спальню')}</Link></li>
-                  <li><Link href="/zhaluzi?sub=bambukovi_zhalyuzi&dest=v-gostinnuju" onClick={onClose} className="hover:text-blue-600">{t('У вітальню', 'В гостиную')}</Link></li>
+                  <li><Link href="/zhaluzi?sub=venus&dest=na-kuhnju" onClick={onClose} className="hover:text-blue-600">{t('На кухню', 'На кухню')}</Link></li>
+                  <li><Link href="/zhaluzi?sub=venus&dest=na-balkon" onClick={onClose} className="hover:text-blue-600">{t('На балкон', 'На балкон')}</Link></li>
                 </ul>
               </div>
 
               <div>
-                <Link href="/zhaluzi?sub=derevyani" onClick={onClose} className="font-bold text-gray-900 hover:text-blue-600 block mb-2 text-base">
-                  {t("Дерев'яні 25 / 50 мм", 'Деревянные 25 / 50 мм')}
+                <Link href="/zhaluzi?sub=office" onClick={onClose} className="font-bold text-gray-900 hover:text-blue-600 block mb-2 text-base">
+                  {t('Жалюзі для офісу', 'Жалюзи для офиса')}
                 </Link>
                 <ul className="space-y-1.5 text-gray-600 text-xs">
-                  <li><Link href="/zhaluzi?sub=derevyani&dest=v-spalnju" onClick={onClose} className="hover:text-blue-600">{t('У спальню', 'В спальню')}</Link></li>
-                  <li><Link href="/zhaluzi?sub=derevyani&dest=v-gostinnuju" onClick={onClose} className="hover:text-blue-600">{t('У вітальню', 'В гостиную')}</Link></li>
+                  <li><Link href="/zhaluzi?sub=office&type=vert" onClick={onClose} className="hover:text-blue-600">{t('Вертикальні тканинні', 'Вертикальные тканевые')}</Link></li>
+                  <li><Link href="/zhaluzi?sub=office&type=alum" onClick={onClose} className="hover:text-blue-600">{t('Алюмінієві Classic', 'Алюминиевые Classic')}</Link></li>
                 </ul>
               </div>
             </div>

@@ -110,7 +110,7 @@ export function CatalogView({
     if (selectedTexture === 'plain') {
       list = list.filter((p) => p.texture?.includes('Без малюнка') || p.texture?.includes('Однотонний') || p.texture?.includes('Гладкий'));
     } else if (selectedTexture === 'pattern') {
-      list = list.filter((p) => p.texture?.includes('малюнком') || p.texture?.includes('День-Ніч') || p.texture?.includes('Дерев'));
+      list = list.filter((p) => p.texture?.includes('малюнком') || p.texture?.includes('День-Ніч') || p.texture?.includes('Текстурний'));
     }
 
     // Blackout

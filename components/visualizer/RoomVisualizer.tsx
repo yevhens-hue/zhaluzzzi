@@ -50,11 +50,11 @@ const FABRIC_COLLECTIONS: Record<VisualizerSystem, FabricOption[]> = {
     { id: 'sand-cream', name: 'Крем Сатин S-101', category: 'Сатин', hex: '#EBE5D8', translucency: 0.5, basePrice: 299 },
   ],
   'wood-blinds': [
-    { id: 'wood-wenge', name: 'Дерево 50мм Венге', category: 'Дерев’яні жалюзі', hex: '#261C14', translucency: 0.05, basePrice: 950 },
-    { id: 'wood-oak', name: 'Дерево 50мм Натуральний Дуб', category: 'Дерев’яні жалюзі', hex: '#B88B4A', translucency: 0.05, basePrice: 950 },
-    { id: 'wood-white', name: 'Дерево 50мм Білий Ясен', category: 'Дерев’яні жалюзі', hex: '#F0EFEA', translucency: 0.05, basePrice: 950 },
-    { id: 'wood-walnut', name: 'Дерево 50мм Горіх Тютюновий', category: 'Дерев’яні жалюзі', hex: '#5A3D28', translucency: 0.05, basePrice: 950 },
     { id: 'alum-silver', name: 'Алюміній 25мм Срібний Металік', category: 'Алюмінієві жалюзі', hex: '#A8B0B8', translucency: 0.05, basePrice: 420 },
+    { id: 'alum-white', name: 'Алюміній 25мм Білий Класичний', category: 'Алюмінієві жалюзі', hex: '#F9FAFB', translucency: 0.05, basePrice: 420 },
+    { id: 'alum-graphite', name: 'Алюміній 25мм Графіт Антрацит', category: 'Алюмінієві жалюзі', hex: '#374151', translucency: 0.05, basePrice: 450 },
+    { id: 'alum-gold', name: 'Алюміній 25мм Шампань Металік', category: 'Алюмінієві жалюзі', hex: '#C5A880', translucency: 0.05, basePrice: 450 },
+    { id: 'alum-beige', name: 'Алюміній 25мм Бежевий Перламутр', category: 'Алюмінієві жалюзі', hex: '#E2D5C3', translucency: 0.05, basePrice: 420 },
   ],
   'blackout': [
     { id: 'bo-umbra-graphite', name: 'Umbra Blackout Графіт BO-90', category: '100% Блекаут', hex: '#212529', translucency: 0.0, basePrice: 580 },
@@ -320,7 +320,7 @@ export default function RoomVisualizer({
                   </div>
                 )}
 
-                {/* 3. ДЕРЕВ'ЯНІ ЖАЛЮЗІ (WOOD/VENETIAN) RENDERING */}
+                {/* 3. ГОРИЗОНТАЛЬНІ АЛЮМІНІЄВІ ЖАЛЮЗІ (ALUMINUM/VENETIAN) RENDERING */}
                 {system === 'wood-blinds' && (
                   <div className="w-full h-full flex flex-col justify-between">
                     {Array.from({ length: 16 }).map((_, idx) => {
@@ -451,7 +451,7 @@ export default function RoomVisualizer({
                 {[
                   { id: 'day-night', name: 'День-Ніч', desc: 'Смуги Zebra' },
                   { id: 'roller', name: 'Рулонні штори', desc: 'Класика' },
-                  { id: 'wood-blinds', name: 'Дерев’яні 50мм', desc: 'Преміум ламелі' },
+                  { id: 'wood-blinds', name: 'Жалюзі 25мм', desc: 'Алюміній' },
                   { id: 'blackout', name: '100% Блекаут', desc: 'Темрява' },
                 ].map((sys) => (
                   <button

@@ -33,7 +33,7 @@ export default function ProNasPage() {
         <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-2">
           <div className="text-3xl font-black text-amber-500">50,000+</div>
           <div className="font-bold text-sm text-gray-900">{t('Виготовлених виробів', 'Изготовленных изделий')}</div>
-          <p className="text-xs text-gray-500">{t('Рулонні штори, ролети день-ніч, алюмінієві та дерев’яні жалюзі.', 'Рулонные шторы, роллеты день-ночь, алюминиевые и деревянные жалюзи.')}</p>
+          <p className="text-xs text-gray-500">{t('Рулонні штори, ролети День-Ніч, горизонтальні алюмінієві та вертикальні тканинні жалюзі.', 'Рулонные шторы, роллеты День-Ночь, горизонтальные алюминиевые и вертикальные тканевые жалюзи.')}</p>
         </div>
 
         <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-2">

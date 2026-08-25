@@ -98,7 +98,6 @@ export function Footer() {
               <li><Link href="/roleti?sub=den-nich" className="hover:text-white">{t('Ролети День-Ніч', 'Роллеты День-Ночь')}</Link></li>
               <li><Link href="/roleti?sub=blekaut_roleti" className="hover:text-white">{t('Ролети Блекаут', 'Роллеты Блэкаут')}</Link></li>
               <li><Link href="/roleti?sub=dzhutovi_roleti" className="hover:text-white">{t('Джутові ролети', 'Джутовые роллеты')}</Link></li>
-              <li><Link href="/roleti?sub=bambukovi" className="hover:text-white">{t('Бамбукові ролети', 'Бамбуковые роллеты')}</Link></li>
               <li><Link href="/shtori?sub=rimski" className="hover:text-white">{t('Римські штори', 'Римские шторы')}</Link></li>
               <li><Link href="/shtori?sub=plise" className="hover:text-white">{t('Штори Плісе Duo', 'Шторы Плиссе Duo')}</Link></li>
             </ul>
@@ -110,11 +109,10 @@ export function Footer() {
               {t('Жалюзі & Системи', 'Жалюзи & Системы')}
             </h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/zhaluzi?sub=gorizontalnie_zhaluzi" className="hover:text-white">{t('Горизонтальні жалюзі', 'Горизонтальные жалюзи')}</Link></li>
-              <li><Link href="/zhaluzi?sub=vertikalnie_zhaluzi" className="hover:text-white">{t('Вертикальні жалюзі', 'Вертикальные жалюзи')}</Link></li>
+              <li><Link href="/zhaluzi?sub=gorizontalnie_zhaluzi" className="hover:text-white">{t('Горизонтальні жалюзі 25 мм', 'Горизонтальные жалюзи 25 мм')}</Link></li>
+              <li><Link href="/zhaluzi?sub=vertikalnie_zhaluzi" className="hover:text-white">{t('Вертикальні жалюзі 89/127 мм', 'Вертикальные жалюзи 89/127 мм')}</Link></li>
               <li><Link href="/zhaluzi?sub=alyuminievie_zhaluzi" className="hover:text-white">{t('Алюмінієві жалюзі', 'Алюминиевые жалюзи')}</Link></li>
-              <li><Link href="/zhaluzi?sub=bambukovi_zhalyuzi" className="hover:text-white">{t('Бамбукові жалюзі', 'Бамбуковые жалюзи')}</Link></li>
-              <li><Link href="/zhaluzi?sub=derevyani" className="hover:text-white">{t("Дерев'яні жалюзі", 'Деревянные жалюзи')}</Link></li>
+              <li><Link href="/zhaluzi?sub=venus" className="hover:text-white">{t('Жалюзі Venus на стулку', 'Жалюзи Venus на створку')}</Link></li>
               <li><Link href="/zakryta-sistema" className="hover:text-white">{t('Закрита система з коробом', 'Закрытая система с коробом')}</Link></li>
             </ul>
           </div>
