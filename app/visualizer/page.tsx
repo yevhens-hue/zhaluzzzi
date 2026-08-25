@@ -1,8 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
 import RoomVisualizer from '@/components/visualizer/RoomVisualizer';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { Sparkles, ShieldCheck, Truck, Ruler } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -19,70 +17,64 @@ export const metadata: Metadata = {
 
 export default function VisualizerPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
-      <Header />
+    <div className="space-y-10 py-2 sm:py-4">
+      {/* Page Hero */}
+      <div className="text-center space-y-3 max-w-3xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black uppercase tracking-wider">
+          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+          <span>Інтерактивна примірка</span>
+        </div>
+        <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+          Приміряйте жалюзі та штори на своєму вікні онлайн
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-2xl mx-auto">
+          Оберіть тип системи, змінюйте фактури тканин, перевіряйте захист від сонця у режимах «День» та «Вечір» або завантажте власне фото кімнати.
+        </p>
+      </div>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
-        {/* Page Hero */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-black uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Інтерактивна примірка</span>
+      {/* The Interactive Visualizer */}
+      <div className="w-full">
+        <RoomVisualizer />
+      </div>
+
+      {/* Benefits Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+        <div className="bg-white border border-gray-200/80 p-5 rounded-2xl flex items-start gap-4 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Ruler className="w-5 h-5" />
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-            Приміряйте жалюзі та штори на своєму вікні онлайн
-          </h1>
-          <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
-            Оберіть тип системи, змінюйте фактури тканин, перевіряйте захист від сонця у режимах «День» та «Вечір» або завантажте власне фото кімнати.
-          </p>
+          <div>
+            <h3 className="font-bold text-gray-900 text-sm mb-1">Безкоштовний замір у Дніпрі</h3>
+            <p className="text-xs text-gray-500">
+              Майстер приїде з реальними зразками всіх тканин, каталогами та лазерним далекоміром.
+            </p>
+          </div>
         </div>
 
-        {/* The Interactive Visualizer */}
-        <div className="w-full">
-          <RoomVisualizer />
-        </div>
-
-        {/* Benefits Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
-          <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
-              <Ruler className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-base mb-1">Безкоштовний замір у Дніпрі</h3>
-              <p className="text-xs text-slate-400">
-                Майстер приїде з реальними зразками всіх тканин, каталогами та лазерним далекоміром.
-              </p>
-            </div>
+        <div className="bg-white border border-gray-200/80 p-5 rounded-2xl flex items-start gap-4 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5" />
           </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-base mb-1">Гарантія 24 місяці</h3>
-              <p className="text-xs text-slate-400">
-                Використовуємо лише оригінальні польські механізми Besta та тканини європейського виробництва.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
-              <Truck className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-base mb-1">Швидке виготовлення</h3>
-              <p className="text-xs text-slate-400">
-                Власне виробництво у Дніпрі — термін виготовлення від 2 до 4 робочих днів.
-              </p>
-            </div>
+          <div>
+            <h3 className="font-bold text-gray-900 text-sm mb-1">Гарантія 24 місяці</h3>
+            <p className="text-xs text-gray-500">
+              Використовуємо лише оригінальні польські механізми Besta та тканини європейського виробництва.
+            </p>
           </div>
         </div>
-      </main>
 
-      <Footer />
+        <div className="bg-white border border-gray-200/80 p-5 rounded-2xl flex items-start gap-4 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900 text-sm mb-1">Швидке виготовлення</h3>
+            <p className="text-xs text-gray-500">
+              Власне виробництво у Дніпрі — термін виготовлення від 2 до 4 робочих днів.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
