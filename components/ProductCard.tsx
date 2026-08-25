@@ -84,7 +84,7 @@ export function ProductCard({ product: initialProduct }: ProductCardProps) {
 
   return (
     <>
-      <div className="group bg-white rounded-2xl border border-gray-100/90 shadow-xs hover:shadow-2xl hover:border-blue-300 transition-all duration-300 flex flex-col overflow-hidden relative transform hover:-translate-y-1">
+      <div className="group bg-white rounded-3xl border border-slate-200/60 luxury-card-shadow transition-all duration-500 flex flex-col overflow-hidden relative transform hover:-translate-y-1.5">
         {/* Badges / Stickers top left */}
         <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 pointer-events-none">
           {product.is_popular && (

@@ -1,6 +1,6 @@
 import { AiConsultantWidget } from "@/components/ai/AiConsultantWidget";
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 import { CityProvider } from '@/context/CityContext';
@@ -20,6 +20,12 @@ import { Toaster } from 'sonner';
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
   display: 'swap',
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin', 'cyrillic'],
+  display: 'swap',
+  variable: '--font-playfair',
 });
 
 export const metadata: Metadata = {
@@ -94,7 +100,7 @@ export default function RootLayout({
 }) {
   return (
     <ViewTransitions>
-      <html lang="uk" className={inter.className}>
+      <html lang="uk" className={`${inter.className} ${playfair.variable}`}>
         <head>
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />

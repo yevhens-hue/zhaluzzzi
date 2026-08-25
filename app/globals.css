@@ -1,15 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
+  --background: #fdfcf7; /* Warm luxury ivory/neutral background */
+  --foreground: #0f172a;
 }
 
 body {
-  background-color: #ffffff;
-  color: #111827;
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: inherit;
   overflow-x: hidden;
+}
+
+/* Luxury Editorial font utility */
+.font-serif-editorial {
+  font-family: var(--font-playfair), Georgia, serif;
 }
 
 /* Ensure all inputs and form fields always have high contrast regardless of OS theme */
@@ -60,10 +65,10 @@ select:-webkit-autofill:focus {
 /* Custom UI animations & utility effects */
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
   }
   50% {
-    box-shadow: 0 0 25px rgba(59, 130, 246, 0.7);
+    box-shadow: 0 0 35px rgba(212, 175, 55, 0.6);
   }
 }
 
@@ -81,17 +86,25 @@ select:-webkit-autofill:focus {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .glass-dark {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.luxury-card-shadow {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.luxury-card-shadow:hover {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(212, 175, 55, 0.3);
 }
 
 /* Modern View Transitions API - Apple style seamless morphing */
@@ -151,4 +164,3 @@ select:-webkit-autofill:focus {
 .animate-accordion-up {
   animation: accordion-up 0.2s ease-out;
 }
-

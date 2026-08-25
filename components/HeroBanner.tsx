@@ -112,7 +112,7 @@ export function HeroBanner() {
                   </div>
 
                   {/* Main Title */}
-                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight max-w-3xl tracking-tight text-white drop-shadow-lg">
+                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-serif-editorial font-bold leading-tight max-w-3xl tracking-tight text-white drop-shadow-xl">
                     {slide.title}
                   </h1>
 
