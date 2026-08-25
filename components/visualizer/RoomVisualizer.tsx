@@ -67,23 +67,23 @@ const FABRIC_COLLECTIONS: Record<VisualizerSystem, FabricOption[]> = {
 const ROOM_BACKGROUNDS: Record<RoomType, { name: string; url: string; windowCoords: { top: string; left: string; width: string; height: string } }> = {
   living: {
     name: 'Вітальня',
-    url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1400&q=80',
-    windowCoords: { top: '16%', left: '32%', width: '36%', height: '58%' },
+    url: '/images/visualizer/living.jpg',
+    windowCoords: { top: '15.5%', left: '28.5%', width: '43%', height: '46.5%' },
   },
   kitchen: {
     name: 'Кухня',
-    url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1400&q=80',
-    windowCoords: { top: '18%', left: '35%', width: '30%', height: '52%' },
+    url: '/images/visualizer/kitchen.jpg',
+    windowCoords: { top: '17.5%', left: '34.5%', width: '31%', height: '40.5%' },
   },
   bedroom: {
     name: 'Спальня',
-    url: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=1400&q=80',
-    windowCoords: { top: '15%', left: '28%', width: '44%', height: '62%' },
+    url: '/images/visualizer/bedroom.jpg',
+    windowCoords: { top: '14.5%', left: '37%', width: '26%', height: '39%' },
   },
   office: {
     name: 'Кабінет',
-    url: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1400&q=80',
-    windowCoords: { top: '14%', left: '30%', width: '40%', height: '60%' },
+    url: '/images/visualizer/office.jpg',
+    windowCoords: { top: '10.5%', left: '30.5%', width: '39%', height: '56.5%' },
   },
   custom: {
     name: 'Моє фото',
