@@ -1,7 +1,7 @@
 # 📑 Engineering Continuity & Production Handoff Package: Жалюзі та Рулонні Штори Дніпро
 
-**Поточна версія:** `v2.6.0` (25.08.2026)  
-**Реліз:** *Interactive Sun vs Blackout Comparison, Shadcn UI Design System & Precision Catalog Routing*  
+**Поточна версія:** `v2.6.1` (25.08.2026)  
+**Реліз:** *Studio Header Redesign & Product Snapshot*  
 **Production URL:** [https://zhaluzi-rolety-dnipro.vercel.app](https://zhaluzi-rolety-dnipro.vercel.app)  
 **GitHub Repository:** [https://github.com/yevhens-hue/zhaluzzzi](https://github.com/yevhens-hue/zhaluzzzi)  
 **Admin Panel:** [https://zhaluzi-rolety-dnipro.vercel.app/admin](https://zhaluzi-rolety-dnipro.vercel.app/admin)  
