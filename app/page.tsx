@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { ArrowRight, Sparkles, Star, ShieldCheck, Flame } from 'lucide-react';
 import { HeroBanner } from '@/components/HeroBanner';
 import { BlindCalculator } from '@/components/BlindCalculator';
+import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { WhyUsSection } from '@/components/WhyUsSection';
 import { MaterialsSection } from '@/components/MaterialsSection';
 import { PortfolioGallery } from '@/components/PortfolioGallery';
@@ -102,7 +103,10 @@ export default async function HomePage() {
         <HomeProductGrid initialProducts={popularProducts} filterType="popular" limit={8} />
       </div>
 
-      {/* 4. Interactive Blind Size & Price Calculator */}
+      {/* 4. Interactive Before/After Sun vs Blackout Comparison */}
+      <BeforeAfterSlider />
+
+      {/* 5. Interactive Blind Size & Price Calculator */}
       <BlindCalculator />
 
       {/* 5. New Arrivals / Premium Collection */}

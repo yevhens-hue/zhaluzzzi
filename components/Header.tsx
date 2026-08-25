@@ -40,7 +40,7 @@ export function Header() {
   };
 
   return (
-    <header className="w-full bg-white border-b border-gray-100 sticky top-0 z-40 shadow-xs">
+    <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-0 z-40 shadow-xs transition-colors">
       {/* Top Banner if configured */}
       {settings.promo?.topBannerText && (
         <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white text-[11px] font-bold py-1.5 px-4 text-center tracking-wide">
