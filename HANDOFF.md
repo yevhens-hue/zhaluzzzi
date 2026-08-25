@@ -1,7 +1,8 @@
 # 📑 Engineering Continuity & Production Handoff Package: Жалюзі та Рулонні Штори Дніпро
 
-**Project Target:** Production E-Commerce Web Application & CMS  
+**Поточна версія:** `v2.4.0` (25.08.2026)  
 **Production URL:** [https://zhaluzi-rolety-dnipro.vercel.app](https://zhaluzi-rolety-dnipro.vercel.app)  
+**GitHub Repository:** [https://github.com/yevhens-hue/zhaluzzzi](https://github.com/yevhens-hue/zhaluzzzi)  
 **Admin Panel:** [https://zhaluzi-rolety-dnipro.vercel.app/admin](https://zhaluzi-rolety-dnipro.vercel.app/admin)  
 **Admin Credentials:**  
 - **Login:** `admin`  
@@ -10,82 +11,95 @@
 
 ---
 
-## 🏛️ System Map & Component Topology
+## 🏛️ Структура та Карта компонентів
 
 ```
 ├── app/
-│   ├── page.tsx                     # Homepage (Hero, Categories, Catalog preview, Works Gallery, AI Consultant)
-│   ├── admin/page.tsx               # Full Admin Panel & CMS (Orders, Leads, Products, Calculator, Gallery, Contacts with Email/SMS, Logs)
-│   ├── catalog/page.tsx             # Full Catalog page with Live Filters & Search
-│   ├── product/[slug]/page.tsx      # Dynamic Product Detail Page with Configurator
-│   ├── checkout/page.tsx            # Full Checkout flow with live UA phone validation & operator badge
+│   ├── page.tsx                     # Головна сторінка (Hero, Категорії, Каталог, Галерея робіт, AI Консультант)
+│   ├── visualizer/page.tsx          # 3D Візуалізатор тканин на вікні (SEO, окрема сторінка)
+│   ├── admin/page.tsx               # Модульна Адмін-панель & CMS (Замовлення, Ліди, Товари, Калькулятор, Контакти)
+│   ├── catalog/page.tsx             # Каталог товарів з живими фільтрами та пошуком
+│   ├── product/[slug]/page.tsx      # Картка товару + Конфігуратор розмірів + Кнопка 3D Примірки
+│   ├── checkout/page.tsx            # Оформлення замовлення з валідацією UA телефонів та операторів
 │   ├── api/
-│   │   ├── tracking/route.ts        # Nova Poshta Live TTN Tracking API
-│   │   ├── notify/route.ts          # Server-side Email (HTML) & SMS notification dispatcher
-│   │   └── chat/route.ts            # AI Consultant OpenAI GPT-4o-mini + Tool Calling + Lead Qualification
+│   │   ├── admin/
+│   │   │   ├── auth/route.ts        # Авторизація адміна (Dnipro2026! + Rate Limit)
+│   │   │   ├── products/route.ts    # CRUD товарів у базі Supabase (upsert за ID)
+│   │   │   └── telegram/test/route.ts # Тестова відправка повідомлення в Telegram
+│   │   ├── webhooks/
+│   │   │   └── telegram/route.ts    # Telegram Bot Webhook (/start, /stats, /orders, /leads, /id)
+│   │   ├── notify/route.ts          # Диспетчер сповіщень: Email (HTML), SMS (TurboSMS) та Telegram
+│   │   ├── tracking/route.ts        # Нова Пошта Live TTN Tracking API
+│   │   ├── chat/route.ts            # AI Консультант (SSE streaming, tool calling розрахунку ціни)
+│   │   └── revalidate/route.ts      # Миттєва ревалідація кешу Next.js після змін
 ├── components/
-│   ├── Header.tsx                   # Header with Navigation, Contacts, Mobile Drawer & TTN Tracking modal
-│   ├── ProductDetailView.tsx        # Product detail view with size calculator, color options, cart integration
-│   ├── ProductCard.tsx              # Reusable product card with useSiteSettings dynamic sync
-│   ├── CatalogView.tsx              # Catalog page with filter drawer, room tags, texture, blackout & search
-│   ├── PortfolioGallery.tsx         # Works gallery connected to useSiteSettings.gallery CMS
-│   ├── TrackingModal.tsx            # Nova Poshta 14-digit TTN tracking popup modal
-│   ├── OneClickModal.tsx            # 1-Click order popup with real-time UA phone validation & operator badge
+│   ├── Header.tsx                   # Хедер з кнопкою 3D Примірки, ТТН та телефонами
+│   ├── Footer.tsx                   # Футер з бейджем версії v2.4.0
+│   ├── ProductDetailView.tsx        # Картка товару з модалкою 3D візуалізатора
+│   ├── visualizer/
+│   │   ├── RoomVisualizer.tsx       # 3D/Canvas Візуалізатор (День-Ніч, Рулонні, Жалюзі, Блекаут)
+│   │   └── RoomVisualizerModal.tsx  # Модальне вікно примірки на вікні
+│   ├── admin/                       # Модульні вкладки адмін-панелі
+│   │   ├── AdminHeader.tsx          # Шапка адмінки з бейджем версії v2.4.0
+│   │   ├── AdminLogin.tsx           # Екран входу з індикатором CapsLock
+│   │   └── tabs/                    # OrdersTab, LeadsTab, ProductsTab, ContactsTab (Telegram), etc.
 │   └── ai/
-│       └── AiConsultantWidget.tsx   # Floating AI assistant with city context, quick prompts & lead capture
+│       └── AiConsultantWidget.tsx   # AI Консультант з калькулятором вартості та рекомендаціями
 ├── lib/
-│   ├── phoneValidator.ts            # Ukrainian Phone Validator (Kyivstar, Vodafone, Lifecell, Intertelecom, Landline)
-│   ├── notifications.ts             # Email (HTML) & SMS notification dispatcher (Resend, TurboSMS, AlphaSMS, Webhooks)
-│   ├── siteSettings.ts              # SiteSettings interfaces (contacts.email, phone1, phone2), defaults & sync
-│   ├── supabase.ts                  # Supabase client, createOrder & createLead with automated notification triggers
-│   ├── mockData.ts                  # Baseline fallback product catalog & categories
-│   ├── logger.ts                    # Application event audit logger
-│   └── ai/
-│       ├── prompts.ts               # System prompt with order qualification (type, sizes, preferred time)
-│       ├── tools.ts                 # Function calling schema (submitLead with orderType, dimensions, time)
-│       └── knowledgeBase.ts         # Technical knowledge base for window treatment systems
-└── context/
-    ├── SiteSettingsContext.tsx      # Global React Context broadcasting settings & dynamic products
-    ├── CartContext.tsx              # Shopping cart state manager
-    ├── CityContext.tsx              # City & geolocation selector
-    └── LanguageContext.tsx          # Language provider (locked to Ukrainian)
+│   ├── version.ts                   # Конфіг версії (v2.4.0) та назви релізу
+│   ├── telegram.ts                  # Клієнт Telegram Bot API (форматування, інлайн-кнопки)
+│   ├── notifications.ts             # Відправка Email, SMS та Telegram сповіщень
+│   ├── phoneValidator.ts            # Валідатор українських номерів та операторів (+380...)
+│   ├── siteSettings.ts              # Конфіг налаштувань сайту (SiteContacts, PromoContent)
+│   └── supabase.ts                  # Supabase клієнт та прямі запити до БД
+└── .github/
+    ├── dependabot.yml               # Щотижневе авто-оновлення npm залежностей
+    └── workflows/
+        ├── e2e.yml                  # Playwright E2E тести
+        ├── lighthouse.yml           # Lighthouse CI (Speed & SEO аудит)
+        ├── security-scan.yml        # Gitleaks сканування секретів
+        └── supabase-migrations.yml  # Валідація SQL міграцій
 ```
 
 ---
 
-## 🚀 Key Features Implemented & Verified
+## 🚀 Ключові можливості версії `v2.4.0`
 
-| Feature | Description | Status |
+| Функціонал | Опис | Статус |
 | :--- | :--- | :--- |
-| **Ukrainian Phone Validation** | Validates digit count (10/12), normalizes to E.164 (`+380...`), detects mobile operators (Kyivstar, Vodafone, Lifecell, etc.) with real-time badge in UI | ✅ Live & Verified |
-| **Email & SMS Auto-Dispatch** | Instant rich HTML email with product table + concise SMS to site contacts upon order or lead creation | ✅ Live & Verified |
-| **AI Consultant with Qualification** | GPT-4o-mini consultant that clarifies order type (visit/custom sizes), dimensions, and preferred contact time | ✅ Live & Verified |
-| **Nova Poshta TTN Tracking** | Live 14-digit TTN tracking popup connected to official Nova Poshta API | ✅ Live & Verified |
-| **Admin Panel CMS** | Full control over orders, leads, products, calculator rates, gallery, and notification contacts (email & phones) | ✅ Live & Verified |
-| **Dynamic Context Sync** | Real-time synchronization between Admin changes and client views via `SiteSettingsContext` | ✅ Live & Verified |
+| **3D Візуалізатор тканин** | Інтерактивна примірка рулонних штор, День-Ніч, жалюзі та блекауту на 4 центрованих кімнатах або на власному фото вікна клієнта | ✅ Live & Опубліковано |
+| **Telegram Bot сповіщення** | Миттєві картки нових замовлень та лідів з кнопками швидкого дзвінка, перегляду в адмінці та командами `/stats`, `/orders`, `/leads` | ✅ Live & Опубліковано |
+| **Надійність Адмін-панелі** | Збереження та редагування карток товарів безпосередньо у Supabase за первинним ключем `id` без конфліктів посилань | ✅ Live & Опубліковано |
+| **Автоматичний Fallback** | Каталог завжди стабільно відображає товари навіть за тимчасової недоступності БД | ✅ Live & Опубліковано |
+| **Семантичне версіонування** | Відображення актуальної версії `v2.4.0` в адмінці, на екрані входу та у футері сайту | ✅ Live & Опубліковано |
+| **GitHub CI/CD & Автотести** | Синхронізація з репозиторієм, автодеплой на Vercel, тести Playwright, аудит швидкості Lighthouse, Dependabot | ✅ Live & Опубліковано |
 
 ---
 
-## 🛠️ Diagnostics & Maintenance Runbook
+## 🛠️ Інструкція для розробника (Runbook)
 
-### 1. Local Verification
-To build and test the project locally:
+### 1. Локальна збірка та перевірка типів
 ```bash
 npm run build
 ```
 
-### 2. Integration Tests
-To run phone validation & notification tests:
+### 2. Запуск локального сервера розробки
 ```bash
-npx tsx scratch/test-phone-notifications.ts
+npm run dev
 ```
 
-### 3. Vercel Production Deployment
-To deploy all changes directly to production:
+### 3. Запуск Playwright E2E тестів
 ```bash
-npx vercel --prod --yes
+npx playwright test
+```
+
+### 4. Відправка змін у GitHub та автоматичний деплой на Vercel
+```bash
+git add .
+git commit -m "your commit message"
+git push origin main
 ```
 
 ---
 
-*Handoff package generated and updated on 2026-08-23.*
+*Handoff package сформовано та зафіксовано 25 серпня 2026 року.*
