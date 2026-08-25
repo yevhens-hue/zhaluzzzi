@@ -52,13 +52,10 @@ export function Header() {
       <div className="bg-[#f8f9fa] border-b border-gray-200/70 text-xs text-gray-600 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 py-1.5 flex justify-between items-center">
           {/* Main info links */}
-          <nav className="flex items-center space-x-5 font-medium text-gray-700">
+          <nav className="flex items-center space-x-6 font-medium text-gray-700">
             <Link href="/" className="hover:text-blue-600 transition">{t('Головна', 'Главная')}</Link>
             <Link href="/aktsii" className="hover:text-blue-600 transition">{t('Акції', 'Акции')}</Link>
             <Link href="/zamir" className="hover:text-blue-600 transition">{t('Замір', 'Замер')}</Link>
-            <Link href="/montaj" className="hover:text-blue-600 transition">{t('Монтаж', 'Монтаж')}</Link>
-            <Link href="/sposobi_oplati" className="hover:text-blue-600 transition">{t('Оплата', 'Оплата')}</Link>
-            <Link href="/dostavka" className="hover:text-blue-600 transition">{t('Доставка', 'Доставка')}</Link>
             <Link href="/pro_nas" className="hover:text-blue-600 transition">{t('Про нас', 'О нас')}</Link>
             <Link href="/zvyazok" className="hover:text-blue-600 transition">{t('Контакти', 'Контакты')}</Link>
           </nav>
