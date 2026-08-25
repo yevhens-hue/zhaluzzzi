@@ -18,6 +18,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { AdminTab } from './types';
+import { APP_VERSION } from '@/lib/version';
 
 interface AdminHeaderProps {
   isSupabaseConfigured: boolean;
@@ -78,6 +79,10 @@ export default function AdminHeader({
               }`}
             />
             <span>{isSupabaseConfigured ? 'Supabase Live' : 'Local Storage Sync'}</span>
+          </div>
+
+          <div className="hidden sm:flex items-center px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+            <span>v{APP_VERSION}</span>
           </div>
 
           <button

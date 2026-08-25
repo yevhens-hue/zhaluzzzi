@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { APP_VERSION, APP_BUILD_DATE } from '@/lib/version';
 
 interface AdminLoginProps {
   onSuccess: () => void;
@@ -144,8 +145,9 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
           </button>
         </form>
 
-        <div className="text-[11px] text-gray-400 text-center">
-          🔒 Доступ суворо обмежений для власника сайту.
+        <div className="text-[11px] text-gray-400 text-center space-y-1">
+          <div>🔒 Доступ суворо обмежений для власника сайту.</div>
+          <div className="font-mono text-[10px] text-gray-400">Система керування v{APP_VERSION} ({APP_BUILD_DATE})</div>
         </div>
       </div>
     </div>

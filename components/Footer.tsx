@@ -7,6 +7,7 @@ import { Logo } from './Logo';
 import { InstagramIcon } from './InstagramIcon';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { APP_VERSION } from '@/lib/version';
 
 export function Footer() {
   const { settings } = useSiteSettings();
@@ -138,8 +139,9 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-gray-500">
-          <div>
-            © 2014–2026 {t('Жалюзі та Ролети від виробника • м. Дніпро. Всі права захищено.', 'Жалюзи и Роллеты от производителя • г. Днепр. Все права защищены.')}
+          <div className="flex items-center gap-2">
+            <span>© 2014–2026 {t('Жалюзі та Ролети від виробника • м. Дніпро.', 'Жалюзи и Роллеты от производителя • г. Днепр.')}</span>
+            <span className="text-[10px] font-mono text-gray-600 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded">v{APP_VERSION}</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1 text-emerald-500">
