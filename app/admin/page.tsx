@@ -242,7 +242,11 @@ export default function AdminPage() {
         )
       );
 
-      const slug = generateSlugFromTitle(productToSave.title, productToSave.id);
+      const slug = isAddingNewProduct
+        ? generateSlugFromTitle(productToSave.title, productToSave.id)
+        : (productToSave.slug && productToSave.slug.trim().length > 0
+            ? productToSave.slug.trim()
+            : generateSlugFromTitle(productToSave.title, productToSave.id));
 
       const rawChars: Record<string, string> = Object.fromEntries(
         Object.entries(productToSave.characteristics || {}).filter(([, v]) => v != null)
@@ -302,7 +306,8 @@ export default function AdminPage() {
       showNotification(`✅ Товар "${cleanedProduct.title}" збережено!`);
     } catch (err) {
       console.error('handleSaveProduct error:', err);
-      showNotification('❌ Помилка збереження! Спробуйте вказати URL-посилання на фото замість завантаження файлу.');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showNotification(`❌ ${errMsg}`);
     } finally {
       setIsSaving(false);
     }
@@ -313,7 +318,13 @@ export default function AdminPage() {
     if (!confirm('Видалити цей товар з каталогу?')) return;
     const updated = products.filter((p) => p.id !== productId);
     await updateProducts(updated);
-    fetch(`/api/admin/products?id=${productId}`, { method: 'DELETE' }).catch(() => null);
+    fetch(`/api/admin/products?id=${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Dnipro2026!'}`,
+      },
+      credentials: 'include',
+    }).catch(() => null);
     showNotification('Товар видалено з каталогу.');
   };
 
@@ -325,7 +336,11 @@ export default function AdminPage() {
 
     fetch(`/api/admin/products/${productId}/toggle`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Dnipro2026!'}`,
+      },
+      credentials: 'include',
       body: JSON.stringify({ field, value }),
     }).catch(() => null);
     showNotification(`✅ ${field === 'is_popular' ? '⭐ Популярне' : field === 'is_new' ? '🆕 Новинка' : '✅ В наявності'}: ${value ? 'увімкнено' : 'вимкнено'}`);

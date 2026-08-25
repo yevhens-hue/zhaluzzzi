@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await client
       .from('zhaluzi_products')
-      .upsert(product, { onConflict: 'slug' })
+      .upsert(product, { onConflict: 'id' })
       .select()
       .single();
 
@@ -94,8 +94,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ product: data });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[Admin Products POST]', message);
+    const message =
+      (err as any)?.message ||
+      (err as any)?.details ||
+      (err instanceof Error ? err.message : 'Unknown error');
+    console.error('[Admin Products POST]', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

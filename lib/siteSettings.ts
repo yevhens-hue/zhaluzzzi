@@ -267,22 +267,36 @@ export async function saveDynamicProducts(
   // Direct persistence to Supabase via API
   if (typeof window !== 'undefined') {
     const toSync = changedProduct ? [changedProduct] : products;
-    try {
-      await Promise.all(
-        toSync.map(async (product) => {
+    const errors: string[] = [];
+    await Promise.all(
+      toSync.map(async (product) => {
+        try {
           const res = await fetch('/api/admin/products', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              // Send Bearer token so auth works even if cookie is absent/expired
+              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Dnipro2026!'}`,
+            },
+            credentials: 'include',
             body: JSON.stringify({ product }),
           });
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
-            console.warn('Supabase product sync warning:', errData);
+            const msg = errData?.error || `HTTP ${res.status}`;
+            console.error('[saveDynamicProducts] API error:', msg, 'product:', product.slug);
+            errors.push(msg);
           }
-        })
-      );
-    } catch (err) {
-      console.warn('Supabase sync network error:', err);
+        } catch (err) {
+          const msg = String(err);
+          console.error('[saveDynamicProducts] Network error:', msg);
+          errors.push(msg);
+        }
+      })
+    );
+
+    if (errors.length > 0) {
+      throw new Error(`Не вдалося зберегти товар: ${errors[0]}`);
     }
 
     // On-demand ISR: revalidate catalog pages immediately
