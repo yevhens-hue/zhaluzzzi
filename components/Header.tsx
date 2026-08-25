@@ -40,39 +40,39 @@ export function Header() {
   };
 
   return (
-    <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-0 z-40 shadow-xs transition-colors">
+    <header className="w-full bg-white/90 backdrop-blur-xl border-b border-gray-200/80 sticky top-0 z-40 shadow-xs transition-all">
       {/* Top Banner if configured */}
       {settings.promo?.topBannerText && (
-        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white text-[11px] font-bold py-1.5 px-4 text-center tracking-wide">
-          {settings.promo.topBannerText}
+        <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-amber-300 text-[11px] font-bold py-2 px-4 text-center tracking-wide border-b border-amber-500/20">
+          ✨ {settings.promo.topBannerText}
         </div>
       )}
 
-      {/* Top Bar (Info, Contacts, Instagram, Working hours) */}
-      <div className="bg-[#f8f9fa] border-b border-gray-200/70 text-xs text-gray-600 hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 py-1.5 flex justify-between items-center">
-          {/* Main info links */}
-          <nav className="flex items-center space-x-6 font-medium text-gray-700">
-            <Link href="/" className="hover:text-blue-600 transition">{t('Головна', 'Главная')}</Link>
-            <Link href="/aktsii" className="hover:text-blue-600 transition">{t('Акції', 'Акции')}</Link>
-            <Link href="/zamir" className="hover:text-blue-600 transition">{t('Замір', 'Замер')}</Link>
-            <Link href="/pro_nas" className="hover:text-blue-600 transition">{t('Про нас', 'О нас')}</Link>
-            <Link href="/zvyazok" className="hover:text-blue-600 transition">{t('Контакти', 'Контакты')}</Link>
+      {/* Top Dark Utility Bar (Studio Contacts & Direct Lines) */}
+      <div className="bg-slate-950 text-gray-300 text-xs hidden md:block border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
+          {/* Left: Studio info / navigation links */}
+          <nav className="flex items-center space-x-6 font-medium text-gray-300">
+            <Link href="/" className="hover:text-amber-400 transition">{t('Головна студія', 'Главная студия')}</Link>
+            <Link href="/aktsii" className="hover:text-amber-400 transition">{t('Акції та знижки', 'Акции и скидки')}</Link>
+            <Link href="/zamir" className="hover:text-amber-400 transition">{t('Виїзд замірника', 'Выезд замерщика')}</Link>
+            <Link href="/pro_nas" className="hover:text-amber-400 transition">{t('Власне виробництво', 'Собственное производство')}</Link>
+            <Link href="/zvyazok" className="hover:text-amber-400 transition">{t('Контакти майстра', 'Контакты мастера')}</Link>
           </nav>
 
-          {/* Right side: Instagram, phones, work hours */}
+          {/* Right: Socials, Phones, Work hours, TTN */}
           <div className="flex items-center space-x-5">
-            {/* Instagram link */}
+            {/* Instagram */}
             <a
               href={contacts.instagramUrl || 'https://www.instagram.com/zhaluzi.rollety.dnipro'}
               target="_blank"
               rel="noopener noreferrer"
               title="Instagram"
-              aria-label="Instagram профіль Жалюзі та Ролети Дніпро"
-              className="flex items-center gap-1.5 text-pink-600 hover:text-pink-700 font-semibold transition"
+              aria-label="Instagram студії"
+              className="flex items-center gap-1.5 text-pink-400 hover:text-pink-300 font-semibold transition"
             >
               <InstagramIcon className="w-3.5 h-3.5" />
-              <span>Instagram</span>
+              <span>@zhaluzi_dnipro</span>
             </a>
 
             {/* Telegram / Viber */}
@@ -82,46 +82,42 @@ export function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Telegram"
-                aria-label="Написати майстру у Telegram"
-                className="text-[#2CA5E0] hover:opacity-80 transition"
+                className="w-5 h-5 rounded-full bg-[#2CA5E0] text-white flex items-center justify-center hover:scale-110 transition"
               >
-                <div className="w-5 h-5 rounded-full bg-[#2CA5E0] text-white flex items-center justify-center">
-                  <Send className="w-3 h-3" />
-                </div>
+                <Send className="w-3 h-3" />
               </a>
               <a
                 href={`viber://chat?number=${encodeURIComponent(contacts.viberNumber || '+380939128531')}`}
                 title="Viber"
-                aria-label="Написати майстру у Viber"
-                className="w-5 h-5 rounded-full bg-[#7F4DA0] text-white flex items-center justify-center text-[10px] font-bold"
+                className="w-5 h-5 rounded-full bg-[#7F4DA0] text-white flex items-center justify-center text-[10px] font-bold hover:scale-110 transition"
               >
                 V
               </a>
             </div>
 
-            {/* Phones: Master */}
-            <div className="flex items-center space-x-1 text-gray-800 font-bold">
-              <Phone className="w-3.5 h-3.5 text-blue-600 mr-0.5" />
-              <a href={`tel:${contacts.phone1.replace(/[^0-9]/g, '')}`} aria-label={`Зателефонувати ${contacts.phone1}`} className="hover:text-blue-600">{contacts.phone1}</a>
+            {/* Phones */}
+            <div className="flex items-center space-x-1 text-white font-bold">
+              <Phone className="w-3.5 h-3.5 text-amber-400 mr-0.5" />
+              <a href={`tel:${contacts.phone1.replace(/[^0-9]/g, '')}`} className="hover:text-amber-400">{contacts.phone1}</a>
               {contacts.phone2 && (
                 <>
-                  <span className="text-gray-300">/</span>
-                  <a href={`tel:${contacts.phone2.replace(/[^0-9]/g, '')}`} aria-label={`Зателефонувати ${contacts.phone2}`} className="hover:text-blue-600">{contacts.phone2}</a>
+                  <span className="text-gray-500">/</span>
+                  <a href={`tel:${contacts.phone2.replace(/[^0-9]/g, '')}`} className="hover:text-amber-400">{contacts.phone2}</a>
                 </>
               )}
             </div>
 
             {/* Working hours */}
-            <div className="flex items-center space-x-1 text-gray-500">
-              <Clock className="w-3.5 h-3.5 text-amber-500 mr-0.5" />
-              <span>{contacts.workHours || '9:00 - 19:00'}</span>
+            <div className="flex items-center space-x-1 text-gray-400">
+              <Clock className="w-3.5 h-3.5 text-amber-400 mr-0.5" />
+              <span>{contacts.workHours || 'Пн-Нд 9:00 - 19:00'}</span>
             </div>
 
-            {/* Nova Poshta Tracking Button */}
+            {/* Nova Poshta Tracking */}
             <button
               onClick={() => setIsTrackingOpen(true)}
-              aria-label="Відстеження посилки за номером ТТН Нова Пошта"
-              className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-red-500"
+              aria-label="Відстеження Нова Пошта"
+              className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md transition flex items-center gap-1 cursor-pointer shadow-sm"
             >
               <span>📦 ТТН</span>
             </button>
@@ -129,170 +125,140 @@ export function Header() {
         </div>
       </div>
 
-      {/* Main Header Bar */}
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      {/* Main Studio Header Bar */}
+      <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
         {/* Mobile menu button */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden p-2 text-gray-700 hover:text-blue-600 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
-          aria-label={isMobileMenuOpen ? "Закрити меню сайту" : "Відкрити навігаційне меню"}
-          aria-expanded={isMobileMenuOpen}
+          className="md:hidden p-2 text-gray-800 hover:text-blue-600 cursor-pointer"
+          aria-label="Меню"
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
 
-        {/* Custom Brand Logo */}
-        <Logo />
+        {/* Brand Logo & City Selector */}
+        <div className="flex items-center gap-4">
+          <Logo />
+          <button
+            onClick={openModal}
+            aria-label="Вибрати місто"
+            className="hidden sm:flex items-center gap-1 text-xs font-bold text-gray-700 bg-gray-100/80 border border-gray-200/80 px-3 py-1.5 rounded-full hover:bg-gray-200 transition cursor-pointer shadow-2xs"
+          >
+            <span>📍</span>
+            <span>{currentCity === 'Місто' ? 'Дніпро' : currentCity}</span>
+            <ChevronDown className="w-3 h-3 text-gray-400" />
+          </button>
+        </div>
 
-        {/* Desktop Navigation Category Tabs */}
-        <nav aria-label="Головні категорії товарів" className="hidden lg:flex items-center space-x-2 text-sm font-semibold">
+        {/* Center Pill Navigation Categories */}
+        <nav aria-label="Категорії" className="hidden lg:flex items-center gap-1 bg-gray-100/90 p-1.5 rounded-2xl border border-gray-200/60 shadow-2xs">
           <button
             onClick={() => toggleMenu('roleti')}
-            aria-expanded={activeMenu === 'roleti'}
-            aria-haspopup="true"
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-              activeMenu === 'roleti'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 cursor-pointer ${
+              activeMenu === 'roleti' ? 'bg-slate-900 text-white shadow-sm' : 'text-gray-700 hover:bg-white hover:text-slate-900'
             }`}
           >
-            <span>{t('Ролети', 'Роллеты')}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'roleti' ? 'rotate-180' : ''}`} />
+            <span>Ролети</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${activeMenu === 'roleti' ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             onClick={() => toggleMenu('shtori')}
-            aria-expanded={activeMenu === 'shtori'}
-            aria-haspopup="true"
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-              activeMenu === 'shtori'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 cursor-pointer ${
+              activeMenu === 'shtori' ? 'bg-slate-900 text-white shadow-sm' : 'text-gray-700 hover:bg-white hover:text-slate-900'
             }`}
           >
-            <span>{t('Рулонні штори', 'Рулонные шторы')}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'shtori' ? 'rotate-180' : ''}`} />
+            <span>Штори</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${activeMenu === 'shtori' ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             onClick={() => toggleMenu('den-nich')}
-            aria-expanded={activeMenu === 'den-nich'}
-            aria-haspopup="true"
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-              activeMenu === 'den-nich'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 cursor-pointer ${
+              activeMenu === 'den-nich' ? 'bg-slate-900 text-white shadow-sm' : 'text-gray-700 hover:bg-white hover:text-slate-900'
             }`}
           >
-            <span>{t('День-Ніч', 'День-Ночь')}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'den-nich' ? 'rotate-180' : ''}`} />
+            <span>День-Ніч</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${activeMenu === 'den-nich' ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             onClick={() => toggleMenu('zhaluzi')}
-            aria-expanded={activeMenu === 'zhaluzi'}
-            aria-haspopup="true"
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-              activeMenu === 'zhaluzi'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 cursor-pointer ${
+              activeMenu === 'zhaluzi' ? 'bg-slate-900 text-white shadow-sm' : 'text-gray-700 hover:bg-white hover:text-slate-900'
             }`}
           >
-            <span>{t('Жалюзі', 'Жалюзи')}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'zhaluzi' ? 'rotate-180' : ''}`} />
+            <span>Жалюзі</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${activeMenu === 'zhaluzi' ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             onClick={() => toggleMenu('zakryta')}
-            aria-expanded={activeMenu === 'zakryta'}
-            aria-haspopup="true"
-            className={`px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-              activeMenu === 'zakryta'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 cursor-pointer ${
+              activeMenu === 'zakryta' ? 'bg-slate-900 text-white shadow-sm' : 'text-gray-700 hover:bg-white hover:text-slate-900'
             }`}
           >
-            <span>{t('Закрита система', 'Закрытая система')}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'zakryta' ? 'rotate-180' : ''}`} />
+            <span>Закрита система</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${activeMenu === 'zakryta' ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* 3D Visualizer Nav Item */}
           <Link
             href="/visualizer"
-            className="px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white font-extrabold text-xs shadow-xs hover:shadow-md transition flex items-center gap-1.5 active:scale-95 shrink-0"
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-sm hover:opacity-95 transition flex items-center gap-1"
           >
-            <Sparkles className="w-3.5 h-3.5 text-cyan-200 animate-pulse" />
-            <span>3D Примірка</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>3D Візуалізатор</span>
           </Link>
         </nav>
 
-        {/* City Selector */}
-        <button
-          onClick={openModal}
-          aria-label="Вибрати місто для доставки або виклику замірника"
-          className="hidden xl:flex items-center gap-1.5 text-xs text-gray-700 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
-        >
-          <span className="text-gray-400">📍</span>
-          <span>{currentCity === 'Місто' ? 'Дніпро' : currentCity}</span>
-          <ChevronDown className="w-3 h-3 text-gray-400" />
-        </button>
-
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} role="search" className="flex-1 max-w-xs relative hidden md:block">
-          <input
-            type="search"
-            name="q"
-            aria-label="Пошук у каталозі жалюзі та ролет"
-            placeholder="Пошук у каталозі..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-full text-xs text-gray-900 bg-white placeholder:text-gray-400 font-medium focus:outline-hidden focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30 transition"
-          />
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-        </form>
-
-        {/* Action icons (Wishlist, Admin/Cabinet, Cart) */}
+        {/* Right Actions: Search, Wishlist, Cart */}
         <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Wishlist */}
+          <form onSubmit={handleSearch} className="relative hidden xl:block w-48">
+            <input
+              type="search"
+              placeholder="Пошук моделі..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-gray-100 border border-gray-200 rounded-full text-xs text-gray-900 placeholder:text-gray-400 font-medium focus:outline-hidden focus:bg-white focus:border-slate-900 transition"
+            />
+            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          </form>
+
           <Link
             href="/catalog?wishlist=true"
-            aria-label={`Обрані товари (${wishlistCount})`}
-            className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-full relative transition focus-visible:ring-2 focus-visible:ring-red-500"
-            title="Закладки"
+            aria-label="Закладки"
+            className="p-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-full relative transition"
           >
             <Heart className="w-5 h-5" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {wishlistCount}
               </span>
             )}
           </Link>
 
-          {/* Admin / Cabinet */}
           <Link
             href="/admin"
-            aria-label="Кабінет адміністратора та керування магазином"
-            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition focus-visible:ring-2 focus-visible:ring-blue-600"
-            title="Кабінет / Замовлення"
+            aria-label="Адмін-панель"
+            className="p-2 text-gray-700 hover:text-slate-900 hover:bg-gray-100 rounded-full transition"
           >
             <User className="w-5 h-5" />
           </Link>
 
-          {/* Cart button */}
           <button
             onClick={toggleCart}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3.5 py-2 rounded-full font-medium text-xs shadow-xs hover:shadow-md transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
-            aria-label={`Кошик покупок, ${totalCount} товарів на суму ${totalAmount} грн`}
+            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-950 text-white px-4 py-2 rounded-full font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+            aria-label="Кошик"
           >
             <div className="relative">
               <ShoppingBag className="w-4 h-4" />
               {totalCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-2 -right-2 bg-amber-400 text-slate-950 text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                   {totalCount}
                 </span>
               )}
             </div>
-            <span className="hidden sm:inline font-semibold">
+            <span className="hidden sm:inline">
               {totalAmount > 0 ? `${totalAmount.toLocaleString('uk-UA')} грн` : 'Кошик'}
             </span>
           </button>
