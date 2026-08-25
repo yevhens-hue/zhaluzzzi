@@ -11,13 +11,15 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
 
+import { toast } from 'sonner';
+
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product: initialProduct }: ProductCardProps) {
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { addItem } = useCart();
+  const { addItem, openCart } = useCart();
   const { t, tProdTitle } = useLanguage();
   const { products: dynamicProducts } = useSiteSettings();
   const [isOneClickOpen, setIsOneClickOpen] = useState(false);
@@ -66,6 +68,13 @@ export function ProductCard({ product: initialProduct }: ProductCardProps) {
     });
 
     setIsAdded(true);
+    toast.success(t('Товар додано до кошика! 🛍️', 'Товар добавлен в корзину! 🛍️'), {
+      description: `${tProdTitle(product.title)} — ${product.base_price} грн`,
+      action: {
+        label: t('В кошик', 'В корзину'),
+        onClick: () => openCart(),
+      },
+    });
     setTimeout(() => setIsAdded(false), 1800);
   };
 
@@ -125,6 +134,7 @@ export function ProductCard({ product: initialProduct }: ProductCardProps) {
             src={mainImg}
             alt={tProdTitle(product.title)}
             fill
+            style={{ viewTransitionName: `product-image-${product.slug}` }}
             className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           />

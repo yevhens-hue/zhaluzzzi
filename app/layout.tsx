@@ -15,6 +15,7 @@ import { CityModal } from '@/components/CityModal';
 import { TelegramWidget } from '@/components/TelegramWidget';
 
 import { LocalBusinessJsonLd, WebSiteJsonLd, SITE_URL } from '@/components/seo/JsonLd';
+import { Toaster } from 'sonner';
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
@@ -118,6 +119,7 @@ export default function RootLayout({
                     <CityModal />
                     <TelegramWidget />
                     <AiConsultantWidget />
+                    <Toaster richColors position="top-right" closeButton />
                   </WishlistProvider>
                 </CityProvider>
               </CartProvider>

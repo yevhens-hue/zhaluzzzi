@@ -11,6 +11,8 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
 import RoomVisualizerModal from './visualizer/RoomVisualizerModal';
 import { VisualizerSystem } from './visualizer/RoomVisualizer';
+import { PriceCounter } from '@/components/ui/price-counter';
+import { toast } from 'sonner';
 import {
   Star,
   Heart,
@@ -36,7 +38,7 @@ export function ProductDetailView({
   reviews: initialReviews,
   relatedProducts,
 }: ProductDetailViewProps) {
-  const { addItem } = useCart();
+  const { addItem, openCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { t, tProdTitle, tColorName, tCharKey, tCharVal } = useLanguage();
   const { products: dynamicProducts, settings } = useSiteSettings();
@@ -145,6 +147,14 @@ export function ProductDetailView({
       unitPrice,
       quantity,
     });
+
+    toast.success(t('Товар додано до кошика! 🛍️', 'Товар добавлен в корзину! 🛍️'), {
+      description: `${tProdTitle(product.title)} (${width}×${height} см) — ${totalPrice.toLocaleString('uk-UA')} грн`,
+      action: {
+        label: t('В кошик', 'В корзину'),
+        onClick: () => openCart(),
+      },
+    });
   };
 
   const handleColorSelect = (color: ProductColor) => {
@@ -220,7 +230,8 @@ export function ProductDetailView({
               src={activeImage}
               alt={tProdTitle(product.title)}
               fill
-              className="object-cover"
+              style={{ viewTransitionName: `product-image-${product.slug}` }}
+              className="object-cover transition-transform duration-500"
               priority
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
@@ -470,9 +481,7 @@ export function ProductDetailView({
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs text-gray-500 font-medium">{t('Розрахункова ціна за розмір:', 'Расчетная цена за размер:')}</div>
-                <div className="text-2xl sm:text-3xl font-black text-blue-950">
-                  {totalPrice.toLocaleString('uk-UA')} {t('грн', 'грн')}
-                </div>
+                <PriceCounter value={totalPrice} className="text-2xl sm:text-3xl font-black text-blue-950" />
               </div>
 
               {/* Quantity input */}
