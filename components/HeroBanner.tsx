@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'next-view-transitions';
 import Image from 'next/image';
-import { ArrowRight, ChevronLeft, ChevronRight, ShieldCheck, Truck, Sparkles, Award, Star, Zap, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, ShieldCheck, Truck, Sparkles, Award, Star, Zap, CheckCircle2, Calculator } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 
@@ -19,8 +19,8 @@ export function HeroBanner() {
       subtitle: t('Індивідуальний розкрій за вашими розмірами з точністю до 1 мм. Понад 450 зразків європейських тканин та надійні механізми Besta.', 'Индивидуальный раскрой по вашим размерам с точностью до 1 мм. Более 450 образцов европейских тканей и надежные механизмы Besta.'),
       highlight: t('Виїзд замірника зі зразками сьогодні', 'Выезд замерщика с образцами сегодня'),
       image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1920&q=80',
-      ctaText: t('Розрахувати вартість', 'Рассчитать стоимость'),
-      ctaLink: '/catalog',
+      ctaText: t('Розрахувати вартість онлайн', 'Рассчитать стоимость онлайн'),
+      ctaLink: '#calculator',
       secondaryText: t('3D Примірка на вікні', '3D Примерка на окне'),
       secondaryLink: '/visualizer',
       accentColor: 'from-slate-950/95 via-slate-900/80 to-slate-950/40',
@@ -33,7 +33,7 @@ export function HeroBanner() {
       highlight: t('Знижка -20% на кожне 2-ге вікно', 'Скидка -20% на каждое 2-е окно'),
       image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1920&q=80',
       ctaText: t('Каталог День-Ніч', 'Каталог День-Ночь'),
-      ctaLink: '/roleti',
+      ctaLink: '/catalog?search=День-Ніч',
       secondaryText: t('Замовити безкоштовний замір', 'Заказать бесплатный замер'),
       secondaryLink: '/zamir',
       accentColor: 'from-blue-950/95 via-slate-900/80 to-blue-950/40',
@@ -45,7 +45,7 @@ export function HeroBanner() {
       subtitle: t('100% натуральна канадська липа та бамбук. Елегантний акцент, який підкреслює статус вашого дому або кабінету.', '100% натуральная канадская липа и бамбук. Элегантный акцент, подчеркивающий статус вашего дома или кабинета.'),
       highlight: t('Гарантія 24 місяці від виробника', 'Гарантия 24 месяца от производителя'),
       image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80',
-      ctaText: t('Дивитися дерев’яні жалюзі', 'Смотреть деревянные жалюзи'),
+      ctaText: t('Каталог жалюзі', 'Каталог жалюзи'),
       ctaLink: '/zhaluzi',
       secondaryText: t('Консультація майстра', 'Консультация мастера'),
       secondaryLink: '/zvyazok',
@@ -62,6 +62,16 @@ export function HeroBanner() {
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
+
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, link: string) => {
+    if (link.startsWith('#')) {
+      e.preventDefault();
+      const el = document.querySelector(link);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <div className="relative w-full my-4 sm:my-6 space-y-4">
@@ -119,14 +129,15 @@ export function HeroBanner() {
 
                   {/* Action Buttons */}
                   <div className="pt-2 flex flex-wrap items-center gap-3">
-                    <Link href={slide.ctaLink}>
+                    <Link href={slide.ctaLink} onClick={(e) => handleLinkClick(e, slide.ctaLink)}>
                       <Button variant="glow" size="xl" className="rounded-2xl shadow-2xl">
+                        {slide.ctaLink === '#calculator' && <Calculator className="w-5 h-5 mr-1" />}
                         <span>{slide.ctaText}</span>
                         <ArrowRight className="w-5 h-5 ml-1" />
                       </Button>
                     </Link>
 
-                    <Link href={slide.secondaryLink}>
+                    <Link href={slide.secondaryLink} onClick={(e) => handleLinkClick(e, slide.secondaryLink)}>
                       <Button variant="outline" size="xl" className="rounded-2xl bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-md">
                         <span>{slide.secondaryText}</span>
                       </Button>
@@ -192,21 +203,21 @@ export function HeroBanner() {
 
       {/* Interactive Quick Filter Chips Row */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none">
-        <span className="text-xs font-bold text-gray-500 shrink-0 hidden sm:inline">Швидкий вибір:</span>
+        <span className="text-xs font-bold text-gray-500 shrink-0 hidden sm:inline">Швидкий перехід:</span>
         <Link
-          href="/roleti"
+          href="/shtori"
           className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-blue-500 hover:text-blue-600 hover:shadow-xs transition shrink-0 flex items-center gap-1.5"
         >
           <span>☀️ Рулонні штори</span>
         </Link>
         <Link
-          href="/roleti"
+          href="/catalog?search=День-Ніч"
           className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-blue-500 hover:text-blue-600 hover:shadow-xs transition shrink-0 flex items-center gap-1.5"
         >
-          <span>🌗 День-Ніч</span>
+          <span>🌗 Штори День-Ніч</span>
         </Link>
         <Link
-          href="/roleti"
+          href="/catalog?search=Блекаут"
           className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-blue-500 hover:text-blue-600 hover:shadow-xs transition shrink-0 flex items-center gap-1.5"
         >
           <span>🌙 100% Блекаут</span>
@@ -215,8 +226,16 @@ export function HeroBanner() {
           href="/zhaluzi"
           className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-blue-500 hover:text-blue-600 hover:shadow-xs transition shrink-0 flex items-center gap-1.5"
         >
-          <span>🪵 Дерев’яні жалюзі</span>
+          <span>🪵 Жалюзі</span>
         </Link>
+        <a
+          href="#calculator"
+          onClick={(e) => handleLinkClick(e, '#calculator')}
+          className="px-4 py-2 rounded-xl bg-white border border-blue-200 text-xs font-bold text-blue-700 hover:bg-blue-50 transition shrink-0 flex items-center gap-1.5 cursor-pointer"
+        >
+          <Calculator className="w-3.5 h-3.5 text-blue-600" />
+          <span>🧮 Онлайн-калькулятор</span>
+        </a>
         <Link
           href="/visualizer"
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold hover:shadow-md transition shrink-0 flex items-center gap-1.5"

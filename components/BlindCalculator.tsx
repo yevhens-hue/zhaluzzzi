@@ -153,7 +153,7 @@ export function BlindCalculator() {
   }, [selectedCategory, fabricTier]);
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 rounded-3xl text-white p-6 sm:p-10 shadow-2xl relative overflow-hidden my-12 border border-blue-900/50">
+    <div id="calculator" className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 rounded-3xl text-white p-6 sm:p-10 shadow-2xl relative overflow-hidden my-12 border border-blue-900/50 scroll-mt-24">
       {/* Background ambient luminous shapes */}
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
