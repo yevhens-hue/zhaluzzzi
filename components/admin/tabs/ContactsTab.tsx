@@ -130,6 +130,81 @@ export default function ContactsTab({
         </div>
       </div>
 
+      {/* Telegram Bot Notification Settings */}
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xl">🤖</span>
+          <h3 className="text-sm font-bold text-gray-900">Telegram Бот для замірників та замовлень</h3>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          Отримуйте миттєві картки нових замовлень та викликів замірника у ваш Telegram-чат з кнопками швидкого дзвінка та перегляду.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div>
+            <label className="block font-bold text-gray-700 mb-1">Telegram Bot Token</label>
+            <input
+              type="password"
+              placeholder="123456789:ABCdefGhIJKlmNoPQRstuvWxyz"
+              value={contactsForm.telegramBotToken || ''}
+              onChange={(e) => setContactsForm({ ...contactsForm, telegramBotToken: e.target.value })}
+              className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs font-mono text-gray-900 bg-white"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-gray-700 mb-1">Telegram Chat ID або ID групи майстрів</label>
+            <input
+              type="text"
+              placeholder="123456789 або -100123456789"
+              value={contactsForm.telegramChatId || ''}
+              onChange={(e) => setContactsForm({ ...contactsForm, telegramChatId: e.target.value })}
+              className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs font-mono text-gray-900 bg-white"
+            />
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-[11px] text-gray-400">
+            Підказка: створіть бота через <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">@BotFather</a>, або напишіть <code>/id</code> боту, щоб отримати Chat ID.
+          </p>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!contactsForm.telegramBotToken || !contactsForm.telegramChatId) {
+                alert('Будь ласка, введіть Bot Token та Chat ID перед тестом!');
+                return;
+              }
+              try {
+                const res = await fetch('/api/admin/telegram/test', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Dnipro2026!'}`,
+                  },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    botToken: contactsForm.telegramBotToken,
+                    chatId: contactsForm.telegramChatId,
+                  }),
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                  alert('✅ Тестове повідомлення успішно надіслано в Telegram!');
+                } else {
+                  alert(`❌ Помилка Telegram: ${data.error || 'Не вдалося надіслати'}`);
+                }
+              } catch (e: any) {
+                alert(`❌ Помилка запиту: ${e.message}`);
+              }
+            }}
+            className="px-3.5 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+          >
+            🔔 Перевірити звʼязок
+          </button>
+        </div>
+      </div>
+
       <div className="flex justify-end pt-4 border-t border-gray-100">
         <button
           type="submit"

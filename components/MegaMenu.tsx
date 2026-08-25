@@ -28,6 +28,13 @@ export function MegaMenu({ activeMenu, onClose }: MegaMenuProps) {
                 <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
                   {t('Понад 500 варіантів', 'Более 500 вариантов')}
                 </span>
+                <Link
+                  href="/visualizer"
+                  onClick={onClose}
+                  className="ml-2 text-xs bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-2.5 py-0.5 rounded-full font-bold shadow-xs hover:shadow-md transition flex items-center gap-1"
+                >
+                  <span>🎨 3D Примірка</span>
+                </Link>
               </h3>
               <Link
                 href="/roleti"

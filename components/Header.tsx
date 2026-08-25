@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Link } from 'next-view-transitions';
 import { useRouter } from 'next/navigation';
-import { Phone, Clock, Search, Heart, User, ShoppingBag, Menu, X, ChevronDown, Send } from 'lucide-react';
+import { Phone, Clock, Search, Heart, User, ShoppingBag, Menu, X, ChevronDown, Send, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useCity } from '@/context/CityContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -218,6 +218,15 @@ export function Header() {
             <span>{t('Закрита система', 'Закрытая система')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${activeMenu === 'zakryta' ? 'rotate-180' : ''}`} />
           </button>
+
+          {/* 3D Visualizer Nav Item */}
+          <Link
+            href="/visualizer"
+            className="px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white font-extrabold text-xs shadow-xs hover:shadow-md transition flex items-center gap-1.5 active:scale-95 shrink-0"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-200 animate-pulse" />
+            <span>3D Примірка</span>
+          </Link>
         </nav>
 
         {/* City Selector */}
@@ -374,8 +383,16 @@ export function Header() {
           <hr className="border-gray-200" />
 
           {/* Info links */}
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-            <Link href="/aktsii" onClick={() => setIsMobileMenuOpen(false)}>Акції</Link>
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 text-xs text-gray-600">
+            <Link 
+              href="/visualizer" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="col-span-2 py-2 px-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-extrabold rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>🎨 3D Примірка на вікні</span>
+            </Link>
+            <Link href="/zamir" onClick={() => setIsMobileMenuOpen(false)}>Виклик замірника</Link>
             <Link href="/zamir" onClick={() => setIsMobileMenuOpen(false)}>Замір вікон</Link>
             <Link href="/montaj" onClick={() => setIsMobileMenuOpen(false)}>Інструкція монтажу</Link>
             <Link href="/sposobi_oplati" onClick={() => setIsMobileMenuOpen(false)}>Оплата / Розстрочка</Link>

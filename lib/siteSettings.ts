@@ -21,6 +21,8 @@ export interface SiteContacts {
   email: string;
   instagramUrl: string;
   telegramUrl: string;
+  telegramBotToken?: string;
+  telegramChatId?: string;
   viberNumber: string;
   workHours: string;
   city: string;

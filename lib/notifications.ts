@@ -2,14 +2,17 @@ import { Order, Lead } from '@/types/database';
 import { logEvent } from './logger';
 import { validateAndNormalizeUaPhone } from './phoneValidator';
 import { DEFAULT_SITE_SETTINGS } from './siteSettings';
+import { sendTelegramMessage } from './telegram';
 
 export interface NotificationResult {
   emailSent: boolean;
   smsSent: boolean;
+  telegramSent?: boolean;
   recipientEmail: string;
   recipientPhone: string;
   emailError?: string;
   smsError?: string;
+  telegramError?: string;
 }
 
 /**
@@ -276,16 +279,46 @@ ${itemsListText}
 
   const smsText = `Нове замовлення #${orderNumber}: ${order.customer_name}, ${formattedPhone}, ${order.city}. Сума: ${order.total_amount} грн. Подробиці: /admin`;
 
-  const [emailSent, smsSent] = await Promise.all([
+  const telegramText = `<b>🛒 НОВЕ ЗАМОВЛЕННЯ #${orderNumber}</b>
+━━━━━━━━━━━━━━━━━━
+👤 <b>Клієнт:</b> ${order.customer_name}
+📞 <b>Телефон:</b> <code>${formattedPhone}</code> ${operator}
+📍 <b>Місто/Доставка:</b> ${order.city}, ${order.delivery_address || 'Самовивіз'}
+💳 <b>Оплата:</b> ${order.payment_method === 'cash_on_delivery' ? 'Накладений платіж' : 'Онлайн оплата'}
+💰 <b>Сума до сплати:</b> <b>${order.total_amount} грн</b>
+${order.comment ? `💬 <b>Коментар:</b> <i>${order.comment}</i>\n` : ''}
+📦 <b>Товари (${(order.items || []).length} поз.):</b>
+${(order.items || []).map((it, i) => `${i + 1}. <b>${it.title}</b> (${it.width}×${it.height} см) — ${it.quantity} шт × ${it.unitPrice} грн`).join('\n')}
+`;
+
+  const [emailSent, smsSent, telegramResult] = await Promise.all([
     dispatchEmail(email, subject, htmlBody, textBody),
     dispatchSms(phone, smsText),
+    sendTelegramMessage(telegramText, {
+      buttons: [
+        [
+          { text: `📞 Зателефонувати`, url: `tel:${order.phone.replace(/\s+/g, '')}` },
+          { text: `💬 Написати в Telegram`, url: `https://t.me/+${order.phone.replace(/\D/g, '')}` },
+        ],
+        [
+          { text: `⚡ Відкрити замовлення в Адмінці`, url: `https://zhaluzi-rolety-dnipro.vercel.app/admin` },
+        ],
+      ],
+    }),
   ]);
 
-  return { emailSent, smsSent, recipientEmail: email, recipientPhone: phone };
+  return {
+    emailSent,
+    smsSent,
+    telegramSent: telegramResult.success,
+    telegramError: telegramResult.error,
+    recipientEmail: email,
+    recipientPhone: phone,
+  };
 }
 
 /**
- * Sends Email & SMS notifications when a new Lead (1-click, AI Chat, Consultation) is captured
+ * Sends Email, SMS & Telegram notifications when a new Lead (1-click, AI Chat, Consultation) is captured
  */
 export async function sendLeadNotification(lead: Lead): Promise<NotificationResult> {
   const { email, phone } = getRecipientContacts();
@@ -349,10 +382,34 @@ export async function sendLeadNotification(lead: Lead): Promise<NotificationResu
 
   const smsText = `Заявка (${leadTypeTitle}): ${lead.name || 'Клієнт'}, ${formattedPhone}. ${lead.product_title || ''} ${lead.comment || ''} -> /admin`;
 
-  const [emailSent, smsSent] = await Promise.all([
+  const telegramText = `<b>🔔 НОВА ЗАЯВКА: ${leadTypeTitle.toUpperCase()}</b>
+━━━━━━━━━━━━━━━━━━
+👤 <b>Клієнт:</b> ${lead.name || 'Не вказано'}
+📞 <b>Телефон:</b> <code>${formattedPhone}</code> ${operator}
+${lead.product_title ? `🏷 <b>Товар:</b> ${lead.product_title} ${lead.product_sku ? `(Арт: ${lead.product_sku})` : ''}\n` : ''}${lead.dimensions ? `📐 <b>Розміри:</b> ${lead.dimensions}\n` : ''}${lead.selected_color ? `🎨 <b>Колір/тканина:</b> ${lead.selected_color}\n` : ''}${lead.calculated_price ? `💰 <b>Розрахунок:</b> <b>${lead.calculated_price} грн</b>\n` : ''}${lead.comment ? `💬 <b>Коментар:</b> <i>${lead.comment}</i>\n` : ''}`;
+
+  const [emailSent, smsSent, telegramResult] = await Promise.all([
     dispatchEmail(email, subject, htmlBody, textBody),
     dispatchSms(phone, smsText.slice(0, 160)),
+    sendTelegramMessage(telegramText, {
+      buttons: [
+        [
+          { text: `📞 Зателефонувати`, url: `tel:${lead.phone.replace(/\s+/g, '')}` },
+          { text: `💬 Написати в Telegram`, url: `https://t.me/+${lead.phone.replace(/\D/g, '')}` },
+        ],
+        [
+          { text: `⚡ Відкрити в Адмін-панелі`, url: `https://zhaluzi-rolety-dnipro.vercel.app/admin` },
+        ],
+      ],
+    }),
   ]);
 
-  return { emailSent, smsSent, recipientEmail: email, recipientPhone: phone };
+  return {
+    emailSent,
+    smsSent,
+    telegramSent: telegramResult.success,
+    telegramError: telegramResult.error,
+    recipientEmail: email,
+    recipientPhone: phone,
+  };
 }
