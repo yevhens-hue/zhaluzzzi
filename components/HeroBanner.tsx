@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import Image from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight, ShieldCheck, Truck, Sparkles, Award } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -75,6 +75,7 @@ export function HeroBanner() {
                 alt={slide.title}
                 fill
                 priority={idx === 0}
+                fetchPriority={idx === 0 ? 'high' : 'auto'}
                 className="object-cover object-center scale-105 transition-transform duration-10000 ease-out"
                 sizes="100vw"
               />

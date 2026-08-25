@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { Flame } from 'lucide-react';
 import { ProductCard } from '@/components/ProductCard';
 import { Product } from '@/types/database';

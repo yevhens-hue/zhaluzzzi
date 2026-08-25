@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Wrench, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function MontajPage() {

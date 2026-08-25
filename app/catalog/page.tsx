@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getProducts } from '@/lib/supabase';
 import { CatalogView } from '@/components/CatalogView';
-import { BreadcrumbsJsonLd, SITE_URL } from '@/components/seo/JsonLd';
+import { BreadcrumbsJsonLd, ItemListJsonLd, SITE_URL } from '@/components/seo/JsonLd';
 
 export const revalidate = 60;
 
@@ -38,6 +38,7 @@ export default async function CatalogPage() {
   return (
     <>
       <BreadcrumbsJsonLd items={breadcrumbs} />
+      <ItemListJsonLd products={products} />
       <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Завантаження каталогу...</div>}>
         <CatalogView
           initialProducts={products}
@@ -47,3 +48,4 @@ export default async function CatalogPage() {
     </>
   );
 }
+

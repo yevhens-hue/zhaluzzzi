@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { Product, ProductColor, Review } from '@/types/database';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';

@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import Image from 'next/image';
 import { ArrowRight, Sparkles, Star, ShieldCheck, Flame } from 'lucide-react';
 import { HeroBanner } from '@/components/HeroBanner';
@@ -11,6 +11,8 @@ import { FaqSection } from '@/components/FaqSection';
 import { ProductCard } from '@/components/ProductCard';
 import { HomeProductGrid } from '@/components/HomeProductGrid';
 import { getProducts, getCategories } from '@/lib/supabase';
+import { FAQPageJsonLd } from '@/components/seo/JsonLd';
+import { FAQ_ITEMS } from '@/lib/mockData';
 
 export const revalidate = 60; // ISR revalidation
 
@@ -23,6 +25,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-12">
+      <FAQPageJsonLd faqs={FAQ_ITEMS} />
       {/* 1. Hero Banner Slider */}
       <HeroBanner />
 

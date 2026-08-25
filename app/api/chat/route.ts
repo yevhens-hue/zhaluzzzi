@@ -4,7 +4,7 @@ import { getSystemPrompt } from "@/lib/ai/prompts";
 import { AI_TOOLS, executeTool } from "@/lib/ai/tools";
 import { createLead } from "@/lib/supabase";
 import { validateAndNormalizeUaPhone } from "@/lib/phoneValidator";
-import { saveChatAnalytics } from "@/lib/ai/analytics";
+import { saveChatAnalytics, saveChatSession, getVectorKnowledge } from "@/lib/ai/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -71,9 +71,41 @@ export async function POST(req: NextRequest) {
   // --- OpenAI Streaming mode ---
   const openai = new OpenAI({ apiKey });
 
+  // Sliding Window: Keep only the last 10 messages to save tokens.
+  // We ensure we don't accidentally split a tool call and its tool response.
+  let activeMessages = messages;
+  if (activeMessages.length > 10) {
+    activeMessages = activeMessages.slice(-10);
+    while (activeMessages.length > 0 && activeMessages[0].role === "tool") {
+      activeMessages.shift();
+    }
+  }
+
+  // Extract keywords from the last 3 user messages for Keyword RAG
+  const lastUserMessages = activeMessages
+    .filter((m: any) => m.role === "user")
+    .slice(-3)
+    .map((m: any) => String(m.content).toLowerCase())
+    .join(" ");
+  const keywords = lastUserMessages.split(/[\s,.-]+/);
+
+  // Attempt Vector RAG if configured
+  let vectorContext = "";
+  try {
+    const embeddingResponse = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: lastUserMessages.length > 3 ? lastUserMessages : "штори жалюзі",
+      encoding_format: "float",
+    });
+    const embedding = embeddingResponse.data[0].embedding;
+    vectorContext = await getVectorKnowledge(embedding);
+  } catch (e) {
+    console.warn("Vector RAG skipped or failed, falling back to keywords:", e);
+  }
+
   const systemMessage = {
     role: "system" as const,
-    content: getSystemPrompt(cityContext, pageContext)
+    content: getSystemPrompt(cityContext, pageContext, keywords, vectorContext)
   };
 
   const stream = new ReadableStream({
@@ -86,7 +118,7 @@ export async function POST(req: NextRequest) {
         // First pass: streaming text response
         const streamResponse = await openai.chat.completions.create({
           model: "gpt-4o-mini",
-          messages: [systemMessage, ...messages],
+          messages: [systemMessage, ...activeMessages],
           tools: AI_TOOLS,
           tool_choice: "auto",
           temperature: 0.2,
@@ -128,7 +160,7 @@ export async function POST(req: NextRequest) {
               model: "gpt-4o-mini",
               messages: [
                 systemMessage,
-                ...messages,
+                ...activeMessages,
                 {
                   role: "assistant" as const,
                   content: null,
@@ -195,7 +227,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Save analytics
+        // Save analytics and session history
         try {
           await saveChatAnalytics({
             messages,
@@ -204,9 +236,18 @@ export async function POST(req: NextRequest) {
             cityContext,
             pageContext,
           });
+
+          if (body.sessionToken) {
+            // Include the newly generated assistant message
+            const updatedMessages = [
+              ...activeMessages,
+              { role: "assistant", content: fullContent }
+            ];
+            await saveChatSession(body.sessionToken, updatedMessages);
+          }
         } catch (e) {
           // Non-blocking — analytics failure must not break chat
-          console.warn("Chat analytics save failed:", e);
+          console.warn("Chat analytics/session save failed:", e);
         }
 
         // Send final "done" event

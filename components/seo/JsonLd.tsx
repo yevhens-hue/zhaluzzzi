@@ -223,3 +223,60 @@ export function ProductJsonLd({
     />
   );
 }
+
+export function ItemListJsonLd({ products }: { products: Product[] }) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: products.map((product, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Product',
+        url: `${SITE_URL}/product/${product.slug}`,
+        name: product.title,
+        image: product.main_image.startsWith('http') ? product.main_image : `${SITE_URL}${product.main_image}`,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'UAH',
+          price: product.base_price,
+          availability: 'https://schema.org/InStock'
+        }
+      }
+    }))
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+export function FAQPageJsonLd({
+  faqs,
+}: {
+  faqs: { question: string; answer: string }[];
+}) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+

@@ -112,6 +112,7 @@ export const AiConsultantWidget: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [sessionToken, setSessionToken] = useState<string>('');
 
   // ── Build welcome message ─────────────────────────────────────────────────
   const buildWelcomeMessage = useCallback(
@@ -128,27 +129,55 @@ export const AiConsultantWidget: React.FC = () => {
 
   // ── Load / init chat history ──────────────────────────────────────────────
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('zhaluzi_ai_chat_history_v1');
-      if (saved) {
-        const parsed = JSON.parse(saved) as MessageItem[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setMessages(parsed);
-          return;
-        }
+    async function initChat() {
+      // 1. Get or create session token
+      let token = localStorage.getItem('zhaluzi_session_token_v1');
+      if (!token) {
+        token = 'sess_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        localStorage.setItem('zhaluzi_session_token_v1', token);
       }
-    } catch {
-      // ignore
+      setSessionToken(token);
+
+      // 2. Try local storage first
+      try {
+        const saved = localStorage.getItem('zhaluzi_ai_chat_history_v1');
+        if (saved) {
+          const parsed = JSON.parse(saved) as MessageItem[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      // 3. Try Supabase history
+      try {
+        const res = await fetch(`/api/chat/history?token=${token}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+            setMessages(data.messages);
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      // 4. Fallback to Welcome message
+      setMessages([
+        {
+          id: 'welcome-1',
+          role: 'assistant',
+          content: buildWelcomeMessage(pageCtx.productSlug),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
     }
 
-    setMessages([
-      {
-        id: 'welcome-1',
-        role: 'assistant',
-        content: buildWelcomeMessage(pageCtx.productSlug),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      },
-    ]);
+    initChat();
   }, [buildWelcomeMessage, pageCtx.productSlug]);
 
   // ── Persist chat history ──────────────────────────────────────────────────
@@ -256,6 +285,7 @@ export const AiConsultantWidget: React.FC = () => {
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
           cityContext: currentCity && currentCity !== 'Місто' ? currentCity : 'Україна',
           pageContext: pageCtx,
+          sessionToken,
         }),
       });
 

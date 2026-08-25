@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import Image from 'next/image';
 import { Heart, Star, ShoppingBag, Check, Zap } from 'lucide-react';
 import { Product } from '@/types/database';

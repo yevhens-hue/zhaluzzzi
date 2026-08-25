@@ -71,7 +71,7 @@ export async function logEvent(
   // 3. Supabase audit_logs persistence (if configured)
   if (supabase) {
     try {
-      await supabase.from('audit_logs').insert([
+      await supabase.from('zhaluzi_audit_logs').insert([
         {
           level,
           action,

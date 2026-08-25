@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Product, Category, Order, Lead, Review } from '@/types/database';
-import { MOCK_CATEGORIES } from './mockData';
+import { MOCK_CATEGORIES, MOCK_PRODUCTS } from './mockData';
 import { logEvent } from './logger';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -21,7 +21,7 @@ export async function getCategories(): Promise<Category[]> {
   }
   try {
     const { data, error } = await supabase
-      .from('categories')
+      .from('zhaluzi_categories')
       .select('*')
       .order('sort_order', { ascending: true });
 
@@ -52,7 +52,7 @@ export async function getProducts(options?: {
   }
 
   try {
-    let query = supabase.from('products').select('*');
+    let query = supabase.from('zhaluzi_products').select('*');
 
     if (options?.categorySlug && options.categorySlug !== 'all') {
       query = query.eq('category_slug', options.categorySlug);
@@ -77,8 +77,17 @@ export async function getProducts(options?: {
     }
 
     const { data, error } = await query;
-    if (error || !data) {
-      return [];
+    if (error || !data || data.length === 0) {
+      // Fallback to MOCK_PRODUCTS if database is empty or fails
+      const mockMatches = MOCK_PRODUCTS.filter(p => {
+        if (options?.categorySlug && options.categorySlug !== 'all' && p.category_slug !== options.categorySlug) return false;
+        if (options?.subcategorySlug && p.subcategory_slug !== options.subcategorySlug) return false;
+        if (options?.isPopular && !p.is_popular) return false;
+        if (options?.isNew && !p.is_new) return false;
+        if (options?.searchQuery && !p.title.toLowerCase().includes(options.searchQuery.toLowerCase())) return false;
+        return true;
+      });
+      return options?.limit ? mockMatches.slice(0, options.limit) : mockMatches;
     }
     return data as Product[];
   } catch (err) {
@@ -187,23 +196,47 @@ export const getProductBySlug = cache(async (slug: string): Promise<Product | nu
   }
   try {
     const { data, error } = await supabase
-      .from('products')
+      .from('zhaluzi_products')
       .select('*')
       .eq('slug', slug)
       .single();
 
     if (error || !data) {
+      const mockProduct = MOCK_PRODUCTS.find(p => p.slug === slug);
+      if (mockProduct) return mockProduct;
+      console.warn(`Product not found in Supabase or MOCK_PRODUCTS for slug: ${slug}`);
       return createFallbackProduct(slug);
     }
     return data as Product;
   } catch (err) {
     console.error('getProductBySlug error:', err);
+    const mockProduct = MOCK_PRODUCTS.find(p => p.slug === slug);
+    if (mockProduct) return mockProduct;
     return createFallbackProduct(slug);
   }
 });
 
 import { validateAndNormalizeUaPhone } from './phoneValidator';
 import { sendOrderNotification, sendLeadNotification } from './notifications';
+
+/**
+ * Check if a duplicate order exists in the last hour
+ */
+async function isDuplicateOrder(phone: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from('zhaluzi_orders')
+      .select('id')
+      .eq('phone', phone)
+      .gte('created_at', oneHourAgo)
+      .limit(1);
+    return !!(data && data.length > 0);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Save new order to database and trigger Email + SMS notifications
@@ -216,8 +249,16 @@ export async function createOrder(order: Order): Promise<{ success: boolean; ord
     return { success: false, orderNumber: '', error: phoneVal.error || 'Некоректний номер телефону' };
   }
 
-  const orderNumber = `ZR-${Math.floor(100000 + Math.random() * 900000)}`;
   const normalizedPhone = phoneVal.normalizedPhone || order.phone;
+
+  // Idempotency check
+  const isDuplicate = await isDuplicateOrder(normalizedPhone);
+  if (isDuplicate) {
+    logEvent('WARN', 'ORDER_IDEMPOTENCY_BLOCK', `Дублікат замовлення заблоковано для: ${normalizedPhone}`);
+    return { success: false, orderNumber: '', error: 'Замовлення вже оформлено, очікуйте дзвінка.' };
+  }
+
+  const orderNumber = `ZR-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const payload: Order = {
     ...order,
@@ -250,7 +291,7 @@ export async function createOrder(order: Order): Promise<{ success: boolean; ord
   // 2. Save in Supabase if configured
   if (supabase) {
     try {
-      const { error } = await supabase.from('orders').insert([payload]);
+      const { error } = await supabase.from('zhaluzi_orders').insert([payload]);
       if (error) {
         logEvent('WARN', 'ORDER_SUPABASE_FALLBACK', `Помилка запису в Supabase, збережено локально: ${error.message}`, error);
       } else {
@@ -282,6 +323,26 @@ export async function createOrder(order: Order): Promise<{ success: boolean; ord
 }
 
 /**
+ * Check if a duplicate lead exists in the last hour
+ */
+async function isDuplicateLead(phone: string, leadType: string = 'one_click'): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from('zhaluzi_leads')
+      .select('id')
+      .eq('phone', phone)
+      .eq('lead_type', leadType)
+      .gte('created_at', oneHourAgo)
+      .limit(1);
+    return !!(data && data.length > 0);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Save lead (1-click buy, AI chat or callback) and trigger Email + SMS notifications
  */
 export async function createLead(lead: Lead): Promise<{ success: boolean; error?: string }> {
@@ -293,10 +354,19 @@ export async function createLead(lead: Lead): Promise<{ success: boolean; error?
   }
 
   const normalizedPhone = phoneVal.normalizedPhone || lead.phone;
+  const leadType = lead.lead_type || 'one_click';
+
+  // Idempotency check
+  const isDuplicate = await isDuplicateLead(normalizedPhone, leadType);
+  if (isDuplicate) {
+    logEvent('WARN', 'LEAD_IDEMPOTENCY_BLOCK', `Дублікат ліда заблоковано для: ${normalizedPhone} (${leadType})`);
+    return { success: false, error: 'Заявка вже відправлена, менеджер скоро з вами зв\'яжеться.' };
+  }
 
   const payload: Lead = {
     ...lead,
     phone: normalizedPhone,
+    lead_type: leadType,
     status: 'pending',
     created_at: new Date().toISOString(),
   };
@@ -318,7 +388,7 @@ export async function createLead(lead: Lead): Promise<{ success: boolean; error?
   // 2. Save in Supabase if configured
   if (supabase) {
     try {
-      const { error } = await supabase.from('leads').insert([payload]);
+      const { error } = await supabase.from('zhaluzi_leads').insert([payload]);
       if (error) {
         logEvent('WARN', 'LEAD_SUPABASE_FALLBACK', `Помилка ліда в Supabase, збережено локально: ${error.message}`, error);
       } else {
@@ -358,7 +428,7 @@ export const getProductReviews = cache(async (productId: string): Promise<Review
   }
   try {
     const { data, error } = await supabase
-      .from('reviews')
+      .from('zhaluzi_reviews')
       .select('*')
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
@@ -388,7 +458,7 @@ export async function addProductReview(review: Omit<Review, 'id' | 'created_at'>
   }
 
   try {
-    const { error } = await supabase.from('reviews').insert([payload]);
+    const { error } = await supabase.from('zhaluzi_reviews').insert([payload]);
     return !error;
   } catch {
     return true;

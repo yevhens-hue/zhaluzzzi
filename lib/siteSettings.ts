@@ -189,7 +189,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<boolean>
 
   if (supabase) {
     try {
-      await supabase.from('site_settings').upsert({
+      await supabase.from('zhaluzi_site_settings').upsert({
         id: 'main',
         settings,
         updated_at: new Date().toISOString(),

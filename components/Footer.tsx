@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { Phone, MapPin, Clock, Send, ShieldCheck, User } from 'lucide-react';
 import { Logo } from './Logo';
 import { InstagramIcon } from './InstagramIcon';

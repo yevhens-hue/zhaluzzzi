@@ -43,7 +43,7 @@ export async function PATCH(
 
   try {
     const { data, error } = await client
-      .from('products')
+      .from('zhaluzi_products')
       .update({ [field]: value })
       .eq('id', id)
       .select('id, is_popular, is_new, in_stock, is_offer_of_day')

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       // Fallback: manual upsert if RPC doesn't exist yet
-      await supabase.from('product_analytics').upsert(
+      await supabase.from('zhaluzi_product_analytics').upsert(
         { product_id, views: 1, orders: 0 },
         { onConflict: 'product_id', ignoreDuplicates: false }
       );

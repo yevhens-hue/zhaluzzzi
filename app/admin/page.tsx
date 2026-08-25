@@ -132,9 +132,9 @@ export default function AdminPage() {
 
     try {
       const [{ data: ordersData }, { data: leadsData }, { data: dbLogs }] = await Promise.all([
-        supabase.from('orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('leads').select('*').order('created_at', { ascending: false }),
-        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
+        supabase.from('zhaluzi_orders').select('*').order('created_at', { ascending: false }),
+        supabase.from('zhaluzi_leads').select('*').order('created_at', { ascending: false }),
+        supabase.from('zhaluzi_audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
       ]);
 
       setOrders(ordersData || []);

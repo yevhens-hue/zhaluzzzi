@@ -84,14 +84,17 @@ export const metadata: Metadata = {
   },
 };
 
+import { ViewTransitions } from 'next-view-transitions';
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="uk" className={inter.className}>
-      <head>
+    <ViewTransitions>
+      <html lang="uk" className={inter.className}>
+        <head>
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://kapkqziyceefxluxlvqc.supabase.co" crossOrigin="anonymous" />
@@ -122,6 +125,7 @@ export default function RootLayout({
           </ToastProvider>
         </LanguageProvider>
       </body>
-    </html>
+      </html>
+    </ViewTransitions>
   );
 }

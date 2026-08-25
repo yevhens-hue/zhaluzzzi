@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Product } from '@/types/database';
 import { verifyAdminSession } from '@/lib/adminAuth';
+import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 // Lazy initialization — avoids crashing at module load if SUPABASE_SERVICE_ROLE_KEY is missing
 let _adminClient: SupabaseClient | null = null;
@@ -41,21 +42,23 @@ function revalidateAllProductRoutes(slug?: string) {
 export async function GET() {
   const client = getAdminClient();
   if (!client) {
-    return NextResponse.json({ products: [] });
+    return NextResponse.json({ products: MOCK_PRODUCTS });
   }
 
   try {
     const { data, error } = await client
-      .from('products')
+      .from('zhaluzi_products')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return NextResponse.json({ products: data || [] });
+    // If DB is empty, fall back to mock data so catalog always shows products
+    const products = data && data.length > 0 ? data : MOCK_PRODUCTS;
+    return NextResponse.json({ products });
   } catch (err) {
     console.error('[Admin Products GET]', err);
-    return NextResponse.json({ products: [] });
+    return NextResponse.json({ products: MOCK_PRODUCTS });
   }
 }
 
@@ -79,7 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { data, error } = await client
-      .from('products')
+      .from('zhaluzi_products')
       .upsert(product, { onConflict: 'slug' })
       .select()
       .single();
@@ -118,8 +121,8 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const query = slug
-      ? client.from('products').delete().eq('slug', slug)
-      : client.from('products').delete().eq('id', id!);
+      ? client.from('zhaluzi_products').delete().eq('slug', slug)
+      : client.from('zhaluzi_products').delete().eq('id', id!);
 
     const { error } = await query;
     if (error) throw error;

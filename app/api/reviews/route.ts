@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('reviews').insert([payload]);
+    const { error } = await supabase.from('zhaluzi_reviews').insert([payload]);
     if (error) {
       console.error('Review insert error:', error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
