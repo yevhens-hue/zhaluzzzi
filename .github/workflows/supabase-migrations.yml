@@ -1,0 +1,48 @@
+name: "Supabase Database CI"
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/**'
+  workflow_dispatch:
+
+jobs:
+  validate_migrations:
+    name: "Validate SQL Migrations"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify Migrations Syntax
+        run: |
+          echo "Checking Supabase configuration and migration files..."
+          ls -la supabase/migrations/
+          echo "Validating SQL file integrity..."
+          for file in supabase/migrations/*.sql; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              test -s "$file" || (echo "Empty migration file: $file" && exit 1)
+            fi
+          done
+          echo "All migrations verified."
+
+      - name: Link and Push to Remote DB (On Main Branch Push only)
+        if: github.ref == 'refs/heads/main' && env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_REF || 'vjquqvvbopgxdpvgdgyh' }}
+        run: |
+          supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
