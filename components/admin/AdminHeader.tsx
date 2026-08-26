@@ -16,6 +16,7 @@ import {
   Activity,
   Database,
   CheckCircle2,
+  Rss,
 } from 'lucide-react';
 import { AdminTab } from './types';
 import { APP_VERSION } from '@/lib/version';
@@ -139,6 +140,18 @@ export default function AdminHeader({
         >
           <Sliders className="w-4 h-4" />
           <span>Товари та розцінки ({productsCount})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('feeds')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'feeds'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Rss className="w-4 h-4" />
+          <span>Google Shopping & XML</span>
         </button>
 
         <button

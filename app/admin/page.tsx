@@ -25,6 +25,7 @@ import ContactsTab from '@/components/admin/tabs/ContactsTab';
 import PromoTab from '@/components/admin/tabs/PromoTab';
 import LogsTab from '@/components/admin/tabs/LogsTab';
 import DatabaseTab from '@/components/admin/tabs/DatabaseTab';
+import FeedsTab from '@/components/admin/tabs/FeedsTab';
 import {
   compressBase64Image,
   generateSlugFromTitle,
@@ -451,6 +452,18 @@ export default function AdminPage() {
     }
   };
 
+  // Import products from XML
+  const handleImportXmlProducts = async (newProducts: Product[]) => {
+    try {
+      const merged = [...newProducts, ...products];
+      const deduped = deduplicateProducts(merged);
+      await updateProducts(deduped);
+    } catch (err) {
+      console.error('handleImportXmlProducts error:', err);
+      throw err;
+    }
+  };
+
   // Load analytics from Supabase
   const handleLoadAnalytics = async () => {
     try {
@@ -556,6 +569,14 @@ export default function AdminPage() {
           downloadCSVTemplate={downloadCSVTemplate}
           handleLoadAnalytics={handleLoadAnalytics}
           analytics={analytics}
+        />
+      )}
+
+      {activeTab === 'feeds' && (
+        <FeedsTab
+          products={products}
+          onImportProducts={handleImportXmlProducts}
+          showNotification={showNotification}
         />
       )}
 

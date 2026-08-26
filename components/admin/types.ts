@@ -12,6 +12,7 @@ export type AdminTab =
   | 'orders'
   | 'leads'
   | 'products'
+  | 'feeds'
   | 'filters'
   | 'calculator'
   | 'gallery'
