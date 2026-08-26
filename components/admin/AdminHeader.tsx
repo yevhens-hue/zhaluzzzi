@@ -17,6 +17,8 @@ import {
   Database,
   CheckCircle2,
   Rss,
+  Share2,
+  MessageSquare,
 } from 'lucide-react';
 import { AdminTab } from './types';
 import { APP_VERSION } from '@/lib/version';
@@ -152,6 +154,30 @@ export default function AdminHeader({
         >
           <Rss className="w-4 h-4" />
           <span>Google Shopping & XML</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('smm')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'smm'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Share2 className="w-4 h-4" />
+          <span>SMM & Контент</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('reviews')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'reviews'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Відгуки & AI Аналітика</span>
         </button>
 
         <button

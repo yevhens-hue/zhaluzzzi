@@ -26,6 +26,8 @@ import PromoTab from '@/components/admin/tabs/PromoTab';
 import LogsTab from '@/components/admin/tabs/LogsTab';
 import DatabaseTab from '@/components/admin/tabs/DatabaseTab';
 import FeedsTab from '@/components/admin/tabs/FeedsTab';
+import SmmTab from '@/components/admin/tabs/SmmTab';
+import ReviewsAnalyticsTab from '@/components/admin/tabs/ReviewsAnalyticsTab';
 import {
   compressBase64Image,
   generateSlugFromTitle,
@@ -576,6 +578,19 @@ export default function AdminPage() {
         <FeedsTab
           products={products}
           onImportProducts={handleImportXmlProducts}
+          showNotification={showNotification}
+        />
+      )}
+
+      {activeTab === 'smm' && (
+        <SmmTab
+          products={products}
+          showNotification={showNotification}
+        />
+      )}
+
+      {activeTab === 'reviews' && (
+        <ReviewsAnalyticsTab
           showNotification={showNotification}
         />
       )}

@@ -9,6 +9,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { mergeAndDeduplicateProducts } from '@/lib/siteSettings';
+import { CategorySeoSection } from './seo/CategorySeoSection';
 
 interface CatalogViewProps {
   initialProducts: Product[];
@@ -346,6 +347,9 @@ export function CatalogView({
           )}
         </main>
       </div>
+
+      {/* ── Category SEO & Buying Guide Section ─────────────────────────── */}
+      <CategorySeoSection categorySlug={categorySlug} />
     </div>
   );
 }
