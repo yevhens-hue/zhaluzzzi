@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Link } from 'next-view-transitions';
 import { useRouter } from 'next/navigation';
-import { Phone, Clock, Search, Heart, User, ShoppingBag, Menu, X, ChevronDown, Send, Sparkles } from 'lucide-react';
+import { Phone, Clock, Search, Heart, User, ShoppingBag, Menu, X, ChevronDown, Send, Sparkles, Camera } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useCity } from '@/context/CityContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -208,6 +208,14 @@ export function Header() {
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>3D Візуалізатор</span>
+          </Link>
+
+          <Link
+            href="/zamir"
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-xs shadow-sm hover:opacity-95 transition flex items-center gap-1"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>AI-Замір</span>
           </Link>
         </nav>
 
