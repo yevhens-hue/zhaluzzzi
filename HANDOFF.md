@@ -1,7 +1,7 @@
 # 📑 Engineering Continuity & Production Handoff Package: Жалюзі та Рулонні Штори Дніпро
 
-**Поточна версія:** `v2.9.0` (26.08.2026)  
-**Реліз:** *Social Proof, Plausible Analytics & Invisible Anti-Spam Turnstile*  
+**Поточна версія:** `v3.0.0` (26.08.2026)  
+**Реліз:** *AI Computer Vision Auto-Measure, Social Proof & Plausible Analytics*  
 **Production URL:** [https://zhaluzi-rolety-dnipro.vercel.app](https://zhaluzi-rolety-dnipro.vercel.app)  
 **GitHub Repository:** [https://github.com/yevhens-hue/zhaluzzzi](https://github.com/yevhens-hue/zhaluzzzi)  
 **Admin Panel:** [https://zhaluzi-rolety-dnipro.vercel.app/admin](https://zhaluzi-rolety-dnipro.vercel.app/admin)  
@@ -16,41 +16,28 @@
 
 ```
 ├── app/
-│   ├── page.tsx                     # Головна сторінка (Hero, Слайдер До/Після, Категорії, Топ, Калькулятор, Матеріали, Галерея, FAQ)
+│   ├── page.tsx                     # Головна сторінка (Hero, Слайдер До/Після, Категорії, Топ, Калькулятор + AI-Замір, Матеріали, Галерея, FAQ)
+│   ├── zamir/page.tsx               # Інструкція заміру + Кнопка запуску AI Комп'ютерного Зору
 │   ├── roleti/page.tsx              # Категорія Ролети + LSI SEO Гід + FAQ Accordion Schema
 │   ├── shtori/page.tsx              # Категорія Штори День-Ніч + LSI SEO Гід
 │   ├── zhaluzi/page.tsx             # Категорія Жалюзі Алюмінієві + LSI SEO Гід
 │   ├── visualizer/page.tsx          # 3D Візуалізатор тканин на вікні
 │   ├── admin/page.tsx               # Модульна Адмін-панель & CMS (Замовлення, Ліди, Товари, Фіди, SMM, Відгуки, Plausible Аналітика)
-│   ├── catalog/page.tsx             # Каталог товарів з живими фільтрами та пошуком
-│   ├── checkout/page.tsx            # Оформлення замовлення
-│   ├── api/
-│   │   ├── analytics/
-│   │   │   ├── event/               # Privacy-First Telemetry Beacon
-│   │   │   └── view/                # Product View Counter
-│   │   ├── feeds/
-│   │   │   ├── google-merchant/     # Google Shopping XML (UK & RU)
-│   │   │   └── rozetka/             # Rozetka / Prom.ua YML XML
-│   │   ├── chat/route.ts            # AI Консультант (Prompt Caching + Rate Limiting)
 ├── components/
+│   ├── AiWindowMeasureModal.tsx     # 📷 AI Авто-замір вікна по фото з калібруванням за карткою/А4 (Computer Vision)
 │   ├── SocialProofNotifications.tsx # Живі спливаючі сповіщення про замовлення та перегляди у Дніпрі
 │   ├── ui/
 │   │   └── TurnstileShield.tsx      # Непомітний захист від спам-ботів (Honeypot + Cloudflare Turnstile)
-│   ├── admin/tabs/
-│   │   ├── AnalyticsDashboardTab.tsx# Власний дашборд аналітики (воронка калькулятора, райони Дніпра, топ тканин)
-│   │   ├── FeedsTab.tsx             # Керування Google Merchant фідами та XML імпортом
-│   │   ├── SmmTab.tsx               # Генератор постів для Instagram/Telegram + 7-денний контент-план
-│   │   └── ReviewsAnalyticsTab.tsx  # AI Аналіз задоволеності клієнтів (Топ-3 переваги / скарги / FAQ)
-│   ├── seo/
-│   │   └── CategorySeoSection.tsx   # Багаті SEO-статті та FAQ акордеони для підняття позицій у Google
+│   ├── BlindCalculator.tsx          # Інтерактивний калькулятор із прямим імпортом розмірів з AI-заміру
 ```
 
 ---
 
-## 🚀 Ключові можливості версії `v2.9.0`
+## 🚀 Ключові можливості версії `v3.0.0`
 
 | Функціонал | Опис | Статус |
 | :--- | :--- | :--- |
+| **AI Computer Vision Auto-Measure** | Авто-визначення ширини та висоти вікна по фото з камери за еталоном (банківська карта / аркуш А4) з точністю до ±2 мм | ✅ **Активно** |
 | **Social Proof Notifications** | Акуратні живі сповіщення внизу екрана: «Олена щойно замовила...», «Зараз переглядають 3 людини» (+15–20% конверсії) | ✅ **Активно** |
 | **Plausible / Umami Telemetry** | Власна аналітика без Google Analytics: воронка калькулятора, топ тканин, райони Дніпра (без cookies, не блокується AdBlock) | ✅ **Активно** |
 | **Invisible Anti-Spam Shield** | 3-рівневий фоновий захист лід-форм: Cloudflare Turnstile + Honeypot + Velocity check без капч і світлофорів | ✅ **Активно** |
@@ -59,10 +46,8 @@
 | **AI User Feedback Analyst** | NLP-аналізатор відгуків у `/admin`: Топ-3 сильних сторін, Топ-3 скарг та рекомендації для FAQ | ✅ **Активно** |
 | **Google Merchant Feeds** | Автоматичні живі XML-фіди (UK & RU) для Google Shopping та Rozetka/Prom | ✅ **Активно** |
 | **Cross-Session Memory** | Збереження параметрів вікна, кімнати та тканини між візитами з персональним привітанням | ✅ **Активно** |
-| **Prompt Caching & Rate Limit** | Економія токенів LLM на 75–80%, TTFB ~400мс та захист від спаму | ✅ **Активно** |
-| **Слайдер «До / Після»** | Інтерактивне перетягування: сліпуче сонце ➔ 100% захист Блекаут | ✅ **Активно** |
 | **3D Візуалізатор вікон** | Центровані фони кімнат для фотореалістичної примірки тканин | ✅ **Активно** |
-| **Адмін-панель v2.9.0** | 13 модулів керування: замовлення, ліди, аналітика, товари, фіди, SMM, відгуки, калькулятор | ✅ **Активно** |
+| **Адмін-панель v3.0.0** | 13 модулів керування: замовлення, ліди, аналітика, товари, фіди, SMM, відгуки, калькулятор | ✅ **Активно** |
 
 ---
 

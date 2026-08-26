@@ -1,17 +1,25 @@
 'use client';
 
-import React from 'react';
-import { Ruler, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Ruler, AlertCircle, Camera, Sparkles, ArrowRight } from 'lucide-react';
 import { Link } from 'next-view-transitions';
 import { useLanguage } from '@/context/LanguageContext';
+import { AiWindowMeasureModal } from '@/components/AiWindowMeasureModal';
+import { useRouter } from 'next/navigation';
 
 export default function ZamirPage() {
   const { t } = useLanguage();
+  const router = useRouter();
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+  const handleApplyDimensions = (widthCm: number, heightCm: number) => {
+    router.push(`/#calculator?width=${widthCm}&height=${heightCm}`);
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 py-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-8 sm:p-10 shadow-xl space-y-3">
+      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-8 sm:p-10 shadow-xl space-y-4">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full text-amber-300 text-xs font-bold">
           <Ruler className="w-4 h-4" />
           <span>{t('Інструкція від майстрів нашого виробництва', 'Инструкция от мастеров нашего производства')}</span>
@@ -21,11 +29,29 @@ export default function ZamirPage() {
         </h1>
         <p className="text-xs sm:text-sm text-gray-200 leading-relaxed max-w-2xl">
           {t(
-            'Точний замір — запорука ідеального вигляду та бездоганної роботи ваших сонцезахисних систем. Дотримуйтесь цих простих кроків:',
-            'Точный замер — залог идеального вида и безупречной работы ваших солнцезащитных систем. Следуйте этим простым шагам:'
+            'Точний замір — запорука ідеального вигляду та бездоганної роботи ваших сонцезахисних систем. Використовуйте AI-замір по фото або дотримуйтесь простих кроків нижче:',
+            'Точный замер — залог идеального вида и безупречной работы ваших солнцезащитных систем. Используйте AI-замер по фото или следуйте простым шагам ниже:'
           )}
         </p>
+
+        {/* AI Measure Launch Banner */}
+        <div className="pt-2">
+          <button
+            onClick={() => setIsAiModalOpen(true)}
+            className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 rounded-2xl font-extrabold text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2.5 transition active:scale-95 cursor-pointer"
+          >
+            <Camera className="w-5 h-5" />
+            <span>📷 Запустити AI Авто-замір по фото (без рулетки)</span>
+            <Sparkles className="w-4 h-4 text-amber-900 animate-pulse" />
+          </button>
+        </div>
       </div>
+
+      <AiWindowMeasureModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onApplyDimensions={handleApplyDimensions}
+      />
 
       {/* 1. Відкрита система на стулку */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-4">

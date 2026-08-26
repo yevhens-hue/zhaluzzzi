@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useMemo, useTransition, useCallback } from 'react';
-import { Calculator, Check, ArrowRight, ShieldCheck, Sparkles, Sliders, CheckCircle2, ShoppingBag, Eye } from 'lucide-react';
+import { Calculator, Check, ArrowRight, ShieldCheck, Sparkles, Sliders, CheckCircle2, ShoppingBag, Eye, Camera } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
+import { AiWindowMeasureModal } from './AiWindowMeasureModal';
 import { Product } from '@/types/database';
 
 import { useLanguage } from '@/context/LanguageContext';
@@ -22,6 +23,7 @@ export function BlindCalculator() {
   const [fixationType, setFixationType] = useState<'with_line' | 'without_line'>('with_line');
   const [isMotorized, setIsMotorized] = useState(false);
   const [isOneClickOpen, setIsOneClickOpen] = useState(false);
+  const [isAiMeasureOpen, setIsAiMeasureOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 
   const [, startTransition] = useTransition();
@@ -232,9 +234,20 @@ export function BlindCalculator() {
 
             {/* 2. Dimensions Sliders & Direct Inputs */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-blue-200 mb-2.5">
-                2. Вкажіть точні розміри (см)
-              </label>
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="block text-xs font-black uppercase tracking-wider text-blue-200">
+                  2. Вкажіть точні розміри (см)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsAiMeasureOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 rounded-full text-[11px] font-extrabold transition cursor-pointer active:scale-95 shadow-xs"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>📷 AI-Замір по фото</span>
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                </button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Width */}
                 <div className="bg-black/30 rounded-2xl p-4 border border-white/10">
@@ -543,6 +556,16 @@ export function BlindCalculator() {
         calculatedPrice={calculatedPrice}
         isOpen={isOneClickOpen}
         onClose={() => setIsOneClickOpen(false)}
+      />
+
+      {/* AI Window Measure Modal */}
+      <AiWindowMeasureModal
+        isOpen={isAiMeasureOpen}
+        onClose={() => setIsAiMeasureOpen(false)}
+        onApplyDimensions={(w, h) => {
+          setWidth(Math.round(w));
+          setHeight(Math.round(h));
+        }}
       />
     </div>
   );
