@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useTransition, useCallback } from 'react';
+import React, { useState, useMemo, useTransition, useCallback, useEffect } from 'react';
 import { Calculator, Check, ArrowRight, ShieldCheck, Sparkles, Sliders, CheckCircle2, ShoppingBag, Eye, Camera } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -25,6 +25,60 @@ export function BlindCalculator() {
   const [isOneClickOpen, setIsOneClickOpen] = useState(false);
   const [isAiMeasureOpen, setIsAiMeasureOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+
+  // Sync width and height from URL params (?width=...&height=...)
+  useEffect(() => {
+    const parseUrlParams = () => {
+      if (typeof window === 'undefined') return;
+      const url = new URL(window.location.href);
+      const urlParams = url.searchParams;
+      
+      // Also check hash for parameters (e.g. #calculator?width=80&height=140)
+      const hash = window.location.hash;
+      let hashParams: URLSearchParams | null = null;
+      if (hash.includes('?')) {
+        const hashQuery = hash.split('?')[1];
+        hashParams = new URLSearchParams(hashQuery);
+      }
+
+      const w = urlParams.get('width') || hashParams?.get('width');
+      const h = urlParams.get('height') || hashParams?.get('height');
+      const cat = urlParams.get('category') || hashParams?.get('category');
+
+      if (w) {
+        const numW = Math.round(Number(w));
+        if (!isNaN(numW) && numW >= 20 && numW <= 300) {
+          setWidth(numW);
+        }
+      }
+      if (h) {
+        const numH = Math.round(Number(h));
+        if (!isNaN(numH) && numH >= 30 && numH <= 350) {
+          setHeight(numH);
+        }
+      }
+      if (cat && ['roleti', 'shtori', 'zhaluzi', 'zakryta-sistema'].includes(cat)) {
+        setSelectedCategory(cat as any);
+      }
+
+      if (hash.startsWith('#calculator')) {
+        const el = document.getElementById('calculator');
+        if (el) {
+          setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 150);
+        }
+      }
+    };
+
+    parseUrlParams();
+    window.addEventListener('hashchange', parseUrlParams);
+    window.addEventListener('popstate', parseUrlParams);
+    return () => {
+      window.removeEventListener('hashchange', parseUrlParams);
+      window.removeEventListener('popstate', parseUrlParams);
+    };
+  }, []);
 
   const [, startTransition] = useTransition();
 
