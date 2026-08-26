@@ -19,6 +19,7 @@ import {
   Rss,
   Share2,
   MessageSquare,
+  BarChart3,
 } from 'lucide-react';
 import { AdminTab } from './types';
 import { APP_VERSION } from '@/lib/version';
@@ -130,6 +131,18 @@ export default function AdminHeader({
         >
           <Users className="w-4 h-4" />
           <span>Ліди в 1 клік ({leadsCount})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`pb-3 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'analytics'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Аналітика Plausible</span>
         </button>
 
         <button

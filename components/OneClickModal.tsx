@@ -6,6 +6,8 @@ import { createLead } from '@/lib/supabase';
 import { Product, ProductColor } from '@/types/database';
 import { useLanguage } from '@/context/LanguageContext';
 import { validateAndNormalizeUaPhone } from '@/lib/phoneValidator';
+import { TurnstileShield } from '@/components/ui/TurnstileShield';
+import { trackEvent } from '@/lib/analytics';
 
 interface OneClickModalProps {
   product: Product;
@@ -69,12 +71,14 @@ export function OneClickModal({
       });
       if (res.success) {
         setIsSuccess(true);
+        trackEvent('one_click_lead', { product: product.title, price: calculatedPrice });
       } else {
         setPhoneError(res.error || 'Помилка збереження заявки');
       }
     } catch (err: any) {
       console.error(err);
       setIsSuccess(true);
+      trackEvent('one_click_lead', { product: product.title, price: calculatedPrice });
     } finally {
       setIsSubmitting(false);
     }
@@ -191,6 +195,8 @@ export function OneClickModal({
                   <p className="text-[11px] text-red-600 mt-1 font-semibold">{phoneError}</p>
                 )}
               </div>
+
+              <TurnstileShield />
 
               <button
                 type="submit"

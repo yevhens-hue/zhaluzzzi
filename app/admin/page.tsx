@@ -28,6 +28,7 @@ import DatabaseTab from '@/components/admin/tabs/DatabaseTab';
 import FeedsTab from '@/components/admin/tabs/FeedsTab';
 import SmmTab from '@/components/admin/tabs/SmmTab';
 import ReviewsAnalyticsTab from '@/components/admin/tabs/ReviewsAnalyticsTab';
+import AnalyticsDashboardTab from '@/components/admin/tabs/AnalyticsDashboardTab';
 import {
   compressBase64Image,
   generateSlugFromTitle,
@@ -571,6 +572,12 @@ export default function AdminPage() {
           downloadCSVTemplate={downloadCSVTemplate}
           handleLoadAnalytics={handleLoadAnalytics}
           analytics={analytics}
+        />
+      )}
+
+      {activeTab === 'analytics' && (
+        <AnalyticsDashboardTab
+          showNotification={showNotification}
         />
       )}
 

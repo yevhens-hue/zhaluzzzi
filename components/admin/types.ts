@@ -11,6 +11,7 @@ import {
 export type AdminTab =
   | 'orders'
   | 'leads'
+  | 'analytics'
   | 'products'
   | 'feeds'
   | 'smm'

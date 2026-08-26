@@ -13,6 +13,7 @@ import { Footer } from '@/components/Footer';
 import { CartDrawer } from '@/components/CartDrawer';
 import { CityModal } from '@/components/CityModal';
 import { TelegramWidget } from '@/components/TelegramWidget';
+import { SocialProofNotifications } from '@/components/SocialProofNotifications';
 
 import { LocalBusinessJsonLd, WebSiteJsonLd, SITE_URL } from '@/components/seo/JsonLd';
 import { Toaster } from 'sonner';
@@ -125,6 +126,7 @@ export default function RootLayout({
                     <CityModal />
                     <TelegramWidget />
                     <AiConsultantWidget />
+                    <SocialProofNotifications />
                     <Toaster richColors position="top-right" closeButton />
                   </WishlistProvider>
                 </CityProvider>
