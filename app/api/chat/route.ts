@@ -5,6 +5,7 @@ import { AI_TOOLS, executeTool } from "@/lib/ai/tools";
 import { createLead } from "@/lib/supabase";
 import { validateAndNormalizeUaPhone } from "@/lib/phoneValidator";
 import { saveChatAnalytics, saveChatSession, getVectorKnowledge } from "@/lib/ai/analytics";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,32 @@ function sseChunk(data: object): Uint8Array {
 }
 
 export async function POST(req: NextRequest) {
+  // ── Rate Limiting (Protection against token drain / spam) ─────────────────
+  const { isLimited } = checkRateLimit(req, 20, 60 * 1000);
+  if (isLimited) {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          sseChunk({
+            type: "delta",
+            text: "Забагато повідомлень за короткий час. ⏳ Зачекайте, будь ласка, 1 хвилину або зателефонуйте майстру-консультанту: **093 912 85 31**.",
+          })
+        );
+        controller.enqueue(sseChunk({ type: "done", leadSubmitted: false }));
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      status: 429,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  }
+
   const body = await req.json();
   const { messages, cityContext, pageContext } = body;
 

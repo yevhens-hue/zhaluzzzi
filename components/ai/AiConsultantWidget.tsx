@@ -95,6 +95,59 @@ function usePageContext() {
   return { page: 'home' };
 }
 
+// ─── Customer Cross-Session Memory ──────────────────────────────────────────
+export interface CustomerMemory {
+  system?: string;
+  dimensions?: string;
+  room?: string;
+  fabric?: string;
+  lastUpdated: number;
+}
+
+function extractCustomerMemory(text: string, currentMemory: CustomerMemory | null): CustomerMemory {
+  const mem: CustomerMemory = currentMemory ? { ...currentMemory } : { lastUpdated: Date.now() };
+  const lower = text.toLowerCase();
+
+  // Extract dimensions (e.g. 140x180, 1400х1800, 60 * 120)
+  const dimMatch = text.match(/(\d{2,4})\s*[xх×*]\s*(\d{2,4})/i);
+  if (dimMatch) {
+    mem.dimensions = `${dimMatch[1]}×${dimMatch[2]}`;
+  }
+
+  // Extract system type
+  if (lower.includes('день-ніч') || lower.includes('день ніч') || lower.includes('день-ночь') || lower.includes('зебра')) {
+    mem.system = 'День-Ніч';
+  } else if (lower.includes('блекаут') || lower.includes('блэкаут') || lower.includes('blackout')) {
+    mem.system = 'Блекаут 100%';
+  } else if (lower.includes('плісе') || lower.includes('плиссе')) {
+    mem.system = 'Штори Плісе';
+  } else if (lower.includes('римськ') || lower.includes('римск')) {
+    mem.system = 'Римські штори';
+  } else if (lower.includes('алюміні') || lower.includes('алюмини') || lower.includes('горизонтал')) {
+    mem.system = 'Алюмінієві жалюзі';
+  } else if (lower.includes('рулонн') || lower.includes('ролет')) {
+    if (!mem.system) mem.system = 'Рулонні штори';
+  }
+
+  // Extract room context
+  if (lower.includes('кухн')) {
+    mem.room = 'кухню';
+  } else if (lower.includes('спальн')) {
+    mem.room = 'спальню';
+  } else if (lower.includes('вітальн') || lower.includes('гостин')) {
+    mem.room = 'вітальню';
+  } else if (lower.includes('дитяч') || lower.includes('детск')) {
+    mem.room = 'дитячу';
+  } else if (lower.includes('балкон') || lower.includes('лоджі') || lower.includes('лоджи')) {
+    mem.room = 'балкон/лоджію';
+  } else if (lower.includes('офіс') || lower.includes('кабінет')) {
+    mem.room = 'офіс';
+  }
+
+  mem.lastUpdated = Date.now();
+  return mem;
+}
+
 // ─── Main widget ──────────────────────────────────────────────────────────────
 export const AiConsultantWidget: React.FC = () => {
   const { currentCity } = useCity();
@@ -108,17 +161,28 @@ export const AiConsultantWidget: React.FC = () => {
   const [streamingContent, setStreamingContent] = useState(''); // live streaming buffer
   const [showFabrics, setShowFabrics] = useState(false);
   const [autoTriggered, setAutoTriggered] = useState(false);
+  const [customerMemory, setCustomerMemory] = useState<CustomerMemory | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sessionToken, setSessionToken] = useState<string>('');
 
-  // ── Build welcome message ─────────────────────────────────────────────────
+  // ── Build welcome message with Cross-Session Memory ──────────────────────
   const buildWelcomeMessage = useCallback(
-    (slug?: string): string => {
+    (slug?: string, memory?: CustomerMemory | null): string => {
       const welcomeCityText =
         currentCity && currentCity !== 'Місто' ? `у місті ${currentCity}` : 'по всій Україні';
+
+      // Cross-Session Memory Return Greeting
+      if (memory && (memory.system || memory.dimensions || memory.room)) {
+        const parts: string[] = [];
+        if (memory.system) parts.push(memory.system);
+        if (memory.dimensions) parts.push(`для вікна ${memory.dimensions} см`);
+        if (memory.room) parts.push(`на ${memory.room}`);
+        return `З поверненням! 👋 Бачу, ви раніше цікавилися: **${parts.join(' ')}**. Продовжимо підбір тканин чи зробимо точний розрахунок вартості?`;
+      }
+
       if (slug) {
         return `Вітаю! 👋 Бачу, що вас цікавить цей товар. Хочете, я розрахую точну вартість під ваші вікна ${welcomeCityText}?`;
       }
@@ -127,7 +191,7 @@ export const AiConsultantWidget: React.FC = () => {
     [currentCity]
   );
 
-  // ── Load / init chat history ──────────────────────────────────────────────
+  // ── Load / init chat history & memory ─────────────────────────────────────
   useEffect(() => {
     async function initChat() {
       // 1. Get or create session token
@@ -138,7 +202,17 @@ export const AiConsultantWidget: React.FC = () => {
       }
       setSessionToken(token);
 
-      // 2. Try local storage first
+      // 2. Load Customer Memory (Cross-Session)
+      let loadedMemory: CustomerMemory | null = null;
+      try {
+        const rawMem = localStorage.getItem('zhaluzi_customer_memory_v1');
+        if (rawMem) {
+          loadedMemory = JSON.parse(rawMem) as CustomerMemory;
+          setCustomerMemory(loadedMemory);
+        }
+      } catch { /* ignore */ }
+
+      // 3. Try local storage chat history
       try {
         const saved = localStorage.getItem('zhaluzi_ai_chat_history_v1');
         if (saved) {
@@ -152,7 +226,7 @@ export const AiConsultantWidget: React.FC = () => {
         // ignore
       }
 
-      // 3. Try Supabase history
+      // 4. Try Supabase history
       try {
         const res = await fetch(`/api/chat/history?token=${token}`);
         if (res.ok) {
@@ -166,12 +240,12 @@ export const AiConsultantWidget: React.FC = () => {
         // ignore
       }
 
-      // 4. Fallback to Welcome message
+      // 5. Fallback to Welcome message (personalized with memory if available)
       setMessages([
         {
           id: 'welcome-1',
           role: 'assistant',
-          content: buildWelcomeMessage(pageCtx.productSlug),
+          content: buildWelcomeMessage(pageCtx.productSlug, loadedMemory),
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -180,7 +254,7 @@ export const AiConsultantWidget: React.FC = () => {
     initChat();
   }, [buildWelcomeMessage, pageCtx.productSlug]);
 
-  // ── Persist chat history ──────────────────────────────────────────────────
+  // ── Persist chat history & memory ─────────────────────────────────────────
   useEffect(() => {
     if (messages.length > 0) {
       try {
@@ -259,6 +333,13 @@ export const AiConsultantWidget: React.FC = () => {
     setStreamingContent('');
     setShowFabrics(false);
 
+    // ── Update Customer Memory from user text ─────────────────────────
+    const updatedMem = extractCustomerMemory(text, customerMemory);
+    setCustomerMemory(updatedMem);
+    try {
+      localStorage.setItem('zhaluzi_customer_memory_v1', JSON.stringify(updatedMem));
+    } catch { /* ignore */ }
+
     // ── Check FAQ cache first ───────────────────────────────────────────
     const faqHit = getCachedFaq(text);
     if (faqHit) {
@@ -329,6 +410,13 @@ export const AiConsultantWidget: React.FC = () => {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isLeadSubmitted: leadSubmitted,
       };
+
+      // Extract additional memory from assistant's response/calculation
+      const finalMem = extractCustomerMemory(accumulated, updatedMem);
+      setCustomerMemory(finalMem);
+      try {
+        localStorage.setItem('zhaluzi_customer_memory_v1', JSON.stringify(finalMem));
+      } catch { /* ignore */ }
 
       setMessages((prev) => [...prev, assistantMsg]);
       setStreamingContent('');
@@ -491,6 +579,21 @@ export const AiConsultantWidget: React.FC = () => {
           {/* ── Quick Prompts ─────────────────────────────────────────────── */}
           {messages.length <= 2 && !showFabrics && (
             <div className="p-2.5 bg-white border-t border-gray-100 flex gap-1.5 overflow-x-auto no-scrollbar">
+              {customerMemory && (customerMemory.system || customerMemory.dimensions) && (
+                <button
+                  onClick={() =>
+                    handleSendMessage(
+                      `Розрахуйте, будь ласка, вартість ${customerMemory.system || 'штор'}${customerMemory.dimensions ? ` ${customerMemory.dimensions}` : ''}${customerMemory.room ? ` на ${customerMemory.room}` : ''}`
+                    )
+                  }
+                  className="whitespace-nowrap text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full font-bold transition-colors border border-indigo-200 active:scale-95 flex items-center gap-1 shadow-xs"
+                >
+                  <Sparkles className="w-3 h-3 text-indigo-600" />
+                  <span>
+                    Продовжити: {customerMemory.system || 'Штори'} {customerMemory.dimensions || ''}
+                  </span>
+                </button>
+              )}
               {QUICK_PROMPTS.map((prompt, idx) => (
                 <button
                   key={idx}
