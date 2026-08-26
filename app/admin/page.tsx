@@ -577,7 +577,12 @@ export default function AdminPage() {
 
       {activeTab === 'analytics' && (
         <AnalyticsDashboardTab
+          orders={orders}
+          leads={leads}
+          products={products}
+          analytics={analytics}
           showNotification={showNotification}
+          onRefresh={loadData}
         />
       )}
 
