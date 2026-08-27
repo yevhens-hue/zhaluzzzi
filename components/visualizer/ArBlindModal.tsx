@@ -7,7 +7,9 @@ import {
   Sparkles, 
   Download, 
   ShoppingCart, 
-  Smartphone
+  Smartphone,
+  Share2,
+  Send
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
@@ -209,8 +211,8 @@ export function ArBlindModal({
     setIsDraggingChain(false);
   };
 
-  // Snapshot Capture
-  const handleCaptureSnapshot = () => {
+  // Snapshot Capture with Realistic 3D Blind Rendering
+  const handleCaptureSnapshot = async () => {
     if (!containerRef.current) return;
     setIsCapturing(true);
 
@@ -225,11 +227,10 @@ export function ArBlindModal({
       canvas.height = cHeight * 2;
       ctx.scale(2, 2);
 
-      // Draw background from video or placeholder
+      // 1. Draw background from live camera or ambient room
       if (videoRef.current && hasCamera) {
         ctx.drawImage(videoRef.current, 0, 0, cWidth, cHeight);
       } else {
-        // gradient room background
         const grad = ctx.createLinearGradient(0, 0, cWidth, cHeight);
         grad.addColorStop(0, '#1e293b');
         grad.addColorStop(1, '#0f172a');
@@ -237,20 +238,101 @@ export function ArBlindModal({
         ctx.fillRect(0, 0, cWidth, cHeight);
       }
 
-      // Draw watermark & specs
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-      ctx.roundRect(16, cHeight - 70, cWidth - 32, 54, 16);
+      // 2. Calculate blind dimensions and center on snapshot
+      const blindW = Math.min(360, Math.max(200, width * 3.8)) * blindScale;
+      const blindX = (cWidth - blindW) / 2 + blindPosition.x;
+      const blindY = (cHeight - 340) / 2 + blindPosition.y;
+      const fabricH = Math.max(30, (height * 2.8) * (openPercent / 100)) * blindScale;
+
+      // 3. Draw Top Cassette
+      const cassetteH = 28;
+      const cassGrad = ctx.createLinearGradient(blindX, blindY, blindX, blindY + cassetteH);
+      cassGrad.addColorStop(0, '#f1f5f9');
+      cassGrad.addColorStop(0.5, '#cbd5e1');
+      cassGrad.addColorStop(1, '#94a3b8');
+      ctx.fillStyle = cassGrad;
+      ctx.beginPath();
+      ctx.roundRect(blindX, blindY, blindW, cassetteH, [8, 8, 0, 0]);
       ctx.fill();
 
+      // Top Cassette glare & brand text
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillRect(blindX + 2, blindY + 2, blindW - 4, 3);
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('UNI-BEST SYSTEM', blindX + blindW / 2, blindY + 18);
+
+      // 4. Draw Fabric Body
+      const fabricY = blindY + cassetteH;
+      ctx.fillStyle = selectedFabric.hex;
+      ctx.fillRect(blindX, fabricY, blindW, fabricH);
+
+      // System patterns
+      if (system === 'day-night') {
+        const stripeH = 14;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+        for (let y = fabricY; y < fabricY + fabricH; y += stripeH * 2) {
+          ctx.fillRect(blindX, y, blindW, Math.min(stripeH, fabricY + fabricH - y));
+        }
+      } else if (system === 'blinds') {
+        const slatH = 16;
+        for (let y = fabricY; y < fabricY + fabricH; y += slatH) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+          ctx.fillRect(blindX, y, blindW, 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.fillRect(blindX, y + 2, blindW, 2);
+        }
+      }
+
+      // Vertical shadow gradient on sides
+      const sideShadow = ctx.createLinearGradient(blindX, fabricY, blindX + blindW, fabricY);
+      sideShadow.addColorStop(0, 'rgba(0,0,0,0.2)');
+      sideShadow.addColorStop(0.1, 'rgba(0,0,0,0)');
+      sideShadow.addColorStop(0.9, 'rgba(0,0,0,0)');
+      sideShadow.addColorStop(1, 'rgba(0,0,0,0.2)');
+      ctx.fillStyle = sideShadow;
+      ctx.fillRect(blindX, fabricY, blindW, fabricH);
+
+      // 5. Draw Bottom Weight Bar
+      const bottomBarH = 14;
+      const btmY = fabricY + fabricH;
+      const btmGrad = ctx.createLinearGradient(blindX, btmY, blindX, btmY + bottomBarH);
+      btmGrad.addColorStop(0, '#e2e8f0');
+      btmGrad.addColorStop(1, '#94a3b8');
+      ctx.fillStyle = btmGrad;
+      ctx.beginPath();
+      ctx.roundRect(blindX, btmY, blindW, bottomBarH, [0, 0, 6, 6]);
+      ctx.fill();
+
+      // 6. Draw Control Chain on Right
+      const chainX = blindX + blindW + 8;
+      for (let cy = blindY + 10; cy < btmY + 20; cy += 10) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(chainX, cy, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 7. Draw Watermark & Specs Badge at Bottom
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(16, cHeight - 74, cWidth - 32, 58, 16);
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.stroke();
+
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText(`Примірка: ${selectedFabric.name} (${width}×${height} см)`, 32, cHeight - 42);
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(`📐 Примірка: ${selectedFabric.name} (${width}×${height} см)`, 30, cHeight - 46);
 
       ctx.fillStyle = '#38bdf8';
       ctx.font = 'bold 12px sans-serif';
-      ctx.fillText(`Ціна: ${calculatedPrice} грн • zhaluzi-dnipro.dp.ua`, 32, cHeight - 24);
+      ctx.fillText(`💰 Вартість: ${calculatedPrice} грн • zhaluzi-dnipro.dp.ua • (093) 912-85-31`, 30, cHeight - 26);
 
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
       setCapturedImage(dataUrl);
       toast.success('📸 Фото примірки збережено!');
     } catch (err) {
@@ -258,6 +340,42 @@ export function ArBlindModal({
       toast.error('Не вдалося створити знімок');
     } finally {
       setIsCapturing(false);
+    }
+  };
+
+  // Native Share / Save Action
+  const handleShareSnapshot = async () => {
+    if (!capturedImage) return;
+
+    try {
+      // Check Web Share API with files
+      if (navigator.share) {
+        const res = await fetch(capturedImage);
+        const blob = await res.blob();
+        const file = new File([blob], `zhaluzi-ar-${width}x${height}.jpg`, { type: 'image/jpeg' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `Примірка ролети ${selectedFabric.name}`,
+            text: `Приміряв ролету ${selectedFabric.name} (${width}×${height} см) за ${calculatedPrice} грн у Жалюзі Дніпро!`,
+            files: [file],
+          });
+          return;
+        }
+      }
+
+      // Fallback: Trigger download
+      const link = document.createElement('a');
+      link.href = capturedImage;
+      link.download = `zhaluzi-ar-${width}x${height}.jpg`;
+      link.click();
+      toast.success('Фото завантажено у галерею/завантаження!');
+    } catch (err) {
+      console.warn('Share error:', err);
+      const link = document.createElement('a');
+      link.href = capturedImage;
+      link.download = `zhaluzi-ar-${width}x${height}.jpg`;
+      link.click();
     }
   };
 
@@ -528,26 +646,58 @@ export function ArBlindModal({
         {/* Snapshot preview modal overlay */}
         {capturedImage && (
           <div className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
-            <div className="relative max-w-sm w-full bg-slate-900 rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
-              <img src={capturedImage} alt="Знімок примірки" className="w-full object-cover" />
+            <div className="relative max-w-sm w-full bg-slate-900 rounded-3xl overflow-hidden border border-white/20 shadow-2xl space-y-0">
+              <div className="relative aspect-4/3 bg-black">
+                <img src={capturedImage} alt="Знімок примірки" className="w-full h-full object-contain" />
+                <button
+                  onClick={() => setCapturedImage(null)}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
               <div className="p-4 space-y-3">
-                <h4 className="text-sm font-bold text-white">📸 Фото примірки готове!</h4>
-                <div className="flex gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <span>📸 Фото примірки збережено</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {selectedFabric.name} • {width}×{height} см • <b className="text-amber-400">{calculatedPrice} грн</b>
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleShareSnapshot}
+                    className="py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>Поділитися / Зберегти</span>
+                  </button>
+
                   <a
                     href={capturedImage}
                     download={`zhaluzi-ar-${width}x${height}.jpg`}
-                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 border border-white/10 transition active:scale-95"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Завантажити</span>
+                    <span>Завантажити файл</span>
                   </a>
-                  <button
-                    onClick={() => setCapturedImage(null)}
-                    className="px-4 py-2.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl"
-                  >
-                    Закрити
-                  </button>
                 </div>
+
+                {/* Direct Send to Master */}
+                <a
+                  href={`https://t.me/+380939128531?text=${encodeURIComponent(
+                    `Привіт! Я зробив AR-примірку ролети:\n📦 ${selectedFabric.name}\n📐 Розмір: ${width}×${height} см\n💰 Ціна: ${calculatedPrice} грн`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 bg-[#2CA5E0] hover:bg-[#2392c7] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Відправити майстру у Telegram</span>
+                </a>
               </div>
             </div>
           </div>
