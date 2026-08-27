@@ -454,10 +454,10 @@ export const AiConsultantWidget: React.FC = () => {
 
   return (
     <div
-      className={`fixed z-[70] font-sans transition-all ${
+      className={`fixed font-sans transition-all ${
         isOpen
-          ? 'inset-0 sm:inset-auto sm:bottom-5 sm:right-5 flex flex-col items-center justify-end sm:items-end p-2 sm:p-0 bg-black/40 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none'
-          : 'hidden md:flex bottom-5 right-5 flex-col items-end'
+          ? 'inset-0 sm:inset-auto sm:bottom-5 sm:right-5 z-[80] flex flex-col items-center justify-end sm:items-end p-2 pb-[calc(env(safe-area-inset-bottom)+68px)] sm:pb-0 sm:p-0 bg-black/50 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none'
+          : 'hidden md:flex md:z-[70] bottom-5 right-5 flex-col items-end'
       }`}
     >
       {/* ── Chat Window ───────────────────────────────────────────────────── */}
@@ -466,7 +466,7 @@ export const AiConsultantWidget: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="ai-chat-title"
-          className="mb-2 sm:mb-3 w-full sm:w-[390px] h-[85vh] sm:h-[560px] max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
+          className="mb-2 sm:mb-3 w-full sm:w-[390px] h-[calc(100vh-env(safe-area-inset-bottom)-76px)] sm:h-[560px] max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-4 text-white flex items-center justify-between shadow-md">

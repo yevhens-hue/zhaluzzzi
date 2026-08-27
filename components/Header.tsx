@@ -235,7 +235,7 @@ export function Header() {
           <Link
             href="/catalog?wishlist=true"
             aria-label="Закладки"
-            className="p-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-full relative transition"
+            className="p-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-full relative transition overflow-visible"
           >
             <Heart className="w-5 h-5" />
             {wishlistCount > 0 && (
@@ -248,17 +248,17 @@ export function Header() {
           <Link
             href="/admin"
             aria-label="Адмін-панель"
-            className="p-2 text-gray-700 hover:text-slate-900 hover:bg-gray-100 rounded-full transition"
+            className="hidden md:flex p-2 text-gray-700 hover:text-slate-900 hover:bg-gray-100 rounded-full transition"
           >
             <User className="w-5 h-5" />
           </Link>
 
           <button
             onClick={toggleCart}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-950 text-white px-4 py-2 rounded-full font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+            className="hidden md:flex items-center gap-2 bg-slate-900 hover:bg-slate-950 text-white px-4 py-2 rounded-full font-bold text-xs shadow-md transition active:scale-95 cursor-pointer overflow-visible"
             aria-label="Кошик"
           >
-            <div className="relative">
+            <div className="relative overflow-visible">
               <ShoppingBag className="w-4 h-4" />
               {totalCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-amber-400 text-slate-950 text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
@@ -266,7 +266,7 @@ export function Header() {
                 </span>
               )}
             </div>
-            <span className="hidden sm:inline">
+            <span className="hidden lg:inline">
               {totalAmount > 0 ? `${totalAmount.toLocaleString('uk-UA')} грн` : 'Кошик'}
             </span>
           </button>
@@ -283,121 +283,232 @@ export function Header() {
 
       {/* Mobile drawer menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-200 px-4 py-4 space-y-4 shadow-lg">
+        <div className="lg:hidden bg-white/98 backdrop-blur-2xl border-t border-gray-200/80 px-4 py-4 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-top-2 duration-200">
           {/* Mobile search */}
           <form onSubmit={handleSearch} className="relative">
             <input
-              type="text"
-              placeholder="Пошук у каталозі..."
+              type="search"
+              placeholder="Пошук моделі або тканини..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full pl-9 pr-3 py-2.5 bg-gray-100/90 border border-gray-200 rounded-xl text-sm font-medium focus:outline-hidden focus:bg-white focus:border-slate-900 transition"
             />
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           </form>
 
-          {/* Instagram link */}
-          <a
-            href="https://www.instagram.com/zhaluzi.rollety.dnipro?igsh=MWR0cXVmdzExem02ZQ=="
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl text-xs font-bold shadow-xs"
-          >
-            <InstagramIcon className="w-4 h-4" />
-            <span>Наш Instagram: @zhaluzi.rollety.dnipro</span>
-          </a>
-
-          {/* City selector */}
-          <button
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              openModal();
-            }}
-            className="w-full flex items-center justify-between p-2.5 bg-gray-50 rounded-lg text-sm text-gray-700 font-medium"
-          >
-            <span>📍 Ваше місто: <strong className="text-blue-600">{currentCity === 'Місто' ? 'Дніпро' : currentCity}</strong></span>
-            <ChevronDown className="w-4 h-4 text-gray-400" />
-          </button>
-
-          {/* Catalog links */}
-          <div className="space-y-1 font-semibold text-gray-800">
-            <Link
-              href="/roleti"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block p-2 hover:bg-blue-50 rounded-lg text-blue-900"
+          {/* Quick search tags */}
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                router.push('/roleti?sub=den-nich');
+              }}
+              className="whitespace-nowrap px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full font-semibold border border-blue-200 transition active:scale-95"
             >
-              Ролети на вікна
-            </Link>
-            <Link
-              href="/shtori"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block p-2 hover:bg-blue-50 rounded-lg text-blue-900"
+              🌓 День-Ніч
+            </button>
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                router.push('/roleti?sub=blekaut_roleti');
+              }}
+              className="whitespace-nowrap px-3 py-1.5 bg-slate-100 text-slate-800 hover:bg-slate-200 rounded-full font-semibold border border-slate-200 transition active:scale-95"
             >
-              Рулонні та римські штори
-            </Link>
-            <Link
-              href="/zhaluzi"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block p-2 hover:bg-blue-50 rounded-lg text-blue-900"
+              🌑 Блекаут 100%
+            </button>
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                router.push('/aktsii');
+              }}
+              className="whitespace-nowrap px-3 py-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded-full font-bold border border-amber-200 transition active:scale-95 flex items-center gap-1"
             >
-              Жалюзі (горизонтальні алюмінієві та вертикальні)
-            </Link>
-            <Link
-              href="/zakryta-sistema"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block p-2 hover:bg-blue-50 rounded-lg text-blue-900"
-            >
-              Закрита система з направляючими
-            </Link>
+              <Sparkles className="w-3 h-3 text-amber-600" />
+              <span>Знижки до -25%</span>
+            </button>
           </div>
 
-          <hr className="border-gray-200" />
+          {/* City selector & Visualizer Bar */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                openModal();
+              }}
+              className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200/80 rounded-xl text-xs font-bold text-gray-800"
+            >
+              <span className="truncate">📍 {currentCity === 'Місто' ? 'Дніпро' : currentCity}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" />
+            </button>
 
-          {/* Info links */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 text-xs text-gray-600">
-            <Link 
-              href="/visualizer" 
+            <Link
+              href="/visualizer"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="col-span-2 py-2 px-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-extrabold rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+              className="flex items-center justify-center gap-1.5 p-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-xs font-extrabold shadow-sm active:scale-95 transition"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>🎨 3D Примірка на вікні</span>
+              <span>3D Візуалізатор</span>
             </Link>
-            <Link href="/zamir" onClick={() => setIsMobileMenuOpen(false)}>Виклик замірника</Link>
-            <Link href="/zamir" onClick={() => setIsMobileMenuOpen(false)}>Замір вікон</Link>
-            <Link href="/montaj" onClick={() => setIsMobileMenuOpen(false)}>Інструкція монтажу</Link>
-            <Link href="/sposobi_oplati" onClick={() => setIsMobileMenuOpen(false)}>Оплата / Розстрочка</Link>
-            <Link href="/dostavka" onClick={() => setIsMobileMenuOpen(false)}>Доставка по Україні</Link>
-            <Link href="/pro_nas" onClick={() => setIsMobileMenuOpen(false)}>Про виробництво</Link>
-            <Link href="/zvyazok" onClick={() => setIsMobileMenuOpen(false)}>Контакти</Link>
-            <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}>Адмін-панель</Link>
           </div>
 
-          {/* Phone call buttons & TTN Tracking */}
-          <div className="space-y-2 pt-2">
+          {/* Visual Category Grid */}
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Каталог продукції</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/roleti"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50/50 border border-blue-100 hover:border-blue-300 rounded-2xl transition group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xl">🪟</span>
+                  <span className="text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded-md">Хіт</span>
+                </div>
+                <div className="font-bold text-xs text-slate-900 group-hover:text-blue-600 transition">Тканинні ролети</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Відкриті та День-Ніч</div>
+              </Link>
+
+              <Link
+                href="/shtori"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-3 bg-gradient-to-br from-purple-50 to-pink-50/50 border border-purple-100 hover:border-purple-300 rounded-2xl transition group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xl">✨</span>
+                  <span className="text-[9px] font-bold bg-purple-600 text-white px-1.5 py-0.5 rounded-md">Новинки</span>
+                </div>
+                <div className="font-bold text-xs text-slate-900 group-hover:text-purple-600 transition">Римські & Плісе</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Ексклюзивні тканини</div>
+              </Link>
+
+              <Link
+                href="/zhaluzi"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-3 bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-100 hover:border-emerald-300 rounded-2xl transition group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xl">📐</span>
+                  <span className="text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded-md">Надійно</span>
+                </div>
+                <div className="font-bold text-xs text-slate-900 group-hover:text-emerald-600 transition">Жалюзі алюмінієві</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Горизонтальні & Venus</div>
+              </Link>
+
+              <Link
+                href="/zakryta-sistema"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-3 bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-100 hover:border-amber-300 rounded-2xl transition group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xl">🛡️</span>
+                  <span className="text-[9px] font-bold bg-amber-600 text-white px-1.5 py-0.5 rounded-md">Преміум</span>
+                </div>
+                <div className="font-bold text-xs text-slate-900 group-hover:text-amber-600 transition">Закрита система</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">З коробом Uni-Best</div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Master direct contact card */}
+          <div className="p-3.5 bg-slate-950 text-white rounded-2xl space-y-2.5 shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-black">
+                  ВК
+                </div>
+                <div>
+                  <div className="font-bold text-xs leading-tight">Віктор Кузьменко</div>
+                  <div className="text-[10px] text-slate-400">Майстер-консультант • Дніпро</div>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> На зв&apos;язку
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5 pt-1">
+              <a
+                href="tel:0939128531"
+                className="flex items-center justify-center gap-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition active:scale-95"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Дзвінок</span>
+              </a>
+              <a
+                href={contacts.telegramUrl || 'https://t.me/+380939128531'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1 py-2 bg-[#2CA5E0] hover:opacity-90 text-white rounded-xl text-xs font-bold transition active:scale-95"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Telegram</span>
+              </a>
+              <a
+                href={`viber://chat?number=${encodeURIComponent(contacts.viberNumber || '+380939128531')}`}
+                className="flex items-center justify-center gap-1 py-2 bg-[#7F4DA0] hover:opacity-90 text-white rounded-xl text-xs font-bold transition active:scale-95"
+              >
+                <span>Viber</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Quick service links */}
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700 font-semibold pt-1">
+            <Link
+              href="/zamir"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center gap-1.5 transition"
+            >
+              <span>🚗</span>
+              <span>Виїзд замірника</span>
+            </Link>
+            <Link
+              href="/montaj"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center gap-1.5 transition"
+            >
+              <span>🔧</span>
+              <span>Інструкція монтажу</span>
+            </Link>
+            <Link
+              href="/sposobi_oplati"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center gap-1.5 transition"
+            >
+              <span>💳</span>
+              <span>Оплата & Розстрочка</span>
+            </Link>
+            <Link
+              href="/dostavka"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center gap-1.5 transition"
+            >
+              <span>🚚</span>
+              <span>Доставка по Україні</span>
+            </Link>
+          </div>
+
+          {/* Tracking button & Instagram */}
+          <div className="space-y-2 pt-1 pb-4">
             <button
               onClick={() => {
                 setIsMobileMenuOpen(false);
                 setIsTrackingOpen(true);
               }}
-              className="w-full text-center py-2.5 bg-red-50 text-red-600 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 border border-red-200"
+              className="w-full text-center py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-red-200 transition"
             >
-              <span>📦 Відстежити ТТН (Нова Пошта)</span>
+              <span>📦 Відстежити ТТН Нової Пошти</span>
             </button>
-            <div className="flex gap-2">
-              <a
-                href="tel:0939128531"
-                className="flex-1 text-center py-2 bg-blue-50 text-blue-700 font-semibold rounded-lg text-xs"
-              >
-                📞 (093) 912-85-31
-              </a>
-              <a
-                href="tel:0935105521"
-                className="flex-1 text-center py-2 bg-blue-50 text-blue-700 font-semibold rounded-lg text-xs"
-              >
-                📞 (093) 510-55-21
-              </a>
-            </div>
+
+            <a
+              href={contacts.instagramUrl || 'https://www.instagram.com/zhaluzi.rollety.dnipro'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl text-xs font-bold shadow-xs active:scale-98 transition"
+            >
+              <InstagramIcon className="w-4 h-4" />
+              <span>Instagram: @zhaluzi_dnipro</span>
+            </a>
           </div>
         </div>
       )}

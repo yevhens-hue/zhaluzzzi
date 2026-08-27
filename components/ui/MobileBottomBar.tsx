@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Camera, ShoppingBag, Send, Calculator, PhoneCall, Sparkles, X, CheckCircle, ShieldCheck, Bot } from 'lucide-react';
+import { LayoutGrid, ShoppingBag, Calculator, PhoneCall, Sparkles, Bot, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { MobileDrawer } from './MobileDrawer';
@@ -30,6 +30,13 @@ export function MobileBottomBar() {
     return null;
   }
 
+  const isCatalogActive =
+    pathname === '/catalog' ||
+    pathname?.startsWith('/roleti') ||
+    pathname?.startsWith('/shtori') ||
+    pathname?.startsWith('/zhaluzi') ||
+    pathname?.startsWith('/zakryta-sistema');
+
   const triggerHaptic = () => {
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
       try {
@@ -38,10 +45,10 @@ export function MobileBottomBar() {
     }
   };
 
-  const handleAiMeasureClick = () => {
+  const handleCatalogClick = () => {
     triggerHaptic();
-    trackEvent('mobile_bottom_ai_measure_click');
-    router.push('/zamir');
+    trackEvent('mobile_bottom_catalog_click');
+    router.push('/catalog');
   };
 
   const handleCalculatorClick = () => {
@@ -123,47 +130,49 @@ export function MobileBottomBar() {
   return (
     <>
       {/* Floating Bottom Thumb-Zone Bar for Mobile Devices */}
-      <aside aria-label="Мобільне меню швидких дій" className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-slate-950/90 backdrop-blur-xl border-t border-white/10 px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl">
+      <aside aria-label="Мобільне меню швидких дій" className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-slate-950/95 backdrop-blur-2xl border-t border-white/10 px-2 py-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl">
         <div className="max-w-md mx-auto flex items-center justify-between gap-1">
-          {/* 1. AI-Measure Shortcut */}
+          {/* 1. Catalog Shortcut */}
           <button
-            onClick={handleAiMeasureClick}
-            className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-slate-300 active:text-emerald-400 active:scale-95 transition-all relative"
-            title="AI-Замір вікна по фото"
+            onClick={handleCatalogClick}
+            className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all active:scale-95 relative ${
+              isCatalogActive ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Каталог товарів"
           >
             <div className="relative">
-              <Camera className="w-5 h-5 text-emerald-400" />
-              <span className="absolute -top-1 -right-2 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
+              <LayoutGrid className="w-5 h-5" />
+              {isCatalogActive && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full" />
+              )}
             </div>
-            <span className="text-[10px] font-semibold mt-1 tracking-tight">AI-Замір</span>
+            <span className="text-[10px] font-medium mt-1 tracking-tight">Каталог</span>
           </button>
 
           {/* 2. Calculator Shortcut */}
           <button
             onClick={handleCalculatorClick}
-            className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-slate-300 active:text-amber-400 active:scale-95 transition-all"
+            className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-slate-400 hover:text-amber-400 active:text-amber-400 active:scale-95 transition-all"
             title="Онлайн-калькулятор"
           >
-            <Calculator className="w-5 h-5 text-amber-400" />
+            <Calculator className="w-5 h-5" />
             <span className="text-[10px] font-medium mt-1 tracking-tight">Розрахунок</span>
           </button>
 
           {/* 3. Main Center CTA: Quick Order / Consult */}
           <button
             onClick={handleQuickCallClick}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-blue-600/30 active:scale-95 transition-all"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-600/40 active:scale-95 transition-all relative overflow-hidden group"
           >
-            <PhoneCall className="w-4 h-4 animate-pulse text-amber-300" />
-            <span>Швидкий замір</span>
+            <span className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-indigo-500 opacity-30 group-hover:opacity-60 blur-xs transition" />
+            <PhoneCall className="w-4 h-4 animate-pulse text-amber-300 relative z-10" />
+            <span className="relative z-10 font-bold whitespace-nowrap">Швидкий замір</span>
           </button>
 
           {/* 4. AI-Consultant Direct */}
           <button
             onClick={handleAiConsultantClick}
-            className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-slate-300 active:text-indigo-400 active:scale-95 transition-all relative"
+            className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-slate-400 hover:text-indigo-400 active:text-indigo-400 active:scale-95 transition-all relative"
             title="AI-Консультант онлайн"
             aria-label="AI-консультант онлайн"
           >
@@ -180,11 +189,11 @@ export function MobileBottomBar() {
           {/* 5. Cart */}
           <button
             onClick={handleCartClick}
-            className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-slate-300 active:text-amber-400 active:scale-95 transition-all relative"
+            className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-slate-400 hover:text-amber-400 active:text-amber-400 active:scale-95 transition-all relative"
             title="Кошик"
           >
             <div className="relative">
-              <ShoppingBag className="w-5 h-5 text-amber-400" />
+              <ShoppingBag className="w-5 h-5" />
               {totalCount > 0 && (
                 <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce">
                   {totalCount}

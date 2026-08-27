@@ -15,7 +15,7 @@ export function Footer() {
   const contacts = settings.contacts;
 
   return (
-    <footer className="bg-slate-950 text-gray-300 pt-16 pb-12 border-t border-slate-800">
+    <footer className="bg-slate-950 text-gray-300 pt-16 pb-28 md:pb-12 border-t border-slate-800 w-full overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
         {/* Top 4 columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-12 border-b border-slate-800 text-xs">
@@ -40,7 +40,7 @@ export function Footer() {
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
                 <span>{contacts.city} ({t('Доставка та відправка по всій Україні', 'Доставка и отправка по всей Украине')})</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Phone className="w-4 h-4 text-blue-400 shrink-0" />
                 <a href={`tel:${contacts.phone1.replace(/[^0-9]/g, '')}`} className="font-bold text-white hover:text-blue-400">{contacts.phone1}</a>
                 {contacts.phone2 && (
@@ -137,15 +137,15 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-gray-500">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
             <span>© 2014–2026 {t('Жалюзі та Ролети від виробника • м. Дніпро.', 'Жалюзи и Роллеты от производителя • г. Днепр.')}</span>
             <span className="text-[10px] font-mono text-gray-600 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded">v{APP_VERSION}</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-emerald-500">
-              <ShieldCheck className="w-3.5 h-3.5" /> 100% {t('Гарантія якості', 'Гарантия качества')}
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-4 gap-y-2 text-center sm:text-right">
+            <span className="flex items-center gap-1 text-emerald-500 shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> 100% {t('Гарантія якості', 'Гарантия качества')}
             </span>
-            <span>Приват24 • Monobank • Visa • MasterCard • NovaPay</span>
+            <span className="text-center sm:text-right">Приват24 • Monobank • Visa • MasterCard • NovaPay</span>
           </div>
         </div>
       </div>
