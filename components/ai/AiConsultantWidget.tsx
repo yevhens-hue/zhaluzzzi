@@ -168,6 +168,13 @@ export const AiConsultantWidget: React.FC = () => {
   const triggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sessionToken, setSessionToken] = useState<string>('');
 
+  // ── Global trigger event listener ─────────────────────────────────────────
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-ai-consultant', handleOpen);
+    return () => window.removeEventListener('open-ai-consultant', handleOpen);
+  }, []);
+
   // ── Build welcome message with Cross-Session Memory ──────────────────────
   const buildWelcomeMessage = useCallback(
     (slug?: string, memory?: CustomerMemory | null): string => {
@@ -446,14 +453,20 @@ export const AiConsultantWidget: React.FC = () => {
   const showLeadBar = messages.length >= 3 && leadProgress < 4;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end font-sans">
+    <div
+      className={`fixed z-[70] font-sans transition-all ${
+        isOpen
+          ? 'inset-0 sm:inset-auto sm:bottom-5 sm:right-5 flex flex-col items-center justify-end sm:items-end p-2 sm:p-0 bg-black/40 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none'
+          : 'hidden md:flex bottom-5 right-5 flex-col items-end'
+      }`}
+    >
       {/* ── Chat Window ───────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="ai-chat-title"
-          className="mb-3 w-[92vw] sm:w-[390px] h-[560px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
+          className="mb-2 sm:mb-3 w-full sm:w-[390px] h-[85vh] sm:h-[560px] max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-4 text-white flex items-center justify-between shadow-md">

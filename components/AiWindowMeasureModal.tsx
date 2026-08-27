@@ -72,6 +72,61 @@ export function AiWindowMeasureModal({
   const [rawWidthMm, setRawWidthMm] = useState<number | null>(null);
   const [rawHeightMm, setRawHeightMm] = useState<number | null>(null);
 
+  // Gyroscope Level Guide state
+  const [gyroData, setGyroData] = useState<{ beta: number | null; gamma: number | null }>({
+    beta: null,
+    gamma: null,
+  });
+  const [isGyroActive, setIsGyroActive] = useState<boolean>(false);
+  const [isGyroSupported, setIsGyroSupported] = useState<boolean>(false);
+
+  // Check gyroscope support and handle motion
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
+      setIsGyroSupported(true);
+    }
+  }, []);
+
+  const requestGyroPermission = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      // iOS 13+ permission request
+      const doe = window.DeviceOrientationEvent as unknown as {
+        requestPermission?: () => Promise<'granted' | 'denied'>;
+      };
+      if (typeof doe?.requestPermission === 'function') {
+        const response = await doe.requestPermission();
+        if (response === 'granted') {
+          setIsGyroActive(true);
+        }
+      } else {
+        setIsGyroActive(true);
+      }
+    } catch (err) {
+      console.warn('Gyroscope permission error:', err);
+      setIsGyroActive(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!isGyroActive || typeof window === 'undefined') return;
+
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.beta !== null && e.gamma !== null) {
+        setGyroData({ beta: e.beta, gamma: e.gamma });
+      }
+    };
+
+    window.addEventListener('deviceorientation', handleOrientation);
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  }, [isGyroActive]);
+
+  // Is phone held vertically (perpendicular to window)?
+  // Vertical upright: beta ~ 80-100 deg, gamma (roll) ~ -5 to +5 deg
+  const pitchDiff = gyroData.beta !== null ? Math.abs(gyroData.beta - 90) : null;
+  const rollDiff = gyroData.gamma !== null ? Math.abs(gyroData.gamma) : null;
+  const isLevelAligned = pitchDiff !== null && rollDiff !== null && pitchDiff <= 8 && rollDiff <= 6;
+
   // Normalized coordinates (0 to 1)
   const [cardBox, setCardBox] = useState<{ x: number; y: number; w: number; h: number }>({
     x: 0.12,
@@ -784,12 +839,99 @@ export function AiWindowMeasureModal({
                 </div>
                 <ul className="space-y-1.5 text-[11px] sm:text-xs text-blue-900/90 leading-relaxed list-disc list-inside">
                   <li>
-                    Прикладіть <strong>банківську карту</strong> або <strong>аркуш А4</strong> плозом
+                    Прикладіть <strong>банківську карту</strong> або <strong>аркуш А4</strong> плазом
                     до скла в кутку або біля рами.
                   </li>
-                  <li>Зробіть фото <strong>прямо навпроти вікна</strong>, щоб у кадр потрапило все вікно та еталон.</li>
+                  <li>Зробіть фото <strong>строго прямо навпроти вікна</strong> без сильного нахилу смартфона.</li>
                   <li>AI автоматично калібрує масштаб та розрахує точні розміри скла та рами.</li>
                 </ul>
+              </div>
+
+              {/* 📐 Digital Spirit Level Guide (Гіроскоп) */}
+              <div className="bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">📐</span>
+                    <span className="text-xs font-bold text-slate-200">
+                      Цифровий рівень нахилу (Гіроскоп)
+                    </span>
+                  </div>
+                  {!isGyroActive ? (
+                    <button
+                      type="button"
+                      onClick={requestGyroPermission}
+                      className="text-[11px] font-bold bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl transition shadow-md active:scale-95 cursor-pointer"
+                    >
+                      Увімкнути рівень
+                    </button>
+                  ) : (
+                    <span
+                      className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                        isLevelAligned
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 animate-pulse'
+                          : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      }`}
+                    >
+                      {isLevelAligned ? '🟢 ІДЕАЛЬНО' : '🟡 ВИРІВНЯЙТЕ'}
+                    </span>
+                  )}
+                </div>
+
+                {isGyroActive ? (
+                  <div className="flex items-center gap-4 bg-slate-950/80 rounded-xl p-3 border border-slate-800/80">
+                    {/* Visual 2D Bubble Spirit Level Target */}
+                    <div className="relative w-16 h-16 rounded-full border-2 border-slate-700 bg-slate-900 shrink-0 flex items-center justify-center overflow-hidden">
+                      {/* Crosshairs */}
+                      <div className="absolute inset-x-0 top-1/2 h-px bg-slate-700/60" />
+                      <div className="absolute inset-y-0 left-1/2 w-px bg-slate-700/60" />
+                      <div className="w-6 h-6 rounded-full border border-dashed border-slate-600" />
+
+                      {/* Moving Bubble indicator */}
+                      <div
+                        className={`w-4 h-4 rounded-full transition-all duration-75 shadow-md ${
+                          isLevelAligned
+                            ? 'bg-emerald-400 ring-4 ring-emerald-400/40 shadow-emerald-400/50'
+                            : 'bg-amber-400 shadow-amber-400/30'
+                        }`}
+                        style={{
+                          transform: `translate(${Math.max(-20, Math.min(20, (gyroData.gamma || 0) * 1.5))}px, ${Math.max(
+                            -20,
+                            Math.min(20, ((gyroData.beta || 90) - 90) * 1.5)
+                          )}px)`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Sensor Readings & Guidance text */}
+                    <div className="text-xs space-y-1 flex-1">
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Нахил вперед/назад:</span>
+                        <span className="font-mono text-white font-bold">
+                          {gyroData.beta !== null ? `${Math.round(gyroData.beta)}°` : '—'} (ідеал 90°)
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Крен вліво/вправо:</span>
+                        <span className="font-mono text-white font-bold">
+                          {gyroData.gamma !== null ? `${Math.round(gyroData.gamma)}°` : '—'} (ідеал 0°)
+                        </span>
+                      </div>
+                      <p
+                        className={`text-[11px] font-semibold pt-0.5 ${
+                          isLevelAligned ? 'text-emerald-400 font-bold' : 'text-amber-300'
+                        }`}
+                      >
+                        {isLevelAligned
+                          ? '✅ Смартфон стоїть рівно! Робіть фото.'
+                          : '👉 Тримайте телефон вертикально перед вікном.'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Увімкніть гіроскоп, щоб перевірити, чи телефон розташовано строго вертикально перед вікном для точності до ±2 мм.
+                  </p>
+                )}
               </div>
 
               {/* Upload & Camera Buttons */}

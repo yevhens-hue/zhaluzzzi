@@ -101,12 +101,58 @@ test.describe('Повне тестування сайту Жалюзі-Роле�
   test('6. AI-Консультант віджет доступний на сторінці та відкривається', async ({ page }) => {
     await page.goto('/');
 
-    const aiConsultantBtn = page.locator('button[aria-label*="AI-консультант" i], button:has-text("AI Eксперт")').first();
+    const aiConsultantBtn = page.locator('button:visible').filter({ hasText: /AI Eксперт|AI-Чат|AI-консультант/i }).first();
     await expect(aiConsultantBtn).toBeVisible({ timeout: 10000 });
     await aiConsultantBtn.click({ force: true });
 
     // Verify Chat window is opened
     const chatInput = page.locator('input[aria-label*="AI-консультант" i], input[placeholder*="Запитайте" i]').first();
     await expect(chatInput).toBeVisible({ timeout: 10000 });
+  });
+
+  test('7. Мобільна панель (MobileBottomBar) та висувна шторка (MobileDrawer)', async ({ page }) => {
+    // Set mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+
+    // Verify Mobile Bottom Bar is visible
+    const mobileBar = page.locator('aside[aria-label="Мобільне меню швидких дій"]');
+    await expect(mobileBar).toBeVisible({ timeout: 10000 });
+
+    // Verify buttons exist
+    await expect(mobileBar.locator('button:has-text("AI-Замір")')).toBeVisible();
+    await expect(mobileBar.locator('button:has-text("Швидкий замір")')).toBeVisible();
+    await expect(mobileBar.locator('button:has-text("Розрахунок")')).toBeVisible();
+
+    // Click "Швидкий замір" to open iOS Bottom Sheet
+    await mobileBar.locator('button:has-text("Швидкий замір")').click({ force: true });
+
+    // Verify MobileDrawer is open
+    const drawerTitle = page.locator('text=Швидкий виклик майстра на замір');
+    await expect(drawerTitle).toBeVisible({ timeout: 10000 });
+
+    // Verify form input inside Drawer
+    const phoneInput = page.locator('input[placeholder*="+380"]').first();
+    await expect(phoneInput).toBeVisible();
+  });
+
+  test('8. Гіроскопічний рівень (Level Guide) доступний в AI-Замірі', async ({ page }) => {
+    await page.goto('/zamir');
+
+    // Open AI-Measure modal
+    const openModalBtn = page.locator('button:has-text("Запустити AI Авто-замір")').first();
+    await openModalBtn.click();
+
+    // Verify Digital Spirit Level section
+    const levelGuideTitle = page.locator('text=Цифровий рівень нахилу (Гіроскоп)');
+    await expect(levelGuideTitle).toBeVisible();
+
+    // Verify toggle button
+    const toggleGyroBtn = page.locator('button:has-text("Увімкнути рівень")');
+    await expect(toggleGyroBtn).toBeVisible();
+    await toggleGyroBtn.click();
+
+    // Verify level indicators are displayed
+    await expect(page.locator('text=Нахил вперед/назад:')).toBeVisible();
   });
 });

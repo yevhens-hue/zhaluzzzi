@@ -1,15 +1,15 @@
 # 📑 Engineering Continuity & Production Master Handoff: Жалюзі та Рулонні Штори Дніпро
 
-**Версія релізу:** `v3.1.0` (27.08.2026)  
-**Кодова назва:** *AI Computer Vision Auto-Measure v2 (Touch & Loupe), Full-Site Playwright E2E Suite, Plausible Telemetry & SEO Content Engine*  
+**Версія релізу:** `v3.2.0` (27.08.2026)  
+**Кодова назва:** *Mobile-First Thumb-Zone Architecture (MobileBottomBar & iOS Drawer), Gyroscope 2D Spirit Level AI-Measure, Clean AI-Consultant Overlay, and Full 32-Test Playwright Suite*  
 **Production URL:** [https://zhaluzi-rolety-dnipro.vercel.app](https://zhaluzi-rolety-dnipro.vercel.app)  
 **GitHub Repository:** [https://github.com/yevhens-hue/zhaluzzzi](https://github.com/yevhens-hue/zhaluzzzi)  
-**Latest Production Commit:** `dcbfda2` (branch `main`)  
+**Latest Production Commit:** `v3.2.0` (branch `main`)  
 **Admin Panel:** [https://zhaluzi-rolety-dnipro.vercel.app/admin](https://zhaluzi-rolety-dnipro.vercel.app/admin)  
 **Admin Credentials:**  
 - **Login:** `admin`  
 - **Password:** `Dnipro2026!`  
-**Language Lock:** 100% Ukrainian (`uk`) across all 21 public and administrative routes.
+- **Language Lock:** 100% Ukrainian (`uk`) across all 21 public and administrative routes.
 
 ---
 
@@ -46,8 +46,20 @@
 │   │   ├── reviews/route.ts         # Збір та модерація відгуків
 │   │   └── tracking/route.ts        # Нова Пошта Live TTN Tracking API
 ├── components/
-│   ├── AiWindowMeasureModal.tsx     # 📷 AI Авто-замір вікна по фото (Touch Pointer Events + Loupe + Scaling)
+│   ├── AiWindowMeasureModal.tsx     # 📷 AI Авто-замір вікна по фото (Touch Pointer Events + Loupe + Scaling + Gyroscope 2D Level)
 │   ├── SocialProofNotifications.tsx # 📢 Живі спливаючі сповіщення про замовлення та перегляди (Framer Motion)
+│   ├── BlindCalculator.tsx          # 🧮 Інтерактивний калькулятор із прямим імпортом розмірів з URL/AI-заміру
+│   ├── Header.tsx                   # Sticky Header з кнопками «📷 AI-Замір», «3D Візуалізатор», ТТН і кошиком
+│   ├── CatalogView.tsx              # Фільтри каталогу + підключений CategorySeoSection
+│   ├── OneClickModal.tsx            # Швидке замовлення в 1 клік з інтегрованим TurnstileShield
+│   ├── ui/
+│   │   ├── MobileBottomBar.tsx      # 📱 Фіксований Thumb-Zone бар (AI-Замір, Розрахунок, Швидкий замір, AI-Чат, Кошик)
+│   │   ├── MobileDrawer.tsx         # 📱 iOS Bottom Sheet на базі vaul для безшовного виклику майстра
+│   │   └── TurnstileShield.tsx      # 🛡️ 3-рівневий непомітний анти-спам (Honeypot + Velocity + Turnstile)
+│   ├── admin/tabs/
+│   │   ├── AnalyticsDashboardTab.tsx# 📊 Власна аналітика без Google (100% динамічні дані з Supabase)
+│   │   ├── FeedsTab.tsx             # 🛒 Керування фідами Google Shopping / Rozetka + XML Імпортер
+│   │   ├── SmmTab.tsx               # 📲 SMM-генератор постів для Instagram/Telegram + 7-денний медіаплан� Живі спливаючі сповіщення про замовлення та перегляди (Framer Motion)
 │   ├── BlindCalculator.tsx          # 🧮 Інтерактивний калькулятор із прямим імпортом розмірів з URL/AI-заміру
 │   ├── Header.tsx                   # Sticky Header з кнопками «📷 AI-Замір», «3D Візуалізатор», ТТН і кошиком
 │   ├── CatalogView.tsx              # Фільтри каталогу + підключений CategorySeoSection

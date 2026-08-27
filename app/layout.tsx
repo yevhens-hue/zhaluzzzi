@@ -17,6 +17,7 @@ import { SocialProofNotifications } from '@/components/SocialProofNotifications'
 
 import { LocalBusinessJsonLd, WebSiteJsonLd, SITE_URL } from '@/components/seo/JsonLd';
 import { Toaster } from 'sonner';
+import { MobileBottomBar } from '@/components/ui/MobileBottomBar';
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
@@ -118,7 +119,7 @@ export default function RootLayout({
                 <CityProvider>
                   <WishlistProvider>
                     <Header />
-                    <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+                    <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-20 md:pb-6">
                       {children}
                     </main>
                     <Footer />
@@ -127,6 +128,7 @@ export default function RootLayout({
                     <TelegramWidget />
                     <AiConsultantWidget />
                     <SocialProofNotifications />
+                    <MobileBottomBar />
                     <Toaster richColors position="top-right" closeButton />
                   </WishlistProvider>
                 </CityProvider>
