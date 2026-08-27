@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { OneClickModal } from '@/components/OneClickModal';
+import { ArBlindModal } from './ArBlindModal';
 
 export type VisualizerSystem = 'day-night' | 'roller' | 'wood-blinds' | 'blackout';
 export type RoomType = 'living' | 'kitchen' | 'bedroom' | 'office' | 'custom';
@@ -132,6 +133,7 @@ export default function RoomVisualizer({
   // Custom photo upload ref
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isOneClickOpen, setIsOneClickOpen] = useState(false);
+  const [isArModalOpen, setIsArModalOpen] = useState(false);
   const [addedToCartToast, setAddedToCartToast] = useState(false);
 
   // Handle custom image upload
@@ -205,26 +207,37 @@ export default function RoomVisualizer({
           </div>
         </div>
 
-        {/* Day/Night Ambience Toggle */}
-        <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-2xl border border-slate-800">
+        {/* Action buttons: Day/Night Ambience Toggle & AR Camera Mode */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsNightMode(false)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              !isNightMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={() => setIsArModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-bold shadow-lg shadow-blue-500/20 border border-white/20 transition-all active:scale-95 cursor-pointer relative overflow-hidden group"
           >
-            <Sun className="w-4 h-4 text-amber-400" />
-            <span>День ☀️</span>
+            <span className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-indigo-500 opacity-40 group-hover:opacity-80 blur-xs transition animate-pulse" />
+            <Camera className="w-4 h-4 text-amber-300 relative z-10 animate-bounce" />
+            <span className="relative z-10">📱 Жива камера / AR</span>
           </button>
-          <button
-            onClick={() => setIsNightMode(true)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              isNightMode ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Moon className="w-4 h-4 text-indigo-400" />
-            <span>Вечір 🌙</span>
-          </button>
+
+          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800">
+            <button
+              onClick={() => setIsNightMode(false)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                !isNightMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Sun className="w-4 h-4 text-amber-400" />
+              <span>День ☀️</span>
+            </button>
+            <button
+              onClick={() => setIsNightMode(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                isNightMode ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Moon className="w-4 h-4 text-indigo-400" />
+              <span>Вечір 🌙</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -645,6 +658,23 @@ export default function RoomVisualizer({
           }}
         />
       )}
+
+      {/* AR Live Camera Modal */}
+      <ArBlindModal
+        isOpen={isArModalOpen}
+        onClose={() => setIsArModalOpen(false)}
+        initialColorHex={selectedFabric.hex}
+        initialFabricName={selectedFabric.name}
+        initialSystem={
+          system === 'wood-blinds' 
+            ? 'blinds' 
+            : system === 'blackout' 
+              ? 'blackout' 
+              : system === 'day-night' 
+                ? 'day-night' 
+                : 'roller'
+        }
+      />
     </div>
   );
 }

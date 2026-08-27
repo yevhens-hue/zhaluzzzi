@@ -10,6 +10,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { OneClickModal } from './OneClickModal';
 import RoomVisualizerModal from './visualizer/RoomVisualizerModal';
+import { ArBlindModal, ArSystemType } from './visualizer/ArBlindModal';
 import { VisualizerSystem } from './visualizer/RoomVisualizer';
 import { PriceCounter } from '@/components/ui/price-counter';
 import { toast } from 'sonner';
@@ -25,6 +26,7 @@ import {
   Sparkles,
   Phone,
   Palette,
+  Camera,
 } from 'lucide-react';
 
 interface ProductDetailViewProps {
@@ -110,6 +112,7 @@ export function ProductDetailView({
   // Modals & review
   const [isOneClickOpen, setIsOneClickOpen] = useState(false);
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(false);
+  const [isArOpen, setIsArOpen] = useState(false);
   const [reviewsList, setReviewsList] = useState<Review[]>(initialReviews);
   const [reviewName, setReviewName] = useState('');
   const [reviewCity, setReviewCity] = useState('');
@@ -518,14 +521,25 @@ export function ProductDetailView({
               </button>
             </div>
 
-            {/* 3D Visualizer Try-On Button */}
-            <button
-              onClick={() => setIsVisualizerOpen(true)}
-              className="w-full py-3 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:from-slate-800 hover:to-indigo-900 text-white rounded-xl font-black text-xs shadow-md border border-indigo-500/40 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
-              <span>{t('🎨 3D Примірка на вікні онлайн', '🎨 3D Примерка на окне онлайн')}</span>
-            </button>
+            {/* AR Live Camera Try-On & 3D Visualizer Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                onClick={() => setIsArOpen(true)}
+                className="py-3 px-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-extrabold text-xs shadow-md border border-white/20 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer relative overflow-hidden group"
+              >
+                <span className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-indigo-500 opacity-40 group-hover:opacity-75 blur-xs transition animate-pulse" />
+                <Camera className="w-4 h-4 text-amber-300 relative z-10 animate-bounce" />
+                <span className="relative z-10">{t('📱 AR-Примірка на камері', '📱 AR-Примерка на камере')}</span>
+              </button>
+
+              <button
+                onClick={() => setIsVisualizerOpen(true)}
+                className="py-3 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-extrabold text-xs shadow-md border border-gray-700 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span>{t('🎨 3D Кімната', '🎨 3D Комната')}</span>
+              </button>
+            </div>
 
             {/* Viber Quick Order */}
             {(() => {
@@ -768,6 +782,25 @@ export function ProductDetailView({
           }
         />
       )}
+
+      {/* AR Live Camera Modal */}
+      <ArBlindModal
+        isOpen={isArOpen}
+        onClose={() => setIsArOpen(false)}
+        initialColorHex={selectedColor?.hex}
+        initialFabricName={selectedColor?.name || product.title}
+        initialWidth={width}
+        initialHeight={height}
+        initialSystem={
+          (product.title || '').toLowerCase().includes('день-ніч') || (product.title || '').toLowerCase().includes('день ніч')
+            ? 'day-night'
+            : (product.title || '').toLowerCase().includes('блекаут') || (product.title || '').toLowerCase().includes('blackout')
+            ? 'blackout'
+            : (product.category_slug || '').toLowerCase().includes('zhaluzi') || (product.title || '').toLowerCase().includes('жалюзі')
+            ? 'blinds'
+            : 'roller'
+        }
+      />
     </div>
   );
 }
